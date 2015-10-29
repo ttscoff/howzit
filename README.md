@@ -53,20 +53,20 @@ demonstration purposes only and does not apply to this software.
    has been marked with the terms `replace` or `Replace`.
    You can replace the placeholder gem name with your own using
 
-```
-$ git mv replace_gemname.gemspec your_gemname.gemspec
-$ git mv lib/replace_gemname.rb lib/your_gemname.rb
-$ git mv lib/replace_gemname lib/your_gemname
-$ git ls-files -z | xargs -0 sed -i 's/replace_gemname/your_gemname/g'
-$ git ls-files -z | xargs -0 sed -i 's/ReplaceGemname/YourGemname/g'
-```
+   ```
+   $ git mv replace_gemname.gemspec your_gemname.gemspec
+   $ git mv lib/replace_gemname.rb lib/your_gemname.rb
+   $ git mv lib/replace_gemname lib/your_gemname
+   $ git ls-files -z | xargs -0 sed -i 's/replace_gemname/your_gemname/g'
+   $ git ls-files -z | xargs -0 sed -i 's/ReplaceGemname/YourGemname/g'
+   ```
 
    To see a list of what else still needs to be replaced, run
 
-```
-$ grep -Ri replace
-$ find . -name "*replace*"
-```
+   ```
+   $ grep -Ri replace
+   $ find . -name "*replace*"
+   ```
 
 Note that `CHANGELOG.md` is just a template for this skeleton.
 The actual changes for this project are documented in the commit history
