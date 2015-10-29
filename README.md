@@ -53,7 +53,7 @@ demonstration purposes only and does not apply to this software.
    has been marked with the terms `replace` or `Replace`.
    You can replace the placeholder gem name with your own using
 
-```bash
+```
 $ git mv replace_gemname.gemspec your_gemname.gemspec
 $ git mv lib/replace_gemname.rb lib/your_gemname.rb
 $ git mv lib/replace_gemname lib/your_gemname
@@ -63,7 +63,7 @@ $ git ls-files -z | xargs -0 sed -i 's/ReplaceGemname/YourGemname/g'
 
    To see a list of what else still needs to be replaced, run
 
-```bash
+```
 $ grep -Ri replace
 $ find . -name "*replace*"
 ```
@@ -112,13 +112,13 @@ gem 'replace_gemname'
 
 And then execute:
 
-```bash
+```
 $ bundle
 ```
 
 Or install it yourself as:
 
-```bash
+```
 $ gem install replace_gemname
 ```
 
@@ -139,7 +139,7 @@ The [ReplaceGemname source](https://github.com/replace_username/replace_gemname)
 is hosted on GitHub.
 To clone the project run
 
-```bash
+```
 $ git clone https://github.com/replace_username/replace_gemname.git
 ```
 
