@@ -163,6 +163,7 @@ rake release[remote]       # Create tag v0.0.0 and build and push replace_gemnam
 rake rubocop               # Run RuboCop
 rake rubocop:auto_correct  # Auto-correct RuboCop offenses
 rake spec                  # Run RSpec code examples
+rake test                  # Run test suite
 rake yard                  # Generate YARD Documentation
 ```
 
