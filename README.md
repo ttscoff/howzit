@@ -1,12 +1,12 @@
 # Ruby Gem Skeleton
 
 <!--
-[![Gem Version](https://img.shields.io/gem/v/replace_gemname.svg)](https://rubygems.org/gems/replace_gemname)
+[![Gem](https://img.shields.io/gem/v/replace_gemname.svg)](https://rubygems.org/gems/replace_gemname)
 -->
-[![MIT License](https://img.shields.io/github/license/makenew/ruby-gem.svg)](./LICENSE.txt)
-[![Dependency Status](https://img.shields.io/gemnasium/makenew/ruby-gem.svg)](https://gemnasium.com/makenew/ruby-gem)
-[![Build Status](https://img.shields.io/travis/makenew/ruby-gem.svg)](https://travis-ci.org/makenew/ruby-gem)
-[![Coverage Status](https://img.shields.io/codecov/c/github/makenew/ruby-gem.svg)](https://codecov.io/github/makenew/ruby-gem)
+[![GitHub license](https://img.shields.io/github/license/makenew/ruby-gem.svg)](./LICENSE.txt)
+[![Gemnasium](https://img.shields.io/gemnasium/makenew/ruby-gem.svg)](https://gemnasium.com/makenew/ruby-gem)
+[![Travis](https://img.shields.io/travis/makenew/ruby-gem.svg)](https://travis-ci.org/makenew/ruby-gem)
+[![Codecov](https://img.shields.io/codecov/c/github/makenew/ruby-gem.svg)](https://codecov.io/github/makenew/ruby-gem)
 [![Code Climate](https://img.shields.io/codeclimate/github/makenew/ruby-gem.svg)](https://codeclimate.com/github/makenew/ruby-gem)
 
 Use this project freely as a base for your testable Ruby gems.
