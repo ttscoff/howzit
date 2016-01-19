@@ -1,15 +1,9 @@
 # Parts of this file were adapted from
 # GitHub’s collection of .gitignore file templates
-# which are Copyright (c) 2014 GitHub, Inc.
+# which are Copyright (c) 2016 GitHub, Inc.
 # and released under the MIT License.
 # For more details, visit the project page:
 # https://github.com/github/gitignore
-
-*.bundle
-*.so
-*.o
-*.a
-mkmf.log
 
 *.gem
 *.rbc
@@ -18,6 +12,7 @@ mkmf.log
 /InstalledFiles
 /pkg/
 /spec/reports/
+/spec/examples.txt
 /test/tmp/
 /test/version_tmp/
 /tmp/
@@ -33,8 +28,9 @@ build/
 /doc/
 /rdoc/
 
-## Environment normalisation:
+## Environment normalization:
 /.bundle/
+/vendor/bundle
 /lib/bundler/man/
 
 # for a library or gem, you might want to ignore these files since the code is
