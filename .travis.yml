@@ -8,5 +8,3 @@ sudo: false
 
 before_install:
   - 'echo ''gem: --no-document'' > ~/.gemrc'
-
-script: bundle exec rake travis
