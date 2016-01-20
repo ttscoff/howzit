@@ -104,23 +104,25 @@ $ git merge upstream/master
 
 ## Installation
 
-Add this line to your application's Gemfile:
+Add this line to your application's [Gemfile][Bundler]
 
 ```ruby
 gem 'replace_gemname'
 ```
 
-And then execute:
+and update your bundle with
 
 ```
 $ bundle
 ```
 
-Or install it yourself as:
+Or install it yourself with
 
 ```
 $ gem install replace_gemname
 ```
+
+[Bundler]: http://bundler.io/
 
 ## Documentation
 
