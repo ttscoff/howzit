@@ -190,7 +190,7 @@ To submit a patch:
 
 ## License
 
-ReplaceGemname is licensed under the MIT license.
+This Ruby gem is licensed under the MIT license.
 
 ## Warranty
 
