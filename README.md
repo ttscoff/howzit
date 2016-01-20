@@ -147,7 +147,7 @@ $ git clone https://github.com/replace_username/replace_gemname.git
 
 ### Rake
 
-Run `rake -T` to see all Rake tasks.
+Run `$ rake -T` to see all Rake tasks.
 
 ```
 rake build                 # Build replace_gemname-0.0.0.gem into the pkg directory
@@ -173,7 +173,7 @@ rake yard                  # Generate YARD Documentation
 
 Guard tasks have been separated into the following groups:
 `doc`, `lint`, and `unit`.
-By default, Guard will generate documentation, lint, and run unit tests.
+By default, `$ guard` will generate documentation, lint, and run unit tests.
 
 ## Contributing
 
