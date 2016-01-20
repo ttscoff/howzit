@@ -9,7 +9,7 @@ else
   SimpleCov.formatter = SimpleCov::Formatter::HTMLFormatter
 end
 
-require 'replace_gemname'
+require 'makenew'
 
 RSpec.configure do |c|
   c.expect_with(:rspec) { |e| e.syntax = :expect }

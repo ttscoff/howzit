@@ -1,15 +1,15 @@
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'replace_gemname/version'
+require 'makenew/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'replace_gemname'
-  spec.version       = ReplaceGemname::VERSION
-  spec.authors       = ['replace_author']
-  spec.email         = ['replace@example.com']
-  spec.description   = %q{ReplaceDescription.}
-  spec.summary       = %q{ReplaceSummary.}
-  spec.homepage      = 'https://github.com/replace_user/replace_gemname'
+  spec.name          = 'makenew-ruby_gem'
+  spec.version       = Makenew::VERSION
+  spec.authors       = ['Evan Sosenko']
+  spec.email         = ['razorx@evansosenko.com']
+  spec.description   = %q{Ruby gem skeleton.}
+  spec.summary       = %q{Ruby gem skeleton from makenew.}
+  spec.homepage      = 'https://github.com/makenew/ruby-gem'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files`.split($/)
