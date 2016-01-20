@@ -124,12 +124,11 @@ $ gem install replace_gemname
 
 ## Documentation
 
-The primary documentation for ReplaceGemname is this README and the YARD source documentation.
+- [YARD documentation][RubyDoc] is hosted by RubyDoc.info.
+- [Interactive documentation][Omniref] is hosted by Omniref.
 
-YARD documentation for all gem versions is hosted on the
-[ReplaceGemname gem page](https://rubygems.org/gems/replace_gemname).
-Also checkout
-[Omniref's interactive documentation](https://www.omniref.com/ruby/gems/replace_gemname).
+[RubyDoc]: http://www.rubydoc.info/gems/replace_gemname
+[Omniref]: https://www.omniref.com/ruby/gems/replace_gemname
 
 ## Development and Testing
 
