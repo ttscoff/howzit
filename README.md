@@ -134,13 +134,14 @@ $ gem install replace_gemname
 
 ### Source Code
 
-The [ReplaceGemname source](https://github.com/replace_username/replace_gemname)
-is hosted on GitHub.
-To clone the project run
+The [replace_gemname source] is hosted on GitHub.
+Clone the project with
 
 ```
 $ git clone https://github.com/replace_username/replace_gemname.git
 ```
+
+[replace_gemname source]: https://github.com/replace_username/replace_gemname
 
 ### Rake
 
