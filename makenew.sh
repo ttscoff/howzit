@@ -44,7 +44,7 @@ makenew () {
   read -p '> Copyright owner: ' mk_owner
   read -p '> Copyright year: ' mk_year
   read -p '> GitHub user or organization name: ' mk_user
-  read -p '> GitHub repository name: ' mk_project
+  read -p '> GitHub repository name: ' mk_repo
 
   sed -i -e '12,89d;178,181d' README.md
   sed -i -e "12i ${mk_description}" README.md
@@ -57,7 +57,7 @@ makenew () {
   find_replace "s/2016 Evan Sosenko/${mk_year} ${mk_owner}/g"
   find_replace "s/Evan Sosenko/${mk_author}/g"
   find_replace "s/razorx@evansosenko\.com/${mk_email}/g"
-  find_replace "s/makenew\/ruby-gem/${mk_user}\/${mk_project}/g"
+  find_replace "s/makenew\/ruby-gem/${mk_user}\/${mk_repo}/g"
   find_replace "s/makenew-ruby_gem/${mk_slug}/g"
   find_replace "s/Makenew/${mk_module}/g"
   find_replace "s/RubyGem/${mk_class}/g"
