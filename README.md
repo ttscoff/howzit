@@ -37,9 +37,26 @@ Bootstrap a new [Ruby] gem in less than a minute.
 
 ### Bootstrapping a New Project
 
-1. Clone this repository or download a [release][Releases].
+1. Clone the master branch of this repository with
 
-2. Run `./makenew.sh` and follow the prompts.
+   ```
+   $ git clone --single-branch https://github.com/makenew/ruby-gem.git new-ruby-gem
+   $ cd new-ruby-gem
+   ```
+
+   Optionally, reset to the latest [release][Releases] with
+
+   ```
+   $ git reset --hard ruby-gem-v2.0.0
+   ```
+
+2. Run
+
+   ```
+   $ ./makenew.sh
+   ```
+
+   and follow the prompts.
    This will replace the boilerplate, delete itself,
    and stage changes for commit.
    This script assumes the project repository will be hosted on GitHub.
