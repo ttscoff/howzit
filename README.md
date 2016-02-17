@@ -152,6 +152,19 @@ $ git clone https://github.com/makenew/ruby-gem.git
 
 [makenew-ruby_gem source]: https://github.com/makenew/ruby-gem
 
+### Requirements
+
+You will need [Ruby] with [Bundler].
+
+Install the development dependencies with
+
+```
+$ bundle
+```
+
+[Bundler]: http://bundler.io/
+[Ruby]: https://www.ruby-lang.org/
+
 ### Rake
 
 Run `$ rake -T` to see all Rake tasks.
