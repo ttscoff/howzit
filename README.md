@@ -15,23 +15,27 @@ Bootstrap a new [Ruby] gem in less than a minute.
 
 ### Features
 
-* [Rake] and [Guard] tasks for included tools.
-* Gem management with [Bundler] and [Bump].
-* Documentation generation with [YARD].
-* Linting with [RuboCop].
-* Unit testing with [RSpec].
-* [Travis CI] ready.
-* [EditorConfig].
-* Badges from [Shields.io]!
+- [Rake] and [Guard] tasks for included tools.
+- Gem and dependency management with [Bundler] and [Bump].
+- Documentation generation with [YARD].
+- Linting with [RuboCop].
+- Unit testing with [RSpec].
+- Code coverage with [SimpleCov].
+- [Travis CI] ready.
+- [Keep a CHANGELOG].
+- Consistent coding with [EditorConfig].
+- Badges from [Shields.io].
 
 [Bump]: https://github.com/gregorym/bump
 [Bundler]: http://bundler.io/
 [EditorConfig]: http://editorconfig.org/
+[Keep a CHANGELOG]: http://keepachangelog.com/
 [Guard]: http://guardgem.org/
 [Rake]: https://github.com/jimweirich/rake
 [RSpec]: http://rspec.info/
 [RuboCop]: https://github.com/bbatsov/rubocop
 [Shields.io]: http://shields.io/
+[SimpleCov]: https://github.com/colszowka/simplecov
 [Travis CI]: https://travis-ci.org/
 [YARD]: http://yardoc.org/index.html
 
