@@ -51,7 +51,7 @@ Bootstrap a new [Ruby] gem in less than a minute.
    Optionally, reset to the latest [release][Releases] with
 
    ```
-   $ git reset --hard ruby-gem-v2.0.0
+   $ git reset --hard ruby-gem-v2.0.1
    ```
 
 2. Run
@@ -170,7 +170,7 @@ $ bundle
 Run `$ rake -T` to see all Rake tasks.
 
 ```
-rake build                 # Build makenew-ruby_gem-2.0.0.gem into the pkg directory
+rake build                 # Build makenew-ruby_gem-2.0.1.gem into the pkg directory
 rake bump:current[tag]     # Show current gem version
 rake bump:major[tag]       # Bump major part of gem version
 rake bump:minor[tag]       # Bump minor part of gem version
@@ -179,9 +179,9 @@ rake bump:pre[tag]         # Bump pre part of gem version
 rake bump:set              # Sets the version number using the VERSION environment variable
 rake clean                 # Remove any temporary products
 rake clobber               # Remove any generated files
-rake install               # Build and install makenew-ruby_gem-2.0.0.gem into system gems
-rake install:local         # Build and install makenew-ruby_gem-2.0.0.gem into system gems without network access
-rake release[remote]       # Create tag v2.0.0 and build and push makenew-ruby_gem-2.0.0.gem to Rubygems
+rake install               # Build and install makenew-ruby_gem-2.0.1.gem into system gems
+rake install:local         # Build and install makenew-ruby_gem-2.0.1.gem into system gems without network access
+rake release[remote]       # Create tag v2.0.1 and build and push makenew-ruby_gem-2.0.1.gem to Rubygems
 rake rubocop               # Run RuboCop
 rake rubocop:auto_correct  # Auto-correct RuboCop offenses
 rake spec                  # Run RSpec code examples
