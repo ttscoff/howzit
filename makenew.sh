@@ -46,7 +46,7 @@ makenew () {
   read -p '> GitHub user or organization name: ' mk_user
   read -p '> GitHub repository name: ' mk_repo
 
-  sed -i -e '12,110d;213,216d' README.md
+  sed -i -e '3d;13,111d;214,217d' README.md
   sed -i -e "12i ${mk_description}" README.md
 
   find_replace "s/VERSION =.*/VERSION = '${mk_version}'.freeze/g"
@@ -69,6 +69,9 @@ makenew () {
   git mv lib/makenew/ruby_gem.rb lib/makenew/${mk_class_file}.rb
   git mv lib/makenew.rb lib/${mk_module_dir}.rb
   git mv lib/makenew lib/${mk_module_dir}
+
+  mk_attribution='> Built from [makenew/ruby-gem](https://github.com/makenew/ruby-gem).'
+  sed -i -e "10i ${mk_attribution}\n" README.md
 
   echo
   echo 'Replacing boilerplate.'

@@ -1,5 +1,6 @@
 # Ruby Gem Skeleton
 
+[<img src="https://makenew.github.io/makenew.svg" alt="Make New" height="20">](https://makenew.github.io/)
 [![Gem](https://img.shields.io/gem/v/makenew-ruby_gem.svg)](https://rubygems.org/gems/makenew-ruby_gem)
 [![GitHub license](https://img.shields.io/github/license/makenew/ruby-gem.svg)](./LICENSE.txt)
 [![Gemnasium](https://img.shields.io/gemnasium/makenew/ruby-gem.svg)](https://gemnasium.com/makenew/ruby-gem)
