@@ -2,7 +2,6 @@
 language: ruby
 sudo: required
 dist: trusty
-cache:
-  bundler: true
+cache: bundler
 rvm:
   - 2
