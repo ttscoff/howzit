@@ -9,10 +9,9 @@ task default: [:yard, :rubocop, :spec]
 desc 'Run test suite'
 task test: [:rubocop, :spec]
 
-YARD::Config.load_plugin 'redcarpet-ext'
 YARD::Rake::YardocTask.new do |t|
   t.files = ['**/*.rb', '-', 'README.md', 'CHANGELOG.md', 'LICENSE.txt']
-  t.options = ['--markup-provider=redcarpet', '--markup=markdown']
+  t.options = ['--markup=markdown']
 end
 
 RuboCop::RakeTask.new do |t|

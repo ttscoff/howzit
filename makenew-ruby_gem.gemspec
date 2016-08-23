@@ -34,8 +34,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'codecov', '~> 0.1'
   spec.add_development_dependency 'fuubar', '~> 2.0'
 
-  spec.add_development_dependency 'yard', '~> 0.8.7'
-  spec.add_development_dependency 'yard-redcarpet-ext', '~> 0.0.3'
+  spec.add_development_dependency 'yard', '~> 0.9.5'
   spec.add_development_dependency 'redcarpet', '~> 3.2'
   spec.add_development_dependency 'github-markup', '~> 1.3'
 end
