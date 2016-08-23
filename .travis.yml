@@ -1,9 +1,11 @@
 ---
 language: ruby
-sudo: false
+sudo: required
+dist: trusty
+cache:
+  bundler: true
 rvm:
   - 2
-cache: bundler
 
 before_install:
   - 'echo ''gem: --no-document'' > ~/.gemrc'
