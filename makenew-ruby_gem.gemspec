@@ -1,4 +1,4 @@
-lib = File.expand_path('../lib', __FILE__)
+lib = File.expand_path(File.join('..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'makenew/version'
 
@@ -7,12 +7,12 @@ Gem::Specification.new do |spec|
   spec.version       = Makenew::VERSION
   spec.authors       = ['Evan Sosenko']
   spec.email         = ['razorx@evansosenko.com']
-  spec.description   = %q{Ruby gem skeleton.}
-  spec.summary       = %q{Ruby gem skeleton from makenew.}
+  spec.description   = 'Ruby gem skeleton.'
+  spec.summary       = 'Ruby gem skeleton from makenew.'
   spec.homepage      = 'https://github.com/makenew/ruby-gem'
   spec.license       = 'MIT'
 
-  spec.files         = `git ls-files`.split($/)
+  spec.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.test_files    = spec.files.grep(%r{^(features|spec|test)/})
   spec.require_paths = ['lib']
