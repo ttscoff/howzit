@@ -6,8 +6,3 @@ cache:
   bundler: true
 rvm:
   - 2
-
-before_install:
-  - 'echo ''gem: --no-document'' > ~/.gemrc'
-
-script: bundle exec rake test
