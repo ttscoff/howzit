@@ -1,3 +1,11 @@
+### 1.2.11
+
+2022-08-01 08:23
+
+#### IMPROVED
+
+- Code cleanup and refactoring
+
 ### 1.2.10
 
 2022-08-01 07:45
