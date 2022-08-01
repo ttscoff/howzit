@@ -29,3 +29,8 @@ task :ver do
   puts "version.rb: #{version}"
   puts "changelog: #{cver}"
 end
+
+desc 'Changelog version check'
+task :cver do
+  puts IO.read(File.join(File.dirname(__FILE__), 'CHANGELOG.md')).match(/^#+ (\d+\.\d+\.\d+(\w+)?)/)[1]
+end
