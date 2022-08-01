@@ -3,7 +3,7 @@ module Howzit
   class BuildNotes
     include Prompt
 
-    attr_accessor :arguments, :metadata
+    attr_accessor :cli_args, :arguments, :metadata
 
     def topics
       @topics ||= read_help
@@ -673,7 +673,7 @@ module Howzit
       matches
     end
 
-    def initialize(args)
+    def initialize(args = [])
       flags = {
         run: false,
         list_topics: false,
@@ -716,7 +716,8 @@ module Howzit
       OptionParser.new do |opts|
         opts.banner = "Usage: #{__FILE__} [OPTIONS] [TOPIC]"
         opts.separator ''
-        opts.separator 'Show build notes for the current project (buildnotes.md). Include a topic name to see just that topic, or no argument to display all.'
+        opts.separator 'Show build notes for the current project (buildnotes.md).
+        Include a topic name to see just that topic, or no argument to display all.'
         opts.separator ''
         opts.separator 'Options:'
 
@@ -725,7 +726,8 @@ module Howzit
           Process.exit 0
         end
 
-        opts.on('-e', '--edit', "Edit buildnotes file in current working directory using #{File.basename(ENV['EDITOR'])}") do
+        opts.on('-e', '--edit', "Edit buildnotes file in current working directory
+                using #{File.basename(ENV['EDITOR'])}") do
           edit_note
           Process.exit 0
         end
@@ -743,7 +745,8 @@ module Howzit
           @options[:list_topics] = true
         end
 
-        opts.on('-m', '--matching TYPE', MATCHING_OPTIONS, 'Topics matching type', "(#{MATCHING_OPTIONS.join(', ')})") do |c|
+        opts.on('-m', '--matching TYPE', MATCHING_OPTIONS,
+                'Topics matching type', "(#{MATCHING_OPTIONS.join(', ')})") do |c|
           @options[:matching] = c
         end
 
@@ -806,7 +809,7 @@ module Howzit
             puts "\e[1;30m[\e[1;37mtasks\e[1;30m]──────────────────────────────────────┐\e[0m"
             metadata = file.extract_metadata
             topics = read_help_file(file)
-            topics.keys.each do |topic|
+            topics.each_key do |topic|
               puts " \e[1;30m│\e[1;37m-\e[0m \e[1;36;40m#{template}:#{topic.sub(/^.*?:/, '')}\e[0m"
             end
             if metadata.size > 0
@@ -845,7 +848,7 @@ module Howzit
         end
       end.parse!(args)
 
-      process(args)
+      @cli_args = args
     end
 
     def edit_note
@@ -1064,7 +1067,7 @@ module Howzit
       `#{ENV['EDITOR']} "#{config_file}"`
     end
 
-    def process(args)
+    def process
       output = []
 
       unless note_file
@@ -1118,9 +1121,9 @@ module Howzit
       elsif @options[:choose]
         topic_match = choose(topics.keys)
       # If there are arguments use those to search for a matching topic
-      elsif !args.empty?
+      elsif !@cli_args.empty?
 
-        search = args.join(' ').strip.downcase
+        search = @cli_args.join(' ').strip.downcase
         matches = match_topic(search)
 
         if matches.empty?

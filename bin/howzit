@@ -4,4 +4,6 @@
 $LOAD_PATH.unshift File.join(__dir__, '..', 'lib')
 require 'howzit'
 
-Howzit::BuildNotes.new(ARGV)
+how = Howzit::BuildNotes.new(ARGV)
+how.process
+
