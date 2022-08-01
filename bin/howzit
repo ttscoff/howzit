@@ -6,4 +6,3 @@ require 'howzit'
 
 how = Howzit::BuildNotes.new(ARGV)
 how.process
-
