@@ -1040,7 +1040,7 @@ module Howzit
       File.join(config_dir, 'templates')
     end
 
-    def create_config
+    def create_config(defaults)
       dir, file = [config_dir, config_file]
       unless File.directory?(dir)
         warn "Creating config directory at #{dir}"
@@ -1055,7 +1055,7 @@ module Howzit
     end
 
     def load_config(defaults)
-      file = create_config
+      file = create_config(defaults)
       config = YAML.load(IO.read(file))
       newconfig = config ? defaults.merge(config) : defaults
       write_config(newconfig)
