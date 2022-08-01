@@ -1,6 +1,8 @@
 module Howzit
   # Primary Class for this module
   class BuildNotes
+    include Prompt
+
     attr_accessor :arguments, :metadata
 
     def topics
@@ -108,7 +110,6 @@ module Howzit
       options = {
         color: true,
         highlight: false,
-        paginate: false,
         wrap: 0
       }
 
@@ -124,12 +125,15 @@ module Howzit
 
       output = `echo #{Shellwords.escape(string.strip)}#{pipes}`
 
-      if options[:paginate]
+      if @options[:paginate]
         page(output)
       else
-        output.gsub!(/^╌/, '\e]1337;SetMark\a╌') if ENV['TERM_PROGRAM'] =~ /^iTerm/ && !options[:run]
         puts output
       end
+    end
+
+    def iterm_marker
+      "\e]1337;SetMark\a\n" if ENV['TERM_PROGRAM'] =~ /^iTerm/ && !@options[:run] && !@options[:paginate]
     end
 
     def color_single_options(choices = %w[y n])
@@ -153,16 +157,9 @@ module Howzit
       end
       # First make sure there isn't already a buildnotes file
       if note_file
-        system 'stty cbreak'
         fname = "\e[1;33m#{note_file}\e[1;37m"
-        yn = color_single_options(%w[y N])
-        $stdout.syswrite "#{fname} exists and appears to be a build note, continue anyway #{yn}\e[1;37m? \e[0m"
-        res = $stdin.sysread 1
-        res.chomp!
-        puts
-        system 'stty cooked'
-
-        unless res =~ /y/i
+        res = yn("#{fname} exists and appears to be a build note, continue anyway?", false)
+        unless res
           puts 'Canceled'
           Process.exit 0
         end
@@ -209,16 +206,10 @@ module Howzit
       EOBUILDNOTES
 
       if File.exist?(filename)
-        system 'stty cbreak'
-        yn = color_single_options(%w[y N])
         file = "\e[1;33m#{filename}"
-        $stdout.syswrite "\e[1;37mAre you absolutely sure you want to overwrite #{file} #{yn}\e[1;37m? \e[0m"
-        res = $stdin.sysread 1
-        res.chomp!
-        puts
-        system 'stty cooked'
+        res = yn("Are you absolutely sure you want to overwrite #{file}", false)
 
-        unless res =~ /y/i
+        unless res
           puts 'Canceled'
           Process.exit 0
         end
@@ -240,11 +231,11 @@ module Howzit
 
       options.merge!(opts)
 
-      cols = `tput cols`.strip.to_i
+      cols = TTY::Screen.columns
       cols = @options[:wrap] if (@options[:wrap]).positive? && cols > @options[:wrap]
       title = "\e[#{options[:border]}m#{options[:hr]}#{options[:hr]}( \e[#{options[:color]}m#{title}\e[#{options[:border]}m )"
       tail = options[:hr] * (cols - title.uncolor.length)
-      "#{title}#{tail}\e[0m"
+      options[:hr] =~ /╌/ ? "#{iterm_marker}#{title}#{tail}\e[0m" : "#{title}#{tail}\e[0m"
     end
 
     def os_open(command)
@@ -283,6 +274,15 @@ module Howzit
       output = []
       tasks = 0
       if topics[key] =~ /(@(include|run|copy|open|url)\((.*?)\)|`{3,}run)/i
+        prereqs = topics[key].scan(/(?<=@before\n).*?(?=\n@end)/im).map(&:strip)
+        postreqs = topics[key].scan(/(?<=@after\n).*?(?=\n@end)/im).map(&:strip)
+
+        unless prereqs.empty?
+          puts prereqs.join("\n\n")
+          res = yn('This task has prerequisites, have they been met?', true)
+          Process.exit 1 unless res
+
+        end
         directives = topics[key].scan(/(?:@(include|run|copy|open|url)\((.*?)\)|(`{3,})run(?: +([^\n]+))?(.*?)\3)/mi)
 
         tasks += directives.length
@@ -333,6 +333,8 @@ module Howzit
         warn "\e[0;31m--run: No \e[1;31m@directive\e[0;31;40m found in \e[1;37m#{key}\e[0m"
       end
       output.push("Ran #{tasks} #{tasks == 1 ? 'task' : 'tasks'}") if @options[:log_level] < 2
+
+      puts postreqs.join("\n\n")
     end
 
     # Output a topic with fancy title and bright white text.
@@ -349,6 +351,8 @@ module Howzit
       topic.gsub!(/(?mi)^(`{3,})run *([^\n]*)[\s\S]*?\n\1\s*$/, '@@@run \2') unless @options[:show_all_code]
       topic.split(/\n/).each do |l|
         case l
+        when /@(before|after|prereq|end)/
+          next
         when /@include\((.*?)\)/
 
           m = Regexp.last_match
@@ -837,14 +841,9 @@ module Howzit
       raise 'No EDITOR variable defined in environment' if ENV['EDITOR'].nil?
 
       if note_file.nil?
-        system 'stty cbreak'
-        yn = color_single_options(%w[Y n])
-        $stdout.syswrite "No build notes file found, create one #{yn}? "
-        res = $stdin.sysread 1
-        puts
-        system 'stty cooked'
+        res = yn("No build notes file found, create one?", true)
 
-        create_note if res.chomp =~ /^y?$/i
+        create_note if res
         edit_note
       else
         `#{ENV['EDITOR']} "#{note_file}"`
@@ -1064,14 +1063,8 @@ module Howzit
         ARGV.length.times do
           ARGV.shift
         end
-        system 'stty cbreak'
-        yn = color_single_options(%w[Y n])
-        $stdout.syswrite "No build notes file found, create one #{yn}? "
-        res = $stdin.sysread 1
-        puts
-        system 'stty cooked'
-
-        create_note if res.chomp =~ /^y?$/i
+        res = yn("No build notes file found, create one?", true)
+        create_note if res
         Process.exit 1
       end
 

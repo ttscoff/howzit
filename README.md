@@ -2,10 +2,6 @@
 
 [![Gem](https://img.shields.io/gem/v/howzit.svg)](https://rubygems.org/gems/howzit)
 [![GitHub license](https://img.shields.io/github/license/ttscoff/howzit.svg)](./LICENSE.txt)
-[![Gemnasium](https://img.shields.io/gemnasium/ttscoff/howzit.svg)](https://gemnasium.com/ttscoff/howzit)
-[![Travis](https://img.shields.io/travis/ttscoff/howzit.svg)](https://travis-ci.org/ttscoff/howzit)
-[![Codecov](https://img.shields.io/codecov/c/github/ttscoff/howzit.svg)](https://codecov.io/github/ttscoff/howzit)
-[![Code Climate](https://img.shields.io/codeclimate/github/ttscoff/howzit.svg)](https://codeclimate.com/github/ttscoff/howzit)
 
 A command-line reference tool for tracking project build systems
 

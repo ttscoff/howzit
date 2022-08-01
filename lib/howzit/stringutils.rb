@@ -5,7 +5,7 @@ module Howzit
   module StringUtils
     # Just strip out color codes when requested
     def uncolor
-      gsub(/\e\[[\d;]+m/, '')
+      gsub(/\e\[[\d;]+m/, '').gsub(/\e]1337;SetMark/,'')
     end
 
     # Adapted from https://github.com/pazdera/word_wrap/,

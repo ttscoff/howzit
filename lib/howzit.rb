@@ -1,4 +1,5 @@
 require 'howzit/version'
+require 'howzit/prompt'
 require 'howzit/buildnotes'
 require 'howzit/stringutils'
 require 'optparse'
@@ -7,6 +8,8 @@ require 'pathname'
 require 'readline'
 require 'tempfile'
 require 'yaml'
+
+require 'tty/screen'
 
 CONFIG_DIR = '~/.config/howzit'
 CONFIG_FILE = 'howzit.yaml'

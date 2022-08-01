@@ -39,4 +39,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'github-markup', '~> 1.3'
 
   spec.add_runtime_dependency 'mdless', '~> 1.0', '>= 1.0.28'
+  spec.add_runtime_dependency 'tty-screen', '~> 0.8'
 end
