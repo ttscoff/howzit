@@ -1,13 +1,15 @@
+# frozen_string_literal: true
+
 require 'bump/tasks'
 require 'bundler/gem_tasks'
 require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 require 'yard'
 
-task default: [:test, :yard]
+task default: %i[test yard]
 
 desc 'Run test suite'
-task test: [:rubocop, :spec]
+task test: %i[rubocop spec]
 
 RSpec::Core::RakeTask.new
 

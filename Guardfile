@@ -1,4 +1,6 @@
-scope groups: [:doc, :lint, :unit]
+# frozen_string_literal: true
+
+scope groups: %i[doc lint unit]
 
 group :doc do
   guard :yard do
