@@ -582,6 +582,24 @@ module Howzit
       template_topics
     end
 
+    def include_file(m)
+      file = File.expand_path(m[1])
+
+      return m[0] unless File.exist?(file)
+
+      content = IO.read(file)
+      home = ENV['HOME']
+      short_path = File.dirname(file.sub(/^#{home}/, '~'))
+      prefix = "#{short_path}/#{File.basename(file)}:"
+      parts = content.split(/^##+/)
+      parts.shift
+      if parts.empty?
+        content
+      else
+        "## #{parts.join('## ')}".gsub(/^(##+ *)(?=\S)/, "\\1#{prefix}")
+      end
+    end
+
     # Read in the build notes file and output a hash of "Title" => contents
     def read_help_file(path = nil)
       filename = path.nil? ? note_file : path
@@ -589,21 +607,7 @@ module Howzit
       help = IO.read(filename)
 
       help.gsub!(/@include\((.*?)\)/) do
-        m = Regexp.last_match
-        file = File.expand_path(m[1])
-        if File.exist?(file)
-          content = IO.read(file)
-          home = ENV['HOME']
-          short_path = File.dirname(file.sub(/^#{home}/, '~'))
-          prefix = "#{short_path}:"
-          parts = content.split(/^##+/)
-          parts.shift
-          content = '## ' + parts.join('## ')
-          content.gsub!(/^(##+ *)(?=\S)/, "\\1#{prefix}")
-          content
-        else
-          m[0]
-        end
+        include_file(Regexp.last_match)
       end
 
       template_topics = get_template_topics(help)
