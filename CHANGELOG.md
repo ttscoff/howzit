@@ -1,3 +1,12 @@
+### 1.2.12
+
+2022-08-01 16:23
+
+#### IMPROVED
+
+- Replace ANSI escape codes with color template system
+- When @including an external file, if the file doesn't contain any level 2+ headers, import it as plain text.
+
 ### 1.2.11
 
 2022-08-01 08:23
