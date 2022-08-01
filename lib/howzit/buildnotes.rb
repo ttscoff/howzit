@@ -132,8 +132,12 @@ module Howzit
       end
     end
 
+    def should_mark_iterm?
+      ENV['TERM_PROGRAM'] =~ /^iTerm/ && !@options[:run] && !@options[:paginate]
+    end
+
     def iterm_marker
-      "\e]1337;SetMark\a\n" if ENV['TERM_PROGRAM'] =~ /^iTerm/ && !@options[:run] && !@options[:paginate]
+      "\e]1337;SetMark\a" if should_mark_iterm?
     end
 
     def color_single_options(choices = %w[y n])
@@ -226,16 +230,23 @@ module Howzit
       options = {
         hr: "\u{254C}",
         color: '1;32',
-        border: '0'
+        border: '0',
+        mark: false
       }
 
       options.merge!(opts)
 
       cols = TTY::Screen.columns
+
       cols = @options[:wrap] if (@options[:wrap]).positive? && cols > @options[:wrap]
-      title = "\e[#{options[:border]}m#{options[:hr]}#{options[:hr]}( \e[#{options[:color]}m#{title}\e[#{options[:border]}m )"
-      tail = options[:hr] * (cols - title.uncolor.length)
-      options[:hr] =~ /╌/ ? "#{iterm_marker}#{title}#{tail}\e[0m" : "#{title}#{tail}\e[0m"
+      title = "\e[#{options[:border]}m#{options[:hr] * 2}( \e[#{options[:color]}m#{title}\e[#{options[:border]}m )"
+
+      tail = if should_mark_iterm?
+               "#{options[:hr] * (cols - title.uncolor.length - 15)}#{options[:mark] ? iterm_marker : ''}"
+             else
+               options[:hr] * (cols - title.uncolor.length)
+             end
+      "#{title}#{tail}\e[0m"
     end
 
     def os_open(command)
@@ -344,7 +355,7 @@ module Howzit
 
       output = []
       if opt[:header]
-        output.push(format_header(key))
+        output.push(format_header(key, { mark: should_mark_iterm? }))
         output.push('')
       end
       topic = topics[key].strip
