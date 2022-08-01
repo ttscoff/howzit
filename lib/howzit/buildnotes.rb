@@ -3,7 +3,7 @@ module Howzit
   class BuildNotes
     include Prompt
 
-    attr_accessor :cli_args, :arguments, :metadata
+    attr_accessor :cli_args, :options, :arguments, :metadata
 
     def topics
       @topics ||= read_help
@@ -456,14 +456,14 @@ module Howzit
       topics.keys.join("\n")
     end
 
-    def get_note_title(filename, truncate = 0)
+    def get_note_title(truncate = 0)
       title = nil
-      help = IO.read(filename).strip
+      help = IO.read(note_file).strip
       title = help.match(/(?:^(\S.*?)(?=\n==)|^# ?(.*?)$)/)
       title = if title
                 title[1].nil? ? title[2] : title[1]
               else
-               filename.sub(/(\.\w+)?$/, '')
+               note_file.sub(/(\.\w+)?$/, '')
              end
 
       title && truncate.positive? ? title.trunc(truncate) : title
@@ -779,8 +779,8 @@ module Howzit
           @options[:log_level] = 0
         end
 
-        opts.on('-u', '--upstream', 'Traverse up parent directories for additional build notes') do
-          @options[:include_upstream] = true
+        opts.on('-u', '--[no-]upstream', 'Traverse up parent directories for additional build notes') do |p|
+          @options[:include_upstream] = p
         end
 
         opts.on('--show-code', 'Display the content of fenced run blocks') do
@@ -1083,11 +1083,11 @@ module Howzit
       end
 
       if @options[:title_only]
-        out = get_note_title(note_file, 20)
+        out = get_note_title(20)
         $stdout.print(out.strip)
         Process.exit(0)
       elsif @options[:output_title]
-        title = get_note_title(note_file)
+        title = get_note_title
         if title && !title.empty?
           header = format_header(title, { hr: "\u{2550}", color: '1;37;40' })
           output.push("#{header}\n")
