@@ -1,3 +1,11 @@
+### 1.2.10
+
+2022-08-01 07:45
+
+#### FIXED
+
+- Headline formatting when iTerm markers are inserted
+
 ### 1.2.9
 
 2022-08-01 07:09
