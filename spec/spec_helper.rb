@@ -9,7 +9,7 @@ else
   SimpleCov.formatter = SimpleCov::Formatter::HTMLFormatter
 end
 
-require 'makenew'
+require 'howzit'
 
 RSpec.configure do |c|
   c.expect_with(:rspec) { |e| e.syntax = :expect }

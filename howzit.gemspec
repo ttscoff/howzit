@@ -1,15 +1,15 @@
 lib = File.expand_path(File.join('..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'makenew/version'
+require 'howzit/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'makenew-ruby_gem'
-  spec.version       = Makenew::VERSION
-  spec.authors       = ['Evan Sosenko']
-  spec.email         = ['razorx@evansosenko.com']
-  spec.description   = 'Ruby gem skeleton.'
-  spec.summary       = 'Ruby gem skeleton from makenew.'
-  spec.homepage      = 'https://github.com/makenew/ruby-gem'
+  spec.name          = 'howzit'
+  spec.version       = Howzit::VERSION
+  spec.authors       = ['Brett Terpstra']
+  spec.email         = ['me@brettterpstra.com']
+  spec.description   = 'Command line project documentation and task runner'
+  spec.summary       = 'Provides a way to access Markdown project notes by topic with query capabilities and the ability to execute the tasks it describes.'
+  spec.homepage      = 'https://github.com/ttscoff/howzit'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 2.0.1'
 
-  spec.add_development_dependency 'bundler', '~> 1.6'
+  spec.add_development_dependency 'bundler', '~> 2.2'
   spec.add_development_dependency 'rake', '~> 11.2'
   spec.add_development_dependency 'bump', '~> 0.5'
 
@@ -37,4 +37,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'yard', '~> 0.9.5'
   spec.add_development_dependency 'redcarpet', '~> 3.2'
   spec.add_development_dependency 'github-markup', '~> 1.3'
+
+  spec.add_runtime_dependency 'mdless', '~> 1.0', '>= 1.0.28'
 end

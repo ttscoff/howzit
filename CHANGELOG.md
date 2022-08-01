@@ -7,4 +7,4 @@ This change log follows the conventions of
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/makenew/ruby-gem/compare/v0.0.0...HEAD
+[Unreleased]: https://github.com/ttscoff/howzit/compare/v1.2.4...HEAD
