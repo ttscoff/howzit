@@ -733,7 +733,7 @@ module Howzit
         end
 
         opts.on('-e', '--edit', "Edit buildnotes file in current working directory
-                using #{File.basename(ENV['EDITOR'])}") do
+                using #{ENV['EDITOR']}") do
           edit_note
           Process.exit 0
         end
