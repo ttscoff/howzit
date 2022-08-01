@@ -862,7 +862,7 @@ module Howzit
     end
 
     ##
-    ## @brief      Traverse up directory tree looking for build notes
+    ## Traverse up directory tree looking for build notes
     ##
     ## @return     topics dictionary
     ##
