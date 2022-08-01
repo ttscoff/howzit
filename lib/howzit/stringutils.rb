@@ -49,11 +49,11 @@ module Howzit
     # Truncate string to nearest word
     # @param len <number> max length of string
     def trunc(len)
-      split(/ /).each_with_object('') do |x, ob|
-        break ob unless ob.length + ' '.length + x.length <= len
+      split(/ /).each_with_object([]) do |x, ob|
+        break ob unless ob.join(' ').length + ' '.length + x.length <= len
 
-        ob << (" #{x}")
-      end.strip
+        ob.push(x)
+      end.join(' ').strip
     end
 
     def trunc!(len)
