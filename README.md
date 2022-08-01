@@ -87,6 +87,12 @@ You can include commands that can be executed by howzit. Commands start at the b
 - `@include(TOPIC)`
 
     Includes all tasks from another topic, matching the name (partial match allowed) and returning first match.
+- `@before...@end`
+    
+    A block defined between @before and @end markers will be considered prerequisite for any task the topic can run. If one or more of these blocks exist in the topic, they will be displayed before running and a yes/no dialog will request confirmation that the prerequisites have been met. The content between these markers is still included when viewing the topic, but the tags themselves do not show up in output.
+- `@after...@end`
+
+    A block defined between @after and @end markers will be displayed after a topic is run. Use it to remind yourself of additional tasks after automated ones have been executed. The content between these markers is still included when viewing the topic, but the tags themselves do not show up in output.
 
 ### Run blocks (embedded scripts)
 
