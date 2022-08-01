@@ -2,6 +2,7 @@ module Howzit
   # Primary Class for this module
   class BuildNotes
     include Prompt
+    include Color
 
     attr_accessor :cli_args, :options, :arguments, :metadata
 
@@ -40,8 +41,8 @@ module Howzit
     # favoring environment settings
     def which_pager
       if @options[:pager] =~ /auto/i
-        pagers = [ENV['GIT_PAGER'], ENV['PAGER'],
-                  'bat', 'less', 'more', 'cat', 'pager']
+        pagers = [ENV['PAGER'], ENV['GIT_PAGER'],
+                  'bat', 'less', 'more', 'pager']
         pagers.delete_if(&:nil?).select!(&:available?)
         return nil if pagers.empty?
 
@@ -145,12 +146,12 @@ module Howzit
       choices.each do |choice|
         case choice
         when /[A-Z]/
-          out.push("\e[1;32m#{choice}\e[0;32m")
+          out.push(Color.template("{bg}#{choice}{xg}"))
         else
-          out.push(choice)
+          out.push(Color.template("{w}#{choice}"))
         end
       end
-      "\e[0;32m[#{out.join('/')}]\e[0m"
+      Color.template("{g}[#{out.join('/')}{g}]{x}")
     end
 
     # Create a buildnotes skeleton
@@ -161,7 +162,7 @@ module Howzit
       end
       # First make sure there isn't already a buildnotes file
       if note_file
-        fname = "\e[1;33m#{note_file}\e[1;37m"
+        fname = Color.template("{by}#{note_file}{bw}")
         res = yn("#{fname} exists and appears to be a build note, continue anyway?", false)
         unless res
           puts 'Canceled'
@@ -170,19 +171,19 @@ module Howzit
       end
 
       title = File.basename(Dir.pwd)
-      printf "\e[1;37mProject name \e[0;32m[#{title}]\e[1;37m: \e[0m"
-      input = STDIN.gets.chomp
+      printf Color.template("{bw}Project name {xg}[#{title}]{bw}: {x}")
+      input = $stdin.gets.chomp
       title = input unless input.empty?
 
       summary = ''
-      printf "\e[1;37mProject summary: \e[0m"
-      input = STDIN.gets.chomp
+      printf Color.template('{bw}Project summary: {x}')
+      input = $stdin.gets.chomp
       summary = input unless input.empty?
 
-      filename = 'buildnotes.md'
-      printf "\e[1;37mBuild notes filename (must begin with 'howzit' or 'build')\n\e[0;32m[#{filename}]\e[1;37m: \e[0m"
-      input = STDIN.gets.chomp
-      filename = input unless input.empty?
+      fname = 'buildnotes.md'
+      printf Color.template("{bw}Build notes filename (must begin with 'howzit' or 'build')\n{xg}[#{fname}]{bw}: {x}")
+      input = $stdin.gets.chomp
+      fname = input unless input.empty?
 
       note = <<~EOBUILDNOTES
         # #{title}
@@ -209,8 +210,8 @@ module Howzit
 
       EOBUILDNOTES
 
-      if File.exist?(filename)
-        file = "\e[1;33m#{filename}"
+      if File.exist?(fname)
+        file = Color.template("{by}#{fname}")
         res = yn("Are you absolutely sure you want to overwrite #{file}", false)
 
         unless res
@@ -219,9 +220,9 @@ module Howzit
         end
       end
 
-      File.open(filename, 'w') do |f|
+      File.open(fname, 'w') do |f|
         f.puts note
-        puts "Build notes for #{title} written to #{filename}"
+        puts Color.template("{by}Build notes for #{title} written to #{fname}")
       end
     end
 
@@ -229,8 +230,8 @@ module Howzit
     def format_header(title, opts = {})
       options = {
         hr: "\u{254C}",
-        color: '1;32',
-        border: '0',
+        color: '{bg}',
+        border: '{x}',
         mark: false
       }
 
@@ -239,29 +240,29 @@ module Howzit
       cols = TTY::Screen.columns
 
       cols = @options[:wrap] if (@options[:wrap]).positive? && cols > @options[:wrap]
-      title = "\e[#{options[:border]}m#{options[:hr] * 2}( \e[#{options[:color]}m#{title}\e[#{options[:border]}m )"
+      title = Color.template("#{options[:border]}#{options[:hr] * 2}( #{options[:color]}#{title}#{options[:border]} )")
 
       tail = if should_mark_iterm?
                "#{options[:hr] * (cols - title.uncolor.length - 15)}#{options[:mark] ? iterm_marker : ''}"
              else
                options[:hr] * (cols - title.uncolor.length)
              end
-      "#{title}#{tail}\e[0m"
+      Color.template("#{title}#{tail}{x}")
     end
 
     def os_open(command)
       os = RbConfig::CONFIG['target_os']
-      out = "\e[1;32mOpening \e[3;37m#{command}"
+      out = Color.template("{bg}Opening {bw}#{command}")
       case os
       when /darwin.*/i
-        warn "#{out} (macOS)\e[0m" if @options[:log_level] < 2
+        warn Color.template("#{out} (macOS){x}") if @options[:log_level] < 2
         `open #{Shellwords.escape(command)}`
       when /mingw|mswin/i
-        warn "#{out} (Windows)\e[0m" if @options[:log_level] < 2
+        warn Color.template("#{out} (Windows){x}") if @options[:log_level] < 2
         `start #{Shellwords.escape(command)}`
       else
         if 'xdg-open'.available?
-          warn "#{out} (Linux)\e[0m" if @options[:log_level] < 2
+          warn Color.template("#{out} (Linux){x}") if @options[:log_level] < 2
           `xdg-open #{Shellwords.escape(command)}`
         else
           warn out if @options[:log_level] < 2
@@ -300,7 +301,7 @@ module Howzit
         directives.each do |c|
           if c[0].nil?
             title = c[3] ? c[3].strip : ''
-            warn "\e[1;32mRunning block \e[3;37m#{title}\e[0m" if @options[:log_level] < 2
+            warn Color.template("{bg}Running block {bw}#{title}{x}") if @options[:log_level] < 2
             block = c[4].strip
             script = Tempfile.new('howzit_script')
             begin
@@ -322,18 +323,18 @@ module Howzit
                 warn "No topic match for @include(#{search})"
               else
                 if @included.include?(matches[0])
-                  warn "\e[1;33mTasks from \e[3;37m#{matches[0]} already included, skipping\e[0m" if @options[:log_level] < 2
+                  warn Color.template("{by}Tasks from {bw}#{matches[0]} already included, skipping{x}") if @options[:log_level] < 2
                 else
-                  warn "\e[1;33mIncluding tasks from \e[3;37m#{matches[0]}\e[0m" if @options[:log_level] < 2
+                  warn Color.template("{by}Including tasks from {bw}#{matches[0]}{x}") if @options[:log_level] < 2
                   process_topic(matches[0], true)
-                  warn "\e[1;33mEnd include \e[3;37m#{matches[0]}\e[0m" if @options[:log_level] < 2
+                  warn Color.template("{by}End include {bw}#{matches[0]}{x}") if @options[:log_level] < 2
                 end
               end
             when /run/i
-              warn "\e[1;32mRunning \e[3;37m#{obj}\e[0m" if @options[:log_level] < 2
+              warn Color.template("{bg}Running {bw}#{obj}{x}") if @options[:log_level] < 2
               system(obj)
             when /copy/i
-              warn "\e[1;32mCopied \e[3;37m#{obj}\e[1;32m to clipboard\e[0m" if @options[:log_level] < 2
+              warn Color.template("{bg}Copied {bw}#{obj}{bg} to clipboard{x}") if @options[:log_level] < 2
               `echo #{Shellwords.escape(obj)}'\\c'|pbcopy`
             when /open|url/i
               os_open(obj)
@@ -341,7 +342,7 @@ module Howzit
           end
         end
       else
-        warn "\e[0;31m--run: No \e[1;31m@directive\e[0;31;40m found in \e[1;37m#{key}\e[0m"
+        warn Color.template("{r}--run: No {br}@directive{xr} found in {bw}#{key}{x}")
       end
       output.push("Ran #{tasks} #{tasks == 1 ? 'task' : 'tasks'}") if @options[:log_level] < 2
 
@@ -371,12 +372,12 @@ module Howzit
           unless matches.empty?
             if opt[:single]
               title = "From #{matches[0]}:"
-              color = '33;40'
-              rule = '30;40'
+              color = '{yK}'
+              rule = '{kK}'
             else
               title = "Include #{matches[0]}"
-              color = '33;40'
-              rule = '0'
+              color = '{yK}'
+              rule = '{x}'
             end
             output.push(format_header("#{'> ' * @nest_level}#{title}", { color: color, hr: '.', border: rule })) unless @included.include?(matches[0])
 
@@ -405,15 +406,15 @@ module Howzit
                  when /open|url/
                    "\u{279A}"
                  end
-          output.push("\e[1;35;40m#{icon} \e[3;37;40m#{obj}\e[0m")
+          output.push(Color.template("{bmK}#{icon} {bwK}#{obj}{x}"))
         when /(`{3,})run *(.*?)$/i
           m = Regexp.last_match
           desc = m[2].length.positive? ? "Block: #{m[2]}" : 'Code Block'
-          output.push("\e[1;35;40m\u{25B6} \e[3;37;40m#{desc}\e[0m\n```")
+          output.push(Color.template("{bmK}\u{25B6} {bwK}#{desc}{x}\n```"))
         when /@@@run *(.*?)$/i
           m = Regexp.last_match
           desc = m[1].length.positive? ? "Block: #{m[1]}" : 'Code Block'
-          output.push("\e[1;35;40m\u{25B6} \e[3;37;40m#{desc}\e[0m")
+          output.push(Color.template("{bmK}\u{25B6} {bwK}#{desc}{x}"))
         else
           l.wrap!(@options[:wrap]) if (@options[:wrap]).positive?
           output.push(l)
@@ -444,9 +445,9 @@ module Howzit
     # Output a list of topic titles
     def list_topics
       output = []
-      output.push("\e[1;32mTopics:\e[0m\n")
+      output.push(Color.template("{bg}Topics:{x}\n"))
       topics.each_key do |title|
-        output.push("- \e[1;37m#{title}\e[0m")
+        output.push(Color.template("- {bw}#{title}{x}"))
       end
       output.join("\n")
     end
@@ -486,7 +487,7 @@ module Howzit
 
     def list_runnable
       output = []
-      output.push(%(\e[1;32m"Runnable" Topics:\e[0m\n))
+      output.push(Color.template(%({bg}"Runnable" Topics:{x}\n)))
       topics.each do |title, sect|
         s_out = []
         lines = sect.split(/\n/)
@@ -507,7 +508,7 @@ module Howzit
           end
         end
         unless s_out.empty?
-          output.push("- \e[1;37m#{title}\e[0m")
+          output.push(Color.template("- {bw}#{title}{x}"))
           output.push(s_out.join("\n"))
         end
       end
@@ -531,8 +532,8 @@ module Howzit
           required = t_meta['required'].strip.split(/\s*,\s*/)
           required.each do |req|
             unless @metadata.keys.include?(req.downcase)
-              warn %(\e[0;31mERROR: Missing required metadata key from template '\e[1;37m#{File.basename(template, '.md')}\e[0;31m'\e[0m)
-              warn %(\e[0;31mPlease define \e[1;33m#{req.downcase}\e[0;31m in build notes\e[0m)
+              warn Color.template(%({xr}ERROR: Missing required metadata key from template '{bw}#{File.basename(template, '.md')}{xr}'{x}))
+              warn Color.template(%({xr}Please define {by}#{req.downcase}{xr} in build notes{x}))
               Process.exit 1
             end
           end
@@ -674,6 +675,7 @@ module Howzit
     end
 
     def initialize(args = [])
+      Color.coloring = $stdout.isatty
       flags = {
         run: false,
         list_topics: false,
@@ -805,21 +807,21 @@ module Howzit
           Dir.chdir(template_folder)
           Dir.glob('*.md').each do |file|
             template = File.basename(file, '.md')
-            puts "\e[7;30;45mtemplate: \e[7;33;40m#{template}\e[0m"
-            puts "\e[1;30m[\e[1;37mtasks\e[1;30m]──────────────────────────────────────┐\e[0m"
+            puts Color.template("{Mk}template:{Yk}#{template}{x}")
+            puts Color.template("{bk}[{bl}tasks{bk}]──────────────────────────────────────┐{x}")
             metadata = file.extract_metadata
             topics = read_help_file(file)
             topics.each_key do |topic|
-              puts " \e[1;30m│\e[1;37m-\e[0m \e[1;36;40m#{template}:#{topic.sub(/^.*?:/, '')}\e[0m"
+              puts Color.template(" {bk}│{bw}-{x} {bcK}#{template}:#{topic.sub(/^.*?:/, '')}{x}")
             end
             if metadata.size > 0
               meta = []
-              meta << metadata['required'].split(/\s*,\s*/).map {|m| "*\e[1;37m#{m}\e[0;37m" } if metadata.key?('required')
+              meta << metadata['required'].split(/\s*,\s*/).map {|m| "*{bw}#{m}{xw}" } if metadata.key?('required')
               meta << metadata['optional'].split(/\s*,\s*/).map {|m| "#{m}" } if metadata.key?('optional')
-              puts "\e[1;30m[\e[1;34mmeta\e[1;30m]───────────────────────────────────────┤\e[0m"
-              puts " \e[1;30m│\e[1;37m \e[0;37m#{meta.join(", ")}\e[0m"
+              puts Color.template("{bk}[{bl}meta{bk}]───────────────────────────────────────┤{x}")
+              puts Color.template(" {bk}│ {xw}#{meta.join(", ")}{x}")
             end
-            puts " \e[1;30m└───────────────────────────────────────────┘\e[0m"
+            puts Color.template(" {bk}└───────────────────────────────────────────┘{x}")
           end
           Process.exit 0
         end
@@ -1089,7 +1091,7 @@ module Howzit
       elsif @options[:output_title]
         title = get_note_title
         if title && !title.empty?
-          header = format_header(title, { hr: "\u{2550}", color: '1;37;40' })
+          header = format_header(title, { hr: "\u{2550}", color: '{bwK}' })
           output.push("#{header}\n")
         end
       end
@@ -1127,8 +1129,8 @@ module Howzit
         matches = match_topic(search)
 
         if matches.empty?
-          output.push(%(\e[0;31mERROR: No topic match found for \e[1;33m#{search}\e[0m\n))
-          if !@options[:show_all_on_error]
+          output.push(Color.template(%({bR}ERROR:{xr} No topic match found for {bw}#{search}{x}\n)))
+          unless @options[:show_all_on_error]
             show(output.join("\n"), { color: true, highlight: false, paginate: false, wrap: 0 })
             Process.exit 1
           end

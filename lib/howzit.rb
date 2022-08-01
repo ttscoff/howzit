@@ -1,5 +1,6 @@
 require 'howzit/version'
 require 'howzit/prompt'
+require 'howzit/colors'
 require 'howzit/buildnotes'
 require 'howzit/stringutils'
 require 'optparse'
