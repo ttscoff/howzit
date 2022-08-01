@@ -733,7 +733,7 @@ module Howzit
         end
 
         opts.on('-e', '--edit', "Edit buildnotes file in current working directory
-                using #{ENV['EDITOR']}") do
+                using $EDITOR") do
           edit_note
           Process.exit 0
         end
@@ -797,7 +797,7 @@ module Howzit
           @options[:wrap] = w.to_i
         end
 
-        opts.on('--edit-config', "Edit configuration file using #{File.basename(ENV['EDITOR'])}") do
+        opts.on('--edit-config', "Edit configuration file using default $EDITOR") do
           edit_config(defaults)
           Process.exit 0
         end
