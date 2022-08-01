@@ -1,5 +1,12 @@
 # Howzit
 
+[![Gem](https://img.shields.io/gem/v/howzit.svg)](https://rubygems.org/gems/howzit)
+[![GitHub license](https://img.shields.io/github/license/ttscoff/howzit.svg)](./LICENSE.txt)
+[![Gemnasium](https://img.shields.io/gemnasium/ttscoff/howzit.svg)](https://gemnasium.com/ttscoff/howzit)
+[![Travis](https://img.shields.io/travis/ttscoff/howzit.svg)](https://travis-ci.org/ttscoff/howzit)
+[![Codecov](https://img.shields.io/codecov/c/github/ttscoff/howzit.svg)](https://codecov.io/github/ttscoff/howzit)
+[![Code Climate](https://img.shields.io/codeclimate/github/ttscoff/howzit.svg)](https://codeclimate.com/github/ttscoff/howzit)
+
 A command-line reference tool for tracking project build systems
 
 Howzit is a tool that allows you to keep Markdown-formatted notes about a project's tools and procedures. It functions as an easy lookup for notes about a particular task, as well as a task runner to automatically execute appropriate commands.
@@ -30,17 +37,9 @@ Howzit is a simple, self-contained script (at least until I get stupid and make 
 
 ### Installing
 
-#### One-Line Install
-
 You can install `howzit` by running:
 
-    curl -SsL 'https://raw.githubusercontent.com/ttscoff/howzit/main/install.sh'|bash
-
-#### Manual Install
-
-[Clone the repo](https://github.com/ttscoff/howzit/) or just [download the self-contained script](https://github.com/ttscoff/howzit/blob/main/howzit). Save the script as `howzit` to a folder in your $PATH and make it executable with:
-
-    chmod a+x howzit
+    gem install howzit
 
 ## Anatomy of a Build Notes File
 
@@ -345,7 +344,91 @@ There are a few projects that tackle the same concept (a Markdown makefile). Mos
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
 
 <!--END README-->
+
+## Warranty
+
+This software is provided "as is" and without any express or
+implied warranties, including, without limitation, the implied
+warranties of merchantibility and fitness for a particular
+purpose.
+
+## Documentation
+
+- [YARD documentation][RubyDoc] is hosted by RubyDoc.info.
+- [Interactive documentation][Omniref] is hosted by Omniref.
+
+[RubyDoc]: http://www.rubydoc.info/gems/howzit
+[Omniref]: https://www.omniref.com/ruby/gems/howzit
+
+## Development and Testing
+
+### Source Code
+
+The [howzit source] is hosted on GitHub.
+Clone the project with
+
+```
+$ git clone https://github.com/ttscoff/howzit.git
+```
+
+[howzit source]: https://github.com/ttscoff/howzit
+
+### Requirements
+
+You will need [Ruby] with [Bundler].
+
+Install the development dependencies with
+
+```
+$ bundle
+```
+
+[Bundler]: http://bundler.io/
+[Ruby]: https://www.ruby-lang.org/
+
+### Rake
+
+Run `$ rake -T` to see all Rake tasks.
+
+```
+rake build                 # Build howzit-2.0.1.gem into the pkg directory
+rake bump:current[tag]     # Show current gem version
+rake bump:major[tag]       # Bump major part of gem version
+rake bump:minor[tag]       # Bump minor part of gem version
+rake bump:patch[tag]       # Bump patch part of gem version
+rake bump:pre[tag]         # Bump pre part of gem version
+rake bump:set              # Sets the version number using the VERSION environment variable
+rake clean                 # Remove any temporary products
+rake clobber               # Remove any generated files
+rake install               # Build and install howzit-2.0.1.gem into system gems
+rake install:local         # Build and install howzit-2.0.1.gem into system gems without network access
+rake release[remote]       # Create tag v2.0.1 and build and push howzit-2.0.1.gem to Rubygems
+rake rubocop               # Run RuboCop
+rake rubocop:auto_correct  # Auto-correct RuboCop offenses
+rake spec                  # Run RSpec code examples
+rake test                  # Run test suite
+rake yard                  # Generate YARD Documentation
+```
+
+### Guard
+
+Guard tasks have been separated into the following groups:
+`doc`, `lint`, and `unit`.
+By default, `$ guard` will generate documentation, lint, and run unit tests.
+
+## Contributing
+
+Please submit and comment on bug reports and feature requests.
+
+To submit a patch:
+
+1. Fork it (https://github.com/ttscoff/howzit/fork).
+2. Create your feature branch (`git checkout -b my-new-feature`).
+3. Make changes. Write and run tests.
+4. Commit your changes (`git commit -am 'Add some feature'`).
+5. Push to the branch (`git push origin my-new-feature`).
+6. Create a new Pull Request.
 
