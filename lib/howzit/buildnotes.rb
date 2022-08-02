@@ -716,6 +716,7 @@ module Howzit
         include_upstream: false,
         show_all_code: false,
         grep: nil,
+        multiple_matches: 'choose',
         log_level: 1 # 0: debug, 1: info, 2: warn, 3: error
       }
 
@@ -765,6 +766,11 @@ module Howzit
         opts.on('-m', '--matching TYPE', MATCHING_OPTIONS,
                 'Topics matching type', "(#{MATCHING_OPTIONS.join(', ')})") do |c|
           @options[:matching] = c
+        end
+
+        opts.on('--multiple TYPE', MULTIPLE_OPTIONS,
+                'Multiple result handling', "(#{MULTIPLE_OPTIONS.join(', ')}, default choose)") do |c|
+          @options[:multiple_matches] = c.to_sym
         end
 
         opts.on('-R', '--list-runnable', 'List topics containing @ directives (verbose)') do
@@ -868,6 +874,8 @@ module Howzit
           @options[:default] = true
         end
       end.parse!(args)
+
+      @options[:multiple_matches] = @options[:multiple_matches].to_sym
 
       @cli_args = args
     end
@@ -1001,12 +1009,12 @@ module Howzit
 
     def choose(matches)
       if command_exist?('fzf')
-        res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf -0 -1 --height #{matches.count + 2} --prompt 'Select a section > '`.strip
+        res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf -0 -1 -m --height #{matches.count + 2} --header 'Use tab to mark multiple selections, enter to display/run' --prompt 'Select a section > '`.strip
         if res.nil? || res.empty?
           warn 'Cancelled'
           Process.exit 0
         end
-        return res
+        return res.split(/\n/)
       end
 
       res = matches[0..9]
@@ -1136,33 +1144,49 @@ module Howzit
         Process.exit(0)
       end
 
-      topic_match = nil
+      topic_matches = []
       if @options[:grep]
-        topic_match = choose(grep_topics(@options[:grep]))
+        matches = grep_topics(@options[:grep])
+        case @options[:multiple_matches]
+        when :all
+          topic_matches.concat(matches.sort)
+        else
+          topic_matches.concat(choose(matches))
+        end
       elsif @options[:choose]
-        topic_match = choose(topics.keys)
+        topic_matches.concat(choose(topics.keys))
       # If there are arguments use those to search for a matching topic
       elsif !@cli_args.empty?
+        search = @cli_args.join(' ').strip.downcase.split(/ *, */).map(&:strip)
 
-        search = @cli_args.join(' ').strip.downcase
-        matches = match_topic(search)
+        search.each do |s|
+          matches = match_topic(s)
 
-        if matches.empty?
-          output.push(Color.template(%({bR}ERROR:{xr} No topic match found for {bw}#{search}{x}\n)))
-          unless @options[:show_all_on_error]
-            show(output.join("\n"), { color: true, highlight: false, paginate: false, wrap: 0 })
-            Process.exit 1
+          if matches.empty?
+            output.push(Color.template(%({bR}ERROR:{xr} No topic match found for {bw}#{s}{x}\n)))
+          else
+            case @options[:multiple_matches]
+            when :first
+              topic_matches.push(matches[0])
+            when :best
+              topic_matches.push(matches.sort.min_by(&:length))
+            when :all
+              topic_matches.concat(matches)
+            else
+              topic_matches.concat(choose(matches))
+            end
           end
-        elsif matches.length == 1
-          topic_match = matches[0]
-        else
-          topic_match = choose(matches)
+        end
+
+        if topic_matches.empty? && !@options[:show_all_on_error]
+          show(output.join("\n"), { color: true, highlight: false, paginate: false, wrap: 0 })
+          Process.exit 1
         end
       end
 
-      if topic_match
+      if !topic_matches.empty?
         # If we found a match
-        output.push(process_topic(topic_match, @options[:run], true))
+        topic_matches.each { |topic_match| output.push(process_topic(topic_match, @options[:run], true)) }
       else
         # If there's no argument or no match found, output all
         topics.each_key { |k| output.push(process_topic(k, false, false)) }

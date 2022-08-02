@@ -23,14 +23,14 @@ describe Howzit::BuildNotes do
   end
 
   describe ".grep_topics" do
-    it "found editable" do
+    it "finds editable" do
       expect(subject.grep_topics('editable')).to include('File Structure')
       expect(subject.grep_topics('editable')).not_to include('Build')
     end
   end
 
   describe ".list_topic_titles" do
-    it "found 4 topics" do
+    it "finds 4 topics" do
       expect(subject.topics.keys.count).to eq 4
     end
     it "outputs a newline-separated string" do

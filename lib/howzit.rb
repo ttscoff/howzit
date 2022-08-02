@@ -16,3 +16,4 @@ CONFIG_DIR = '~/.config/howzit'
 CONFIG_FILE = 'howzit.yaml'
 IGNORE_FILE = 'ignore.yaml'
 MATCHING_OPTIONS = %w[partial exact fuzzy beginswith].freeze
+MULTIPLE_OPTIONS = %w[first best all choose].freeze

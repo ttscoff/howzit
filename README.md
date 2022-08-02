@@ -24,11 +24,10 @@ Howzit is a tool that allows you to keep Markdown-formatted notes about a projec
 
 ## Getting Started
 
-Howzit is a simple, self-contained script (at least until I get stupid and make a gem out of it).
-
 ### Prerequisites
 
 - Ruby 2.4+ (It probably works on older Rubys, but is untested prior to 2.4.1.)
+- Optional: if [`fzf`](https://github.com/junegunn/fzf) is available, it will be used for handling multiple choice selections
 - Optional: if [`bat`](https://github.com/sharkdp/bat) is available it will page with that
 - Optional: [`mdless`](https://github.com/ttscoff/mdless) or [`mdcat`](https://github.com/lunaryorn/mdcat) for formatting output
 
@@ -200,6 +199,10 @@ Include a topic name to see just that topic, or no argument to display all.
 
     howzit build
 
+You can combine multiple topic searches by separating with a comma. When multiple results are returned, the `:multiple_results:` configuration determines how they're handled.
+
+    howzit build,deploy
+
 Use `-l` to list all topics.
 
     howzit -l
@@ -216,12 +219,15 @@ Other options:
 
     Options:
         -c, --create                     Create a skeleton build note in the current working directory
-        -e, --edit                       Edit buildnotes file in current working directory using editor.sh
+        -e, --edit                       Edit buildnotes file in current working directory
+                    using $EDITOR
             --grep PATTERN               Display sections matching a search pattern
         -L, --list-completions           List topics for completion
         -l, --list                       List available topics
         -m, --matching TYPE              Topics matching type
                                          (partial, exact, fuzzy, beginswith)
+            --multiple TYPE              Multiple result handling
+                                         (first, all, choose)
         -R, --list-runnable              List topics containing @ directives (verbose)
         -r, --run                        Execute @run, @open, and/or @copy commands for given topic
         -s, --select                     Select topic from menu
@@ -229,10 +235,10 @@ Other options:
         -t, --title                      Output title with build notes
         -q, --quiet                      Silence info message
             --verbose                    Show all messages
-        -u, --upstream                   Traverse up parent directories for additional build notes
+        -u, --[no-]upstream              Traverse up parent directories for additional build notes
             --show-code                  Display the content of fenced run blocks
         -w, --wrap COLUMNS               Wrap to specified width (default 80, 0 to disable)
-            --edit-config                Edit configuration file using editor.sh
+            --edit-config                Edit configuration file using default $EDITOR
             --title-only                 Output title only
             --templates                  List available templates
             --[no-]color                 Colorize output (default on)
@@ -240,6 +246,7 @@ Other options:
             --[no-]pager                 Paginate output (default on)
         -h, --help                       Display this screen
         -v, --version                    Display version number
+            --default                    Answer all prompts with default response
 
 
 ## Configuration
@@ -257,6 +264,7 @@ Some of the command line options can be set as defaults. The first time you run 
     :matching: partial
     :include_upstream: false
     :log_level: 1
+    :multiple_matches: choose
 
 If `:color:` is false, output will not be colored, and markdown highlighting will be bypassed.
 
@@ -271,6 +279,8 @@ If `:paginate:` is true, the `:pager:` option will be used to determine the tool
 If `:include_upstream:` is true, build note files in parent directories will be included in addition to the current directory. Priority goes from current directory to root in descending order, so the current directory is top priority, and a build notes file in / is the lowest. Higher priority topics  will not be overwritten by a duplicate topic from a lower priority note.
 
 Set `:log_level:` to 0 for debug messages, or 3 to suppress superfluous info messages.
+
+`:multiple_matches:` determines how howzit will handle cases where a search results in multiple matches. It can be set to "first" (first match in notes), "best" (shortest topic match), "all" (display all results), or "choose" (displays a menu of results). Default is "choose." When grepping for results, only "all" or "choose" are valid, if the default is something else, "choose" will be used. Can be overridden with the `--multiple TYPE` flag.
 
 ### Matching
 
