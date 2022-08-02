@@ -160,30 +160,40 @@ module Howzit
         warn "\nCanceled"
         exit!
       end
+      default = !$stdout.isatty || ENV['TESTING']
       # First make sure there isn't already a buildnotes file
       if note_file
         fname = Color.template("{by}#{note_file}{bw}")
-        res = yn("#{fname} exists and appears to be a build note, continue anyway?", false)
-        unless res
-          puts 'Canceled'
-          Process.exit 0
+        unless default
+          res = yn("#{fname} exists and appears to be a build note, continue anyway?", false)
+          unless res
+            puts 'Canceled'
+            Process.exit 0
+          end
         end
       end
 
       title = File.basename(Dir.pwd)
-      printf Color.template("{bw}Project name {xg}[#{title}]{bw}: {x}")
-      input = $stdin.gets.chomp
-      title = input unless input.empty?
-
+      if default
+        input = title
+      else
+        printf Color.template("{bw}Project name {xg}[#{title}]{bw}: {x}")
+        input = $stdin.gets.chomp
+        title = input unless input.empty?
+      end
       summary = ''
-      printf Color.template('{bw}Project summary: {x}')
-      input = $stdin.gets.chomp
-      summary = input unless input.empty?
+      unless default
+        printf Color.template('{bw}Project summary: {x}')
+        input = $stdin.gets.chomp
+        summary = input unless input.empty?
+      end
 
       fname = 'buildnotes.md'
-      printf Color.template("{bw}Build notes filename (must begin with 'howzit' or 'build')\n{xg}[#{fname}]{bw}: {x}")
-      input = $stdin.gets.chomp
-      fname = input unless input.empty?
+      unless default
+        printf Color.template("{bw}Build notes filename (must begin with 'howzit' or 'build')\n{xg}[#{fname}]{bw}: {x}")
+        input = $stdin.gets.chomp
+        fname = input unless input.empty?
+      end
 
       note = <<~EOBUILDNOTES
         # #{title}
@@ -210,7 +220,7 @@ module Howzit
 
       EOBUILDNOTES
 
-      if File.exist?(fname)
+      if File.exist?(fname) && !default
         file = Color.template("{by}#{fname}")
         res = yn("Are you absolutely sure you want to overwrite #{file}", false)
 
