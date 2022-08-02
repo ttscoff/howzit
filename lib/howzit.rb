@@ -17,3 +17,4 @@ CONFIG_FILE = 'howzit.yaml'
 IGNORE_FILE = 'ignore.yaml'
 MATCHING_OPTIONS = %w[partial exact fuzzy beginswith].freeze
 MULTIPLE_OPTIONS = %w[first best all choose].freeze
+HEADER_FORMAT_OPTIONS = %w[border block].freeze

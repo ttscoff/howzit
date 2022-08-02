@@ -265,6 +265,7 @@ Some of the command line options can be set as defaults. The first time you run 
     :include_upstream: false
     :log_level: 1
     :multiple_matches: choose
+    :header_format: border
 
 If `:color:` is false, output will not be colored, and markdown highlighting will be bypassed.
 
@@ -281,6 +282,8 @@ If `:include_upstream:` is true, build note files in parent directories will be 
 Set `:log_level:` to 0 for debug messages, or 3 to suppress superfluous info messages.
 
 `:multiple_matches:` determines how howzit will handle cases where a search results in multiple matches. It can be set to "first" (first match in notes), "best" (shortest topic match), "all" (display all results), or "choose" (displays a menu of results). Default is "choose." When grepping for results, only "all" or "choose" are valid, if the default is something else, "choose" will be used. Can be overridden with the `--multiple TYPE` flag.
+
+`:header_format:` changes the way topic titles are displayed. Setting it to "border" will add a horizontal rule and brackets around the title. Setting it to "block" will mark topic titles with a unicode block instead.
 
 ### Matching
 

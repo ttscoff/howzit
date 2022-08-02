@@ -247,17 +247,22 @@ module Howzit
 
       options.merge!(opts)
 
-      cols = TTY::Screen.columns
+      case @options[:header_format]
+      when :block
+        Color.template("#{options[:color]}\u{258C}#{title}#{should_mark_iterm? && options[:mark] ? iterm_marker : ''}{x}")
+      else
+        cols = TTY::Screen.columns
 
-      cols = @options[:wrap] if (@options[:wrap]).positive? && cols > @options[:wrap]
-      title = Color.template("#{options[:border]}#{options[:hr] * 2}( #{options[:color]}#{title}#{options[:border]} )")
+        cols = @options[:wrap] if (@options[:wrap]).positive? && cols > @options[:wrap]
+        title = Color.template("#{options[:border]}#{options[:hr] * 2}( #{options[:color]}#{title}#{options[:border]} )")
 
-      tail = if should_mark_iterm?
-               "#{options[:hr] * (cols - title.uncolor.length - 15)}#{options[:mark] ? iterm_marker : ''}"
-             else
-               options[:hr] * (cols - title.uncolor.length)
-             end
-      Color.template("#{title}#{tail}{x}")
+        tail = if should_mark_iterm?
+                 "#{options[:hr] * (cols - title.uncolor.length - 15)}#{options[:mark] ? iterm_marker : ''}"
+               else
+                 options[:hr] * (cols - title.uncolor.length)
+               end
+        Color.template("#{title}#{tail}{x}")
+      end
     end
 
     def os_open(command)
@@ -451,7 +456,7 @@ module Howzit
                else
                  output_topic(key, {single: single})
                end
-      output.nil? ? '' : output.join("\n").strip
+      output.nil? ? '' : output.join("\n")
     end
 
     # Output a list of topic titles
@@ -719,6 +724,7 @@ module Howzit
         include_upstream: false,
         show_all_code: false,
         multiple_matches: 'choose',
+        header_format: 'border',
         log_level: 1 # 0: debug, 1: info, 2: warn, 3: error
       }
 
@@ -882,6 +888,11 @@ module Howzit
           Process.exit 0
         end
 
+        opts.on('--header-format TYPE', HEADER_FORMAT_OPTIONS,
+                "Formatting style for topic titles (#{HEADER_FORMAT_OPTIONS.join(', ')})") do |t|
+          @options[:header_format] = t
+        end
+
         opts.on('--[no-]color', 'Colorize output (default on)') do |c|
           @options[:color] = c
           @options[:highlight] = false unless c
@@ -911,6 +922,7 @@ module Howzit
       end.parse!(args)
 
       @options[:multiple_matches] = @options[:multiple_matches].to_sym
+      @options[:header_format] = @options[:header_format].to_sym
 
       @cli_args = args
     end
