@@ -3,6 +3,31 @@
 module Howzit
   # String Extensions
   module StringUtils
+    # Convert a string to a valid YAML value
+    def to_config_value(orig_value = nil)
+      if orig_value
+        case orig_value.class.to_s
+        when /Integer/
+          to_i
+        when /(True|False)Class/
+          self =~ /^(t(rue)?|y(es)?|1)$/i ? true : false
+        else
+          self
+        end
+      else
+        case self
+        when /^[0-9]+$/
+          to_i
+        when /^(t(rue)?|y(es)?)$/i
+          true
+        when /^(f(alse)?|n(o)?)$/i
+          false
+        else
+          self
+        end
+      end
+    end
+
     # Just strip out color codes when requested
     def uncolor
       gsub(/\e\[[\d;]+m/, '').gsub(/\e\]1337;SetMark/,'')

@@ -232,7 +232,7 @@ module Howzit
                    y: yellow, c: cyan, m: magenta, r: red,
                    W: bgwhite, K: bgblack, G: bggreen, L: bgblue,
                    Y: bgyellow, C: bgcyan, M: bgmagenta, R: bgred,
-                   b: bold, u: underline, i: italic, x: reset }
+                   d: dark, b: bold, u: underline, i: italic, x: reset }
 
         format(fmt, colors)
       end

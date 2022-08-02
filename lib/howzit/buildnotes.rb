@@ -124,7 +124,7 @@ module Howzit
         pipes = "|#{hl}" if hl
       end
 
-      output = `echo #{Shellwords.escape(string.strip)}#{pipes}`
+      output = `echo #{Shellwords.escape(string.strip)}#{pipes}`.strip
 
       if @options[:paginate]
         page(output)
@@ -356,7 +356,9 @@ module Howzit
       end
       output.push("Ran #{tasks} #{tasks == 1 ? 'task' : 'tasks'}") if @options[:log_level] < 2
 
-      puts postreqs.join("\n\n")
+      puts postreqs.join("\n\n") unless postreqs.empty?
+
+      output
     end
 
     # Output a topic with fancy title and bright white text.
@@ -382,12 +384,12 @@ module Howzit
           unless matches.empty?
             if opt[:single]
               title = "From #{matches[0]}:"
-              color = '{yK}'
-              rule = '{kK}'
+              color = '{Kyd}'
+              rule = '{kKd}'
             else
               title = "Include #{matches[0]}"
-              color = '{yK}'
-              rule = '{x}'
+              color = '{Kyd}'
+              rule = '{kKd}'
             end
             output.push(format_header("#{'> ' * @nest_level}#{title}", { color: color, hr: '.', border: rule })) unless @included.include?(matches[0])
 
@@ -449,7 +451,7 @@ module Howzit
                else
                  output_topic(key, {single: single})
                end
-      output.nil? ? '' : output.join("\n")
+      output.nil? ? '' : output.join("\n").strip
     end
 
     # Output a list of topic titles
@@ -700,7 +702,8 @@ module Howzit
         choose: false,
         quiet: false,
         verbose: false,
-        default: false
+        default: false,
+        grep: nil
       }
 
       defaults = {
@@ -715,7 +718,6 @@ module Howzit
         show_all_on_error: false,
         include_upstream: false,
         show_all_code: false,
-        grep: nil,
         multiple_matches: 'choose',
         log_level: 1 # 0: debug, 1: info, 2: warn, 3: error
       }
@@ -812,6 +814,39 @@ module Howzit
 
         opts.on('-w', '--wrap COLUMNS', 'Wrap to specified width (default 80, 0 to disable)') do |w|
           @options[:wrap] = w.to_i
+        end
+
+        opts.on('--config-get [KEY]', 'Display the configuration settings or setting for a specific key') do |k|
+
+          if k.nil?
+            config.sort_by { |key, _| key }.each do |key, val|
+              print "#{key}: "
+              p val
+            end
+          else
+            k.sub!(/^:/, '')
+            if config.key?(k.to_sym)
+              puts config[k.to_sym]
+            else
+              puts "Key #{k} not found"
+            end
+          end
+          Process.exit 0
+        end
+
+        opts.on('--config-set KEY=VALUE', 'Set a config value (must be a valid key)') do |key|
+          raise 'Argument must be KEY=VALUE' unless key =~ /\S=\S/
+
+          k, v = key.split(/=/)
+          k.sub!(/^:/, '')
+
+          if config.key?(k.to_sym)
+            config[k.to_sym] = v.to_config_value(config[k.to_sym])
+          else
+            puts "Key #{k} not found"
+          end
+          write_config(config)
+          Process.exit 0
         end
 
         opts.on('--edit-config', "Edit configuration file using default $EDITOR") do
@@ -1009,7 +1044,15 @@ module Howzit
 
     def choose(matches)
       if command_exist?('fzf')
-        res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf -0 -1 -m --height #{matches.count + 2} --header 'Use tab to mark multiple selections, enter to display/run' --prompt 'Select a section > '`.strip
+        settings = [
+          '-0',
+          '-1',
+          '-m',
+          "--height=#{matches.count + 2}",
+          '--header="Use tab to mark multiple selections, enter to display/run"',
+          '--prompt="Select a section > "'
+        ]
+        res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf #{settings.join(' ')}`.strip
         if res.nil? || res.empty?
           warn 'Cancelled'
           Process.exit 0
@@ -1115,7 +1158,7 @@ module Howzit
         out = get_note_title(20)
         $stdout.print(out.strip)
         Process.exit(0)
-      elsif @options[:output_title]
+      elsif @options[:output_title] && !@options[:run]
         title = get_note_title
         if title && !title.empty?
           header = format_header(title, { hr: "\u{2550}", color: '{bwK}' })
