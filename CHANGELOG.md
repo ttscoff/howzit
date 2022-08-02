@@ -1,3 +1,17 @@
+### 1.2.14
+
+2022-08-02 11:01
+
+#### NEW
+
+- Config option and flag to determine how to handle multiple results (first, best, all, choose)
+- --config-get and --config-set flags for working with config options
+
+#### IMPROVED
+
+- Allow multiple selections when using fzf
+- Clean up newlines in output
+
 ### 1.2.13
 
 2022-08-01 20:50
