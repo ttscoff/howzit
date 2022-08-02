@@ -1,3 +1,15 @@
+### 1.2.15
+
+2022-08-02 11:59
+
+#### NEW
+
+- Option to set :header_format: to block for alternate topic title appearance
+
+#### FIXED
+
+- Missing spacing around topic titles when displaying multiple topics
+
 ### 1.2.14
 
 2022-08-02 11:01
