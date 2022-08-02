@@ -22,12 +22,6 @@ describe Howzit::BuildNotes do
     end
   end
 
-  describe ".get_note_title" do
-    it "is named howzit test" do
-      expect(subject.get_note_title).to match(/buildnotes/)
-    end
-  end
-
   describe ".grep_topics" do
     it "found editable" do
       expect(subject.grep_topics('editable')).to include('File Structure')
