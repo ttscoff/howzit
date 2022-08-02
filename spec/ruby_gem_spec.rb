@@ -12,8 +12,9 @@ end
 
 describe Howzit::BuildNotes do
   Dir.chdir('spec')
-  Howzit::BuildNotes.new(['--no-upstream', '--default']).create_note
-  subject { Howzit::BuildNotes.new(['--no-upstream', '--default']) }
+  how = Howzit::BuildNotes.new(['--no-upstream', '--default'])
+  how.create_note
+  subject { how }
 
   describe ".note_file" do
     it "locates a build note file" do
@@ -23,7 +24,7 @@ describe Howzit::BuildNotes do
 
   describe ".get_note_title" do
     it "is named howzit test" do
-      expect(subject.get_note_title).to match(/spec/)
+      expect(subject.get_note_title).to match(/buildnotes/)
     end
   end
 
