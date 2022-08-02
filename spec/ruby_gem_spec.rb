@@ -12,8 +12,8 @@ end
 
 describe Howzit::BuildNotes do
   Dir.chdir('spec')
-  Howzit::BuildNotes.new.create_note
-  subject { Howzit::BuildNotes.new(['--no-upstream']) }
+  Howzit::BuildNotes.new(['--no-upstream', '--default']).create_note
+  subject { Howzit::BuildNotes.new(['--no-upstream', '--default']) }
 
   describe ".note_file" do
     it "locates a build note file" do

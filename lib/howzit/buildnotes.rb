@@ -160,7 +160,7 @@ module Howzit
         warn "\nCanceled"
         exit!
       end
-      default = !$stdout.isatty || ENV['TESTING']
+      default = !$stdout.isatty || @options[:default]
       # First make sure there isn't already a buildnotes file
       if note_file
         fname = Color.template("{by}#{note_file}{bw}")
@@ -699,7 +699,8 @@ module Howzit
         title_only: false,
         choose: false,
         quiet: false,
-        verbose: false
+        verbose: false,
+        default: false
       }
 
       defaults = {
@@ -861,6 +862,10 @@ module Howzit
         opts.on('-v', '--version', 'Display version number') do
           puts "Howzit v#{VERSION}"
           Process.exit 0
+        end
+
+        opts.on('--default', 'Answer all prompts with default response') do
+          @options[:default] = true
         end
       end.parse!(args)
 
