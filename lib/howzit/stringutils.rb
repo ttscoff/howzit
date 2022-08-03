@@ -131,6 +131,16 @@ module Howzit
       replace render_template(vars)
     end
 
+    def render_arguments
+      unless Howzit.arguments.empty?
+        gsub!(/\$(\d+)/) do |m|
+          idx = m[1].to_i - 1
+          Howzit.arguments.length > idx ? Howzit.arguments[idx] : m
+        end
+        gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
+      end
+    end
+
     def extract_metadata
       if File.exist?(self)
         leader = IO.read(self).split(/^#/)[0].strip

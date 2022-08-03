@@ -422,14 +422,7 @@ module Howzit
       new_topic = topic.dup
 
       # Handle variable replacement
-
-      unless Howzit.arguments.empty?
-        new_topic.content = new_topic.content.gsub(/\$(\d+)/) do |m|
-          idx = m[1].to_i - 1
-          Howzit.arguments.length > idx ? Howzit.arguments[idx] : m
-        end
-        new_topic.content = new_topic.content.gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
-      end
+      new_topic.content = new_topic.content.render_arguments
 
       output = if run
                  new_topic.run

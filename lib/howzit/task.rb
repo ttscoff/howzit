@@ -7,7 +7,7 @@ module Howzit
     def initialize(type, title, action, parent = nil)
       @type = type
       @title = title
-      @action = action
+      @action = action.render_arguments
       @parent = parent
     end
 
