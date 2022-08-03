@@ -1,3 +1,11 @@
+### 2.0.1
+
+2022-08-03 12:46
+
+#### FIXED
+
+- Failure to create new notes file when one isn't found
+
 ### 2.0.0
 
 2022-08-03 12:37
