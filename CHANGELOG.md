@@ -1,3 +1,11 @@
+### 2.0.2
+
+2022-08-03 18:26
+
+#### IMPROVED
+
+- If a title is provided after an @command, display it instead of the contents when viewing
+
 ### 2.0.1
 
 2022-08-03 12:46
