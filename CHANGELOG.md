@@ -1,3 +1,15 @@
+### 1.2.16
+
+2022-08-03 11:41
+
+#### IMPROVED
+
+- Complete code refactoring
+
+#### FIXED
+
+- Multiple includes of upstream files when templates are specified
+
 ### 1.2.15
 
 2022-08-02 11:59
