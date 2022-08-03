@@ -116,11 +116,7 @@ module Howzit
     end
 
     def available?
-      if File.exist?(File.expand_path(self))
-        File.executable?(File.expand_path(self))
-      else
-        system "which #{self}", out: File::NULL
-      end
+      Util.valid_command?(self)
     end
 
     def render_template(vars)

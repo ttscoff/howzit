@@ -10,6 +10,7 @@ module Howzit
     def initialize(file: nil, args: [])
       @topics = []
       @metadata = {}
+
       read_help(file)
     end
 
@@ -468,7 +469,7 @@ module Howzit
           $stdout.print(out.strip)
         else
           out = list_runnable
-          show(out, { color: Howzit.options[:color], paginate: false, highlight: false })
+          Util.show(out, { color: Howzit.options[:color], paginate: false, highlight: false })
         end
         Process.exit(0)
       end
@@ -478,7 +479,7 @@ module Howzit
           $stdout.print(list_completions)
         else
           out = list
-          show(out, { color: Howzit.options[:color], paginate: false, highlight: false })
+          Util.show(out, { color: Howzit.options[:color], paginate: false, highlight: false })
         end
         Process.exit(0)
       end
@@ -521,7 +522,7 @@ module Howzit
         end
 
         if topic_matches.empty? && !Howzit.options[:show_all_on_error]
-          show(output.join("\n"), { color: true, highlight: false, paginate: false, wrap: 0 })
+          Util.show(output.join("\n"), { color: true, highlight: false, paginate: false, wrap: 0 })
           Process.exit 1
         end
       end
@@ -534,132 +535,7 @@ module Howzit
         topics.each { |k| output.push(process_topic(k, false, false)) }
       end
       Howzit.options[:paginate] = false if Howzit.options[:run]
-      show(output.join("\n").strip, Howzit.options)
-    end
-
-    # If either mdless or mdcat are installed, use that for highlighting
-    # markdown
-    def which_highlighter
-      if Howzit.options[:highlighter] =~ /auto/i
-        highlighters = %w[mdcat mdless]
-        highlighters.delete_if(&:nil?).select!(&:available?)
-        return nil if highlighters.empty?
-
-        hl = highlighters.first
-        args = case hl
-               when 'mdless'
-                 '--no-pager'
-               end
-
-        [hl, args].join(' ')
-      else
-        hl = Howzit.options[:highlighter].split(/ /)[0]
-        if hl.available?
-          Howzit.options[:highlighter]
-        else
-          warn 'Specified highlighter not found, switching to auto' if Howzit.options[:log_level] < 2
-          Howzit.options[:highlighter] = 'auto'
-          which_highlighter
-        end
-      end
-    end
-
-    # When pagination is enabled, find the best (in my opinion) option,
-    # favoring environment settings
-    def which_pager
-      if Howzit.options[:pager] =~ /auto/i
-        pagers = [ENV['PAGER'], ENV['GIT_PAGER'],
-                  'bat', 'less', 'more', 'pager']
-        pagers.delete_if(&:nil?).select!(&:available?)
-        return nil if pagers.empty?
-
-        pg = pagers.first
-        args = case pg
-               when 'delta'
-                 '--pager="less -FXr"'
-               when /^(less|more)$/
-                 '-FXr'
-               when 'bat'
-                 if Howzit.options[:highlight]
-                   '--language Markdown --style plain --pager="less -FXr"'
-                 else
-                   '--style plain --pager="less -FXr"'
-                 end
-               else
-                 ''
-               end
-
-        [pg, args].join(' ')
-      else
-        pg = Howzit.options[:pager].split(/ /)[0]
-        if pg.available?
-          Howzit.options[:pager]
-        else
-          warn 'Specified pager not found, switching to auto' if Howzit.options[:log_level] < 2
-          Howzit.options[:pager] = 'auto'
-          which_pager
-        end
-      end
-    end
-
-    # Paginate the output
-    def page(text)
-      read_io, write_io = IO.pipe
-
-      input = $stdin
-
-      pid = Kernel.fork do
-        write_io.close
-        input.reopen(read_io)
-        read_io.close
-
-        # Wait until we have input before we start the pager
-        IO.select [input]
-
-        pager = which_pager
-
-        begin
-          exec(pager)
-        rescue SystemCallError => e
-          @log.error(e)
-          exit 1
-        end
-      end
-
-      read_io.close
-      write_io.write(text)
-      write_io.close
-
-      _, status = Process.waitpid2(pid)
-
-      status.success?
-    end
-
-    # print output to terminal
-    def show(string, opts = {})
-      options = {
-        color: true,
-        highlight: false,
-        wrap: 0
-      }
-
-      options.merge!(opts)
-
-      string = string.uncolor unless options[:color]
-
-      pipes = ''
-      if options[:highlight]
-        hl = which_highlighter
-        pipes = "|#{hl}" if hl
-      end
-
-      output = `echo #{Shellwords.escape(string.strip)}#{pipes}`.strip
-
-      if Howzit.options[:paginate]
-        page(output)
-      else
-        puts output
-      end
+      Util.show(output.join("\n").strip, Howzit.options)
     end
   end
 end

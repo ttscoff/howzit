@@ -62,6 +62,43 @@ describe Howzit::BuildNote do
     end
   end
 
+  describe ".find_topic" do
+    it "finds the File Structure topic" do
+      matches = how.find_topic('file struct')
+      expect(matches.count).to eq 1
+      expect(matches[0].title).to eq 'File Structure'
+    end
+    it "fuzzy matches" do
+      Howzit.options[:matching] = 'fuzzy'
+      matches = how.find_topic('flestct')
+      expect(matches.count).to eq 1
+      expect(matches[0].title).to eq 'File Structure'
+    end
+    it "succeeds with partial match" do
+      Howzit.options[:matching] = 'partial'
+      matches = how.find_topic('structure')
+      expect(matches.count).to eq 1
+      expect(matches[0].title).to eq 'File Structure'
+    end
+    it "succeeds with beginswith match" do
+      Howzit.options[:matching] = 'beginswith'
+      matches = how.find_topic('file')
+      expect(matches.count).to eq 1
+      expect(matches[0].title).to eq 'File Structure'
+    end
+    it "succeeds with exact match" do
+      Howzit.options[:matching] = 'exact'
+      matches = how.find_topic('file structure')
+      expect(matches.count).to eq 1
+      expect(matches[0].title).to eq 'File Structure'
+    end
+    it "fails with incomplete exact match" do
+      Howzit.options[:matching] = 'exact'
+      matches = how.find_topic('file struct')
+      expect(matches.count).to eq 0
+    end
+  end
+
   describe ".topics" do
     it "contains 4 topics" do
       expect(how.list_topics.count).to eq 4

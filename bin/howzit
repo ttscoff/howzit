@@ -5,7 +5,6 @@ $LOAD_PATH.unshift File.join(__dir__, '..', 'lib')
 require 'howzit'
 
 Howzit::Color.coloring = $stdout.isatty
-how = Howzit.buildnote
 
 parts = Shellwords.shelljoin(ARGV).split(/ -- /)
 args = parts[0] ? Shellwords.shellsplit(parts[0]) : []
@@ -95,7 +94,6 @@ OptionParser.new do |opts|
   end
 
   opts.on('--config-get [KEY]', 'Display the configuration settings or setting for a specific key') do |k|
-
     if k.nil?
       Howzit.options.sort_by { |key, _| key }.each do |key, val|
         print "#{key}: "
