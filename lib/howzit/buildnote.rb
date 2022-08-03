@@ -9,6 +9,7 @@ module Howzit
 
     def initialize(file: nil, args: [])
       @topics = []
+      create_note if note_file.nil?
       @metadata = IO.read(note_file).split(/^#/)[0].strip.get_metadata
 
       read_help(file)

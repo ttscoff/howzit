@@ -43,8 +43,8 @@ describe Howzit::BuildNote do
   Howzit.options[:include_upstream] = false
   Howzit.options[:default] = true
   hz = Howzit.buildnote
-
   hz.create_note
+
   subject(:how) { hz }
 
   describe ".note_file" do
