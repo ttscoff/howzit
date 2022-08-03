@@ -5,7 +5,9 @@ module Howzit
   class Topic
     attr_writer :parent
 
-    attr_reader :title, :content, :tasks, :prereqs, :postreqs
+    attr_accessor :content
+
+    attr_reader :title, :tasks, :prereqs, :postreqs
 
     def initialize(title, content)
       @title = title

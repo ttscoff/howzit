@@ -46,7 +46,7 @@ module Howzit
             '-0',
             '-1',
             '-m',
-            "--height=#{matches.count + 2}",
+            "--height=#{matches.count + 3}",
             '--header="Use tab to mark multiple selections, enter to display/run"',
             '--prompt="Select a section > "'
           ]
