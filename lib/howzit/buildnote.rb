@@ -9,7 +9,7 @@ module Howzit
 
     def initialize(file: nil, args: [])
       @topics = []
-      @metadata = {}
+      @metadata = IO.read(note_file).split(/^#/)[0].strip.get_metadata
 
       read_help(file)
     end
@@ -274,7 +274,6 @@ module Howzit
 
       if leader.length > 0
         data = leader.get_metadata
-        @metadata = @metadata.merge(data)
 
         if data.key?('template')
           templates = data['template'].strip.split(/\s*,\s*/)
@@ -380,6 +379,7 @@ module Howzit
           title = "#{short_path}:#{title}"
         end
         topic = Topic.new(title, prefix + lines.join("\n").strip.render_template(@metadata))
+
         topics.push(topic)
       end
 
