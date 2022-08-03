@@ -163,7 +163,8 @@ module Howzit
                  when /open|url/
                    "\u{279A}"
                  end
-          output.push(Color.template("{bmK}#{icon} {bwK}#{obj}{x}"))
+
+          output.push(Color.template("{bmK}#{icon} {bwK}#{obj.gsub(/\\n/, '\​n')}{x}"))
         when /(`{3,})run *(.*?)$/i
           m = Regexp.last_match
           desc = m[2].length.positive? ? "Block: #{m[2]}" : 'Code Block'

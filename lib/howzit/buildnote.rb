@@ -7,7 +7,7 @@ module Howzit
 
     attr_reader :metadata, :title
 
-    def initialize(file = nil)
+    def initialize(file: nil, args: [])
       @topics = []
       @metadata = {}
       read_help(file)
@@ -46,8 +46,12 @@ module Howzit
       output.join("\n")
     end
 
-    def list_completions
+    def list_topics
       @topics.map { |topic| topic.title }
+    end
+
+    def list_completions
+      list_topics.join("\n")
     end
 
     def list_runnable_completions
@@ -78,6 +82,92 @@ module Howzit
 
     def read_file(file)
       read_help_file(file)
+    end
+
+    # Create a buildnotes skeleton
+    def create_note
+      trap('SIGINT') do
+        warn "\nCanceled"
+        exit!
+      end
+      default = !$stdout.isatty || Howzit.options[:default]
+      # First make sure there isn't already a buildnotes file
+      if note_file
+        fname = Color.template("{by}#{note_file}{bw}")
+        unless default
+          res = Prompt.yn("#{fname} exists and appears to be a build note, continue anyway?", false)
+          unless res
+            puts 'Canceled'
+            Process.exit 0
+          end
+        end
+      end
+
+      title = File.basename(Dir.pwd)
+      if default
+        input = title
+      else
+        printf Color.template("{bw}Project name {xg}[#{title}]{bw}: {x}")
+        input = $stdin.gets.chomp
+        title = input unless input.empty?
+      end
+      summary = ''
+      unless default
+        printf Color.template('{bw}Project summary: {x}')
+        input = $stdin.gets.chomp
+        summary = input unless input.empty?
+      end
+
+      fname = 'buildnotes.md'
+      unless default
+        printf Color.template("{bw}Build notes filename (must begin with 'howzit' or 'build')\n{xg}[#{fname}]{bw}: {x}")
+        input = $stdin.gets.chomp
+        fname = input unless input.empty?
+      end
+
+      note = <<~EOBUILDNOTES
+        # #{title}
+
+        #{summary}
+
+        ## File Structure
+
+        Where are the main editable files? Is there a dist/build folder that should be ignored?
+
+        ## Build
+
+        What build system/parameters does this use?
+
+        @run(./build command)
+
+        ## Deploy
+
+        What are the procedures/commands to deploy this project?
+
+        ## Other
+
+        Version control notes, additional gulp/rake/make/etc tasks...
+
+      EOBUILDNOTES
+
+      if File.exist?(fname) && !default
+        file = Color.template("{by}#{fname}")
+        res = Prompt.yn("Are you absolutely sure you want to overwrite #{file}", false)
+
+        unless res
+          puts 'Canceled'
+          Process.exit 0
+        end
+      end
+
+      File.open(fname, 'w') do |f|
+        f.puts note
+        puts Color.template("{by}Build notes for #{title} written to #{fname}")
+      end
+    end
+
+    def note_file
+      @note_file ||= find_note_file
     end
 
     private
@@ -126,10 +216,6 @@ module Howzit
         end
       end
       filename
-    end
-
-    def note_file
-      @note_file ||= find_note_file
     end
 
     def find_note_file
@@ -202,7 +288,7 @@ module Howzit
             if File.exist?(template)
               ensure_requirements(template)
 
-              t_topics = BuildNote.new(template)
+              t_topics = BuildNote.new(file: template)
               if tasks
                 tasks.each do |task|
                   t_topics.topics.each do |topic|
@@ -389,7 +475,7 @@ module Howzit
 
       if Howzit.options[:list_topics]
         if Howzit.options[:list_topic_titles]
-          $stdout.print(list_completions.join("\n"))
+          $stdout.print(list_completions)
         else
           out = list
           show(out, { color: Howzit.options[:color], paginate: false, highlight: false })
@@ -407,7 +493,7 @@ module Howzit
           topic_matches.concat(Prompt.choose(matches))
         end
       elsif Howzit.options[:choose]
-        titles = Prompt.choose(list_completions)
+        titles = Prompt.choose(list_topics)
         titles.each { |title| topic_matches.push(find_topic(title)[0]) }
       # If there are arguments use those to search for a matching topic
       elsif !Howzit.cli_args.empty?

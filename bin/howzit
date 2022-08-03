@@ -20,7 +20,7 @@ OptionParser.new do |opts|
   opts.separator 'Options:'
 
   opts.on('-c', '--create', 'Create a skeleton build note in the current working directory') do
-    create_note
+    Howzit.buildnote.create_note
     Process.exit 0
   end
 
