@@ -28,6 +28,19 @@ module Howzit
       end
     end
 
+    def to_rx
+      case Howzit.options[:matching]
+      when 'exact'
+        /^#{self}$/i
+      when 'beginswith'
+        /^#{self}/i
+      when 'fuzzy'
+        /#{split(//).join('.*?')}/i
+      else
+        /#{self}/i
+      end
+    end
+
     # Just strip out color codes when requested
     def uncolor
       gsub(/\e\[[\d;]+m/, '').gsub(/\e\]1337;SetMark/,'')
@@ -111,12 +124,11 @@ module Howzit
     end
 
     def render_template(vars)
-      content = dup
       vars.each do |k, v|
-        content.gsub!(/\[%#{k}(:.*?)?\]/, v)
+        gsub!(/\[%#{k}(:.*?)?\]/, v)
       end
 
-      content.gsub(/\[%(.*?):(.*?)\]/, '\2')
+      gsub(/\[%(.*?):(.*?)\]/, '\2')
     end
 
     def render_template!(vars)
@@ -153,6 +165,44 @@ module Howzit
         end
       end
       data
+    end
+
+    def should_mark_iterm?
+      ENV['TERM_PROGRAM'] =~ /^iTerm/ && !Howzit.options[:run] && !Howzit.options[:paginate]
+    end
+
+    def iterm_marker
+      "\e]1337;SetMark\a" if should_mark_iterm?
+    end
+
+    # Make a fancy title line for the topic
+    def format_header(opts = {})
+      title = dup
+      options = {
+        hr: "\u{254C}",
+        color: '{bg}',
+        border: '{x}',
+        mark: should_mark_iterm?
+      }
+
+      options.merge!(opts)
+
+      case Howzit.options[:header_format]
+      when :block
+        Color.template("#{options[:color]}\u{258C}#{title}#{should_mark_iterm? && options[:mark] ? iterm_marker : ''}{x}")
+      else
+        cols = TTY::Screen.columns
+
+        cols = Howzit.options[:wrap] if (Howzit.options[:wrap]).positive? && cols > Howzit.options[:wrap]
+        title = Color.template("#{options[:border]}#{options[:hr] * 2}( #{options[:color]}#{title}#{options[:border]} )")
+
+        tail = if should_mark_iterm?
+                 "#{options[:hr] * (cols - title.uncolor.length - 15)}#{options[:mark] ? iterm_marker : ''}"
+               else
+                 options[:hr] * (cols - title.uncolor.length)
+               end
+        Color.template("#{title}#{tail}{x}")
+      end
     end
   end
 end

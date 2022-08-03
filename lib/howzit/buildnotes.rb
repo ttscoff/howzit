@@ -673,7 +673,6 @@ module Howzit
       topics
     end
 
-
     def match_topic(search)
       matches = []
 
