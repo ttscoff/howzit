@@ -1,11 +1,11 @@
 require 'spec_helper'
 
 describe Howzit::BuildNote do
-  subject(:ruby_gem) { Howzit::BuildNote.new(args: []) }
+  subject(:buildnote) { Howzit.buildnote }
 
   describe ".new" do
     it "makes a new instance" do
-      expect(ruby_gem).to be_a Howzit::BuildNote
+      expect(buildnote).to be_a Howzit::BuildNote
     end
   end
 end

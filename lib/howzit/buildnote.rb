@@ -242,6 +242,7 @@ module Howzit
 
     def read_upstream
       buildnotes = glob_upstream
+
       topics_dict = []
       buildnotes.each do |path|
         topics_dict.concat(read_help_file(path))
@@ -391,9 +392,10 @@ module Howzit
 
     def read_help(path = nil)
       @topics = read_help_file(path)
-      return unless Howzit.options[:include_upstream]
+      return unless path.nil? && Howzit.options[:include_upstream]
 
       upstream_topics = read_upstream
+
       upstream_topics.each do |topic|
         @topics.push(topic) unless find_topic(title.sub(/^.+:/, '')).count.positive?
       end
