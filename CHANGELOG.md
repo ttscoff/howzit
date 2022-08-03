@@ -1,3 +1,12 @@
+### 1.2.17
+
+2022-08-03 12:10
+
+#### FIXED
+
+- Variables in topics not being replaced with metadata
+- Allow default response in yes/no prompt
+
 ### 1.2.16
 
 2022-08-03 11:41
