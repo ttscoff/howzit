@@ -1,3 +1,11 @@
+### 1.2.19
+
+2022-08-03 12:18
+
+#### FIXED
+
+- --config-get returning non-default options
+
 ### 1.2.18
 
 2022-08-03 12:13
