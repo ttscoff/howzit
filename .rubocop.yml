@@ -4,6 +4,11 @@ AllCops:
     - Guardfile
     - Rakefile
 
+Metrics/BlockLength:
+  Exclude:
+    - bin/howzit
+    - lib/*.rb
+
 Style/RegexpLiteral:
   Exclude:
     - Guardfile

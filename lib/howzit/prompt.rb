@@ -14,7 +14,7 @@ module Howzit
       	res.chomp!
       	puts
       	system 'stty cooked'
-      	res =~ /y/i
+        res.empty? ? default : res =~ /y/i
       end
 
       def color_single_options(choices = %w[y n])

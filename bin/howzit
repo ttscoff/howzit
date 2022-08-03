@@ -126,7 +126,7 @@ OptionParser.new do |opts|
     Process.exit 0
   end
 
-  opts.on('--edit-config', "Edit configuration file using default $EDITOR") do
+  opts.on('--edit-config', 'Edit configuration file using default $EDITOR') do
     Howzit.config.editor
     Process.exit 0
   end
@@ -141,20 +141,20 @@ OptionParser.new do |opts|
     Dir.glob('*.md').each do |file|
       template = File.basename(file, '.md')
       puts Howzit::Color.template("{Mk}template:{Yk}#{template}{x}")
-      puts Howzit::Color.template("{bk}[{bl}tasks{bk}]──────────────────────────────────────┐{x}")
+      puts Howzit::Color.template('{bk}[{bl}tasks{bk}]──────────────────────────────────────┐{x}')
       metadata = file.extract_metadata
       topics = Howzit.buildnote.read_file(file)
       topics.each do |topic|
         puts Howzit::Color.template(" {bk}│{bw}-{x} {bcK}#{template}:#{topic.title.sub(/^.*?:/, '')}{x}")
       end
-      if metadata.size > 0
+      unless metadata.empty?
         meta = []
-        meta << metadata['required'].split(/\s*,\s*/).map {|m| "*{bw}#{m}{xw}" } if metadata.key?('required')
-        meta << metadata['optional'].split(/\s*,\s*/).map {|m| "#{m}" } if metadata.key?('optional')
-        puts Howzit::Color.template("{bk}[{bl}meta{bk}]───────────────────────────────────────┤{x}")
-        puts Howzit::Color.template(" {bk}│ {xw}#{meta.join(", ")}{x}")
+        meta << metadata['required'].split(/\s*,\s*/).map { |m| "*{bw}#{m}{xw}" } if metadata.key?('required')
+        meta << metadata['optional'].split(/\s*,\s*/).map(&:to_s) if metadata.key?('optional')
+        puts Howzit::Color.template('{bk}[{bl}meta{bk}]───────────────────────────────────────┤{x}')
+        puts Howzit::Color.template(" {bk}│ {xw}#{meta.join(', ')}{x}")
       end
-      puts Howzit::Color.template(" {bk}└───────────────────────────────────────────┘{x}")
+      puts Howzit::Color.template(' {bk}└───────────────────────────────────────────┘{x}')
     end
     Process.exit 0
   end
