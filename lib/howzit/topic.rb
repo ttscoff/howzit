@@ -153,10 +153,11 @@ module Howzit
             Howzit.inclusions.push(matches[0])
           end
 
-        when /@(run|copy|open|url|include)\((.*?)\)/
+        when /@(run|copy|open|url|include)\((.*?)\)(.*?)$/
           m = Regexp.last_match
           cmd = m[1]
           obj = m[2]
+          title = m[3].nil? ? obj : m[3]
           icon = case cmd
                  when 'run'
                    "\u{25B6}"
@@ -166,7 +167,7 @@ module Howzit
                    "\u{279A}"
                  end
 
-          output.push(Color.template("{bmK}#{icon} {bwK}#{obj.gsub(/\\n/, '\​n')}{x}"))
+          output.push(Color.template("{bmK}#{icon} {bwK}#{title.gsub(/\\n/, '\​n')}{x}"))
         when /(`{3,})run *(.*?)$/i
           m = Regexp.last_match
           desc = m[2].length.positive? ? "Block: #{m[2]}" : 'Code Block'
