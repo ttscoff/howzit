@@ -1,3 +1,12 @@
+### 2.0.0
+
+2022-08-03 12:37
+
+#### FIXED
+
+- Positional arguments not rendering in tasks
+- Fix degradation where arguments are empty
+
 ### 1.2.19
 
 2022-08-03 12:18
