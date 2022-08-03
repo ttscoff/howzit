@@ -95,9 +95,9 @@ OptionParser.new do |opts|
 
   opts.on('--config-get [KEY]', 'Display the configuration settings or setting for a specific key') do |k|
     if k.nil?
-      Howzit.options.sort_by { |key, _| key }.each do |key, val|
+      Howzit::Config::DEFAULTS.sort_by { |key, _| key }.each do |key, val|
         print "#{key}: "
-        p val
+        p Howzit.options[key]
       end
     else
       k.sub!(/^:/, '')
