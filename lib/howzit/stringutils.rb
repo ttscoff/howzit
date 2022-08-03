@@ -132,13 +132,13 @@ module Howzit
     end
 
     def render_arguments
-      unless Howzit.arguments.empty?
-        gsub!(/\$(\d+)/) do |m|
-          idx = m[1].to_i - 1
-          Howzit.arguments.length > idx ? Howzit.arguments[idx] : m
-        end
-        gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
+      return self if Howzit.arguments.nil? || Howzit.arguments.empty?
+
+      gsub!(/\$(\d+)/) do |m|
+        idx = m[1].to_i - 1
+        Howzit.arguments.length > idx ? Howzit.arguments[idx] : m
       end
+      gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
     end
 
     def extract_metadata
