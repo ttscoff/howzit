@@ -1,3 +1,16 @@
+### 2.0.3
+
+2022-08-04 05:31
+
+#### IMPROVED
+
+- General code cleanup
+- Attempt at os agnostic @copy command, hopefully works on Windows and Linux systems
+
+#### FIXED
+
+- Not displaying action if title is missing
+
 ### 2.0.2
 
 2022-08-03 18:26
