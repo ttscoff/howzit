@@ -1,3 +1,15 @@
+### 2.0.4
+
+2022-08-04 06:25
+
+#### IMPROVED
+
+- Ask to open new buildnote for editing after creation
+
+#### FIXED
+
+- Loop when creating new buildnote
+
 ### 2.0.3
 
 2022-08-04 05:31
