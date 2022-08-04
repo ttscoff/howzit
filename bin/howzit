@@ -74,11 +74,18 @@ OptionParser.new do |opts|
   end
 
   opts.on('-q', '--quiet', 'Silence info message') do
-    Howzit.options[:log_level] = 3
+    Howzit.options[:log_level] = 4
+    Howzit.console.reset_level
   end
 
   opts.on('-v', '--verbose', 'Show all messages') do
+    Howzit.options[:log_level] = 1
+    Howzit.console.reset_level
+  end
+
+  opts.on('-d', '--debug', 'Show debug messages (and all messages)') do
     Howzit.options[:log_level] = 0
+    Howzit.console.reset_level
   end
 
   opts.on('-u', '--[no-]upstream', 'Traverse up parent directories for additional build notes') do |p|

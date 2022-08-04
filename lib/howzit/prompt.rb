@@ -54,7 +54,7 @@ module Howzit
           ]
           res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf #{settings.join(' ')}`.strip
           if res.nil? || res.empty?
-            warn 'Cancelled'
+            Howzit.console.info 'Cancelled'
             Process.exit 0
           end
           return res.split(/\n/)

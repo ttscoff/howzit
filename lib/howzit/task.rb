@@ -13,6 +13,10 @@ module Howzit
       @default = default
     end
 
+    def inspect
+      %(<#Howzit::Task @type=:#{@type} @title="#{@title}" @block?=#{@action.split(/\n/).count > 1}>)
+    end
+
     def to_s
       @title
     end

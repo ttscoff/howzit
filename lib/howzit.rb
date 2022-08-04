@@ -5,8 +5,9 @@ require_relative 'howzit/prompt'
 require_relative 'howzit/colors'
 require_relative 'howzit/stringutils'
 
-require_relative 'howzit/util'
 require_relative 'howzit/hash'
+require_relative 'howzit/console_logger'
+require_relative 'howzit/util'
 require_relative 'howzit/config'
 require_relative 'howzit/task'
 require_relative 'howzit/topic'
@@ -51,6 +52,10 @@ module Howzit
 
     def buildnote
       @buildnote ||= BuildNote.new
+    end
+
+    def console
+      @console ||= Howzit::ConsoleLogger.new(options[:log_level])
     end
   end
 end

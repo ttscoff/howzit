@@ -42,7 +42,7 @@ module Howzit
           end
 
           if task.type == :block
-            warn "{bg}Running block {bw}#{title}{x}".c if Howzit.options[:log_level] < 2
+            Howzit.console.info "{bg}Running block {bw}#{title}{x}".c if Howzit.options[:log_level] < 2
             block = task.action
             script = Tempfile.new('howzit_script')
             begin
@@ -81,7 +81,7 @@ module Howzit
           end
         end
       else
-        warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c
+        Howzit.console.warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c
       end
       output.push("{bm}Ran #{tasks} #{tasks == 1 ? 'task' : 'tasks'}{x}".c) if Howzit.options[:log_level] < 2 && !nested
 
@@ -95,21 +95,21 @@ module Howzit
       out = "{bg}Copying {bw}#{string}".c
       case os
       when /darwin.*/i
-        warn "#{out} (macOS){x}".c if Howzit.options[:log_level] < 2
+        $stderr.puts "#{out} (macOS){x}".c if Howzit.options[:log_level].zero?
         `echo #{Shellwords.escape(string)}'\\c'|pbcopy`
       when /mingw|mswin/i
-        warn "#{out} (Windows){x}".c if Howzit.options[:log_level] < 2
+        $stderr.puts "#{out} (Windows){x}".c if Howzit.options[:log_level].zero?
         `echo #{Shellwords.escape(string)} | clip`
       else
         if 'xsel'.available?
-          warn "#{out} (Linux, xsel){x}".c if Howzit.options[:log_level] < 2
+          $stderr.puts "#{out} (Linux, xsel){x}".c if Howzit.options[:log_level].zero?
           `echo #{Shellwords.escape(string)}'\\c'|xsel -i`
         elsif 'xclip'.available?
-          warn "#{out} (Linux, xclip){x}".c if Howzit.options[:log_level] < 2
+          $stderr.puts "#{out} (Linux, xclip){x}".c if Howzit.options[:log_level].zero?
           `echo #{Shellwords.escape(string)}'\\c'|xclip -i`
         else
-          warn out if Howzit.options[:log_level] < 2
-          warn 'Unable to determine executable for clipboard.'
+          $stderr.puts out if Howzit.options[:log_level].zero?
+          $stderr.puts 'Unable to determine executable for clipboard.'
         end
       end
     end
@@ -119,18 +119,18 @@ module Howzit
       out = "{bg}Opening {bw}#{command}".c
       case os
       when /darwin.*/i
-        warn "#{out} (macOS){x}".c if Howzit.options[:log_level] < 2
+        Howzit.console.debug "#{out} (macOS){x}".c if Howzit.options[:log_level] < 2
         `open #{Shellwords.escape(command)}`
       when /mingw|mswin/i
-        warn "#{out} (Windows){x}".c if Howzit.options[:log_level] < 2
+        Howzit.console.debug "#{out} (Windows){x}".c if Howzit.options[:log_level] < 2
         `start #{Shellwords.escape(command)}`
       else
         if 'xdg-open'.available?
-          warn "#{out} (Linux){x}".c if Howzit.options[:log_level] < 2
+          Howzit.console.debug "#{out} (Linux){x}".c if Howzit.options[:log_level] < 2
           `xdg-open #{Shellwords.escape(command)}`
         else
-          warn out if Howzit.options[:log_level] < 2
-          warn 'Unable to determine executable for `open`.'
+          Howzit.console.debug out if Howzit.options[:log_level] < 2
+          Howzit.console.debug 'Unable to determine executable for `open`.'
         end
       end
     end

@@ -40,7 +40,7 @@ module Howzit
           if hl.available?
             Howzit.options[:highlighter]
           else
-            warn Color.template("{Rw}Error:{xbw} Specified highlighter (#{Howzit.options[:highlighter]}) not found, switching to auto")
+            Howzit.console.error Color.template("{Rw}Error:{xbw} Specified highlighter (#{Howzit.options[:highlighter]}) not found, switching to auto")
             Howzit.options[:highlighter] = 'auto'
             which_highlighter
           end
@@ -78,7 +78,7 @@ module Howzit
           if pg.available?
             Howzit.options[:pager]
           else
-            warn Color.template("{Rw}Error:{xbw} Specified pager (#{Howzit.options[:pager]}) not found, switching to auto")
+            Howzit.console.error Color.template("{Rw}Error:{xbw} Specified pager (#{Howzit.options[:pager]}) not found, switching to auto")
             Howzit.options[:pager] = 'auto'
             which_pager
           end
@@ -104,7 +104,7 @@ module Howzit
           begin
             exec(pager)
           rescue SystemCallError => e
-            @log.error(e)
+            Howzit.console.error(e)
             exit 1
           end
         end

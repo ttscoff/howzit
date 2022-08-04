@@ -273,17 +273,21 @@ Some of the command line options can be set as defaults. The first time you run 
 
     ---
     :color: true
+    :config_editor: subl
+    :editor: subl
+    :header_format: block
     :highlight: true
-    :paginate: true
-    :wrap: 80
-    :output_title: false
-    :highlighter: auto
-    :pager: auto
-    :matching: partial
-    :include_upstream: false
-    :log_level: 1
+    :highlighter: mdcat
+    :include_upstream: true
+    :log_level: 0
+    :matching: fuzzy
     :multiple_matches: choose
-    :header_format: border
+    :output_title: false
+    :pager: auto
+    :paginate: true
+    :show_all_code: false
+    :show_all_on_error: false
+    :wrap: 0
 
 If `:color:` is false, output will not be colored, and markdown highlighting will be bypassed.
 
@@ -353,6 +357,12 @@ If set to `auto` howzit will look for markdown highlighters in this order, using
 - mdless
 
 If you're combining a highlighter with howzit's pagination, include any flags needed to disable the highlighter's pagination (e.g. `mdless --no-pager`).
+
+### Configuring from the Command Line
+
+You can get and set config options from the command line using `--config-get` and `--config-set`. If you run `--config-get` with no argument, it will display all config options. If you add a key (exact match required) you can get just the value for that key.
+
+Using `--config-set` requires an argument in the format `key=value`. The type of the value (boolean, integer, string, symbol) will be automatically determined and converted. To change your highlighter, for example, use `howzit --config-set highlighter=mdcat`.
 
 ## Shell Integration
 

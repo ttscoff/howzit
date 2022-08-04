@@ -89,7 +89,7 @@ module Howzit
     # Create a buildnotes skeleton
     def create_note
       trap('SIGINT') do
-        warn "\nCanceled"
+        Howzit.console.info "\nCanceled"
         exit!
       end
       default = !$stdout.isatty || Howzit.options[:default]
@@ -269,8 +269,8 @@ module Howzit
           required = t_meta['required'].strip.split(/\s*,\s*/)
           required.each do |req|
             unless @metadata.keys.include?(req.downcase)
-              warn %({xr}ERROR: Missing required metadata key from template '{bw}#{File.basename(template, '.md')}{xr}'{x}).c
-              warn %({xr}Please define {by}#{req.downcase}{xr} in build notes{x}).c
+              Howzit.console.error %({xr}ERROR: Missing required metadata key from template '{bw}#{File.basename(template, '.md')}{xr}'{x}).c
+              Howzit.console.error %({xr}Please define {by}#{req.downcase}{xr} in build notes{x}).c
               Process.exit 1
             end
           end
