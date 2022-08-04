@@ -75,7 +75,7 @@ module Howzit
         end
 
         unless s_out.empty?
-          output.push("- {bw}#{topic.title}{x}".c)
+          output.push("- {bw}#{topic.title.gsub(/\\n/, '\​n')}{x}".c)
           output.push(s_out.join("\n"))
         end
       end

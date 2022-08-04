@@ -94,6 +94,18 @@ You can include commands that can be executed by howzit. Commands start at the b
 
     A block defined between @after and @end markers will be displayed after a topic is run. Use it to remind yourself of additional tasks after automated ones have been executed. The content between these markers is still included when viewing the topic, but the tags themselves do not show up in output.
 
+### Adding Titles
+
+When displaying a topic, howzit can display a title instead of the contents of a directive. Any text after the closing parenthesis will be considered the task title.
+
+```
+@run(~/scripts/deploy.sh) Deploy script
+```
+
+When the topic is displayed, it will now show "Run Deploy script" instead of the path to the script. This can be overridden with the `--show-code` flag, which will instead show the contents of the directive.
+
+For adding titles to run blocks (fenced code), see below.
+
 ### Run blocks (embedded scripts)
 
 For longer scripts you can write shell scripts and then call them with `@run(myscript.sh)`. For those in-between cases where you need a few commands but aren't motivated to create a separate file, you can use fenced code blocks with `run` as the language.
@@ -116,6 +128,12 @@ Example:
     ```
 
 Multiple blocks can be included in a topic. @commands take priority over code blocks and will be run first if they exist in the same topic.
+
+### Requiring Confirmation
+
+You can have howzit confirm whether to execute an @command at runtime by including a question mark to the directive, e.g. `@run?(...)`. This will present a yes/no dialog before running the directive, with a default response of "yes" if you just hit return. To make the default response "no," add an exclamation point, e.g. `@run?!(...)`. 
+
+This works for any directive, including `@include`, and run blocks, which can use `run?` as the language specifier.
 
 ### Variables
 
