@@ -115,7 +115,7 @@ OptionParser.new do |opts|
 
     parts = key.split(/=/)
     k = parts[0].sub(/^:/, '')
-    v = parts[1..-1].join(' ')
+    v = parts[1..].join(' ')
 
     if Howzit.options.key?(k.to_sym)
       Howzit.options[k.to_sym] = v.to_config_value(Howzit.options[k.to_sym])
