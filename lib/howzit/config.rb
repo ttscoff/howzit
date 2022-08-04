@@ -24,6 +24,7 @@ module Howzit
 
     def initialize
       load_options
+      @log = Howzit::ConsoleLogger.new(@options[:log_level])
     end
 
     def write_config(config)
@@ -91,12 +92,12 @@ module Howzit
 
     def create_config(d)
       unless File.directory?(config_dir)
-        Howzit::ConsoleLogger.new(:info).info "Creating config directory at #{config_dir}"
+        @log.info "Creating config directory at #{config_dir}"
         FileUtils.mkdir_p(config_dir)
       end
 
       unless File.exist?(config_file)
-        Howzit::ConsoleLogger.new(:info).info "Writing fresh config file to #{config_file}"
+        @log.info "Writing fresh config file to #{config_file}"
         write_config(d)
       end
       config_file
