@@ -166,6 +166,14 @@ module Howzit
         f.puts note
         puts "{by}Build notes for #{title} written to #{fname}".c
       end
+
+      if File.exist?(fname) && !default
+        res = Prompt.yn("{bg}Do you want to open {bw}#{file} {bg}for editing?{x}".c, default: false)
+
+        edit_note if res
+      end
+
+      Process.exit 0
     end
 
     def note_file
