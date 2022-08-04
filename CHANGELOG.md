@@ -1,3 +1,16 @@
+### 2.0.5
+
+2022-08-04 10:50
+
+#### NEW
+
+- Make any task optional when running by adding a ? (@open?(...))
+- Optional tasks default to yes when you hit enter, invert by using a ! (@open?!(...)) to make default "no"
+
+#### FIXED
+
+- Replace escaped newlines in task list output so that they don't trigger a newline in the shell
+
 ### 2.0.4
 
 2022-08-04 06:25
