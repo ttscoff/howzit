@@ -245,8 +245,8 @@ module Howzit
       @postreqs = @content.scan(/(?<=@after\n).*?(?=\n@end)/im).map(&:strip)
 
       rx = /(?mix)(?:
-            @(?<cmd>include|run|copy|open|url)(?<optional>[!?]{1,2})?\((?<action>[^)]*?)\) *(?<title>[^\n]+)?
-            |(?<fence>`{3,})run(?<optional2>[!?]{1,2})?(?:\s*(?<title2>[^\n]+))?(?<block>.*?)\k<fence>
+            @(?<cmd>include|run|copy|open|url)(?<optional>[!?]{1,2})?\((?<action>[^)]*?)\)(?<title>[^\n]+)?
+            |(?<fence>`{3,})run(?<optional2>[!?]{1,2})?(?<title2>[^\n]+)?(?<block>.*?)\k<fence>
             )/
       matches = []
       @content.scan(rx) { matches << Regexp.last_match }
