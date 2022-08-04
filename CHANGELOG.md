@@ -1,3 +1,15 @@
+### 2.0.7
+
+2022-08-04 13:04
+
+#### NEW
+
+- --debug flag (shortcut for :log_level: 0)
+
+#### IMPROVED
+
+- Console output now gets log levels, so :log_level: config option and --quiet/verbose have more utility
+
 ### 2.0.6
 
 2022-08-04 11:08
