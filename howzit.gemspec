@@ -40,4 +40,5 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency 'mdless', '~> 1.0', '>= 1.0.28'
   spec.add_runtime_dependency 'tty-screen', '~> 0.8'
+  # spec.add_runtime_dependency 'tty-prompt', '~> 0.23'
 end

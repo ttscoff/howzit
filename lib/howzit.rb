@@ -20,6 +20,7 @@ require 'tempfile'
 require 'yaml'
 
 require 'tty/screen'
+# require 'tty/prompt'
 
 CONFIG_DIR = '~/.config/howzit'
 CONFIG_FILE = 'howzit.yaml'

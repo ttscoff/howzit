@@ -106,9 +106,11 @@ module Howzit
       end
 
       title = File.basename(Dir.pwd)
+      # prompt = TTY::Prompt.new
       if default
         input = title
       else
+        # title = prompt.ask("{bw}Project name:{x}".c, default: title)
         printf "{bw}Project name {xg}[#{title}]{bw}: {x}".c
         input = $stdin.gets.chomp
         title = input unless input.empty?
