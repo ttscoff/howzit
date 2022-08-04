@@ -41,9 +41,9 @@ module Howzit
     # Output a list of topic titles
     def list
       output = []
-      output.push(Color.template("{bg}Topics:{x}\n"))
+      output.push("{bg}Topics:{x}\n".c)
       @topics.each do |topic|
-        output.push(Color.template("- {bw}#{topic.title}{x}"))
+        output.push("- {bw}#{topic.title}{x}".c)
       end
       output.join("\n")
     end
@@ -66,7 +66,7 @@ module Howzit
 
     def list_runnable
       output = []
-      output.push(Color.template(%({bg}"Runnable" Topics:{x}\n)))
+      output.push(%({bg}"Runnable" Topics:{x}\n).c)
       @topics.each do |topic|
         s_out = []
 
@@ -75,7 +75,7 @@ module Howzit
         end
 
         unless s_out.empty?
-          output.push(Color.template("- {bw}#{topic.title}{x}"))
+          output.push("- {bw}#{topic.title}{x}".c)
           output.push(s_out.join("\n"))
         end
       end
@@ -95,9 +95,9 @@ module Howzit
       default = !$stdout.isatty || Howzit.options[:default]
       # First make sure there isn't already a buildnotes file
       if note_file
-        fname = Color.template("{by}#{note_file}{bw}")
+        fname = "{by}#{note_file}{bw}".c
         unless default
-          res = Prompt.yn("#{fname} exists and appears to be a build note, continue anyway?", false)
+          res = Prompt.yn("#{fname} exists and appears to be a build note, continue anyway?", default: false)
           unless res
             puts 'Canceled'
             Process.exit 0
@@ -109,20 +109,20 @@ module Howzit
       if default
         input = title
       else
-        printf Color.template("{bw}Project name {xg}[#{title}]{bw}: {x}")
+        printf "{bw}Project name {xg}[#{title}]{bw}: {x}".c
         input = $stdin.gets.chomp
         title = input unless input.empty?
       end
       summary = ''
       unless default
-        printf Color.template('{bw}Project summary: {x}')
+        printf '{bw}Project summary: {x}'.c
         input = $stdin.gets.chomp
         summary = input unless input.empty?
       end
 
       fname = 'buildnotes.md'
       unless default
-        printf Color.template("{bw}Build notes filename (must begin with 'howzit' or 'build')\n{xg}[#{fname}]{bw}: {x}")
+        printf "{bw}Build notes filename (must begin with 'howzit' or 'build')\n{xg}[#{fname}]{bw}: {x}".c
         input = $stdin.gets.chomp
         fname = input unless input.empty?
       end
@@ -153,8 +153,8 @@ module Howzit
       EOBUILDNOTES
 
       if File.exist?(fname) && !default
-        file = Color.template("{by}#{fname}")
-        res = Prompt.yn("Are you absolutely sure you want to overwrite #{file}", false)
+        file = "{by}#{fname}".c
+        res = Prompt.yn("Are you absolutely sure you want to overwrite #{file}", default: false)
 
         unless res
           puts 'Canceled'
@@ -164,7 +164,7 @@ module Howzit
 
       File.open(fname, 'w') do |f|
         f.puts note
-        puts Color.template("{by}Build notes for #{title} written to #{fname}")
+        puts "{by}Build notes for #{title} written to #{fname}".c
       end
     end
 
@@ -259,8 +259,8 @@ module Howzit
           required = t_meta['required'].strip.split(/\s*,\s*/)
           required.each do |req|
             unless @metadata.keys.include?(req.downcase)
-              warn Color.template(%({xr}ERROR: Missing required metadata key from template '{bw}#{File.basename(template, '.md')}{xr}'{x}))
-              warn Color.template(%({xr}Please define {by}#{req.downcase}{xr} in build notes{x}))
+              warn %({xr}ERROR: Missing required metadata key from template '{bw}#{File.basename(template, '.md')}{xr}'{x}).c
+              warn %({xr}Please define {by}#{req.downcase}{xr} in build notes{x}).c
               Process.exit 1
             end
           end
@@ -410,7 +410,7 @@ module Howzit
       raise "Invalid editor (#{editor})" unless Util.valid_command?(editor)
 
       if note_file.nil?
-        res = Prompt.yn('No build notes file found, create one?', true)
+        res = Prompt.yn('No build notes file found, create one?', default: true)
 
         create_note if res
         edit_note
@@ -500,7 +500,7 @@ module Howzit
           matches = find_topic(s)
 
           if matches.empty?
-            output.push(Color.template(%({bR}ERROR:{xr} No topic match found for {bw}#{s}{x}\n)))
+            output.push(%({bR}ERROR:{xr} No topic match found for {bw}#{s}{x}\n).c)
           else
             case Howzit.options[:multiple_matches]
             when :first

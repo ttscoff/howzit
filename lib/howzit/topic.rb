@@ -28,14 +28,14 @@ module Howzit
       if @tasks.count.positive?
         unless @prereqs.empty?
           puts @prereqs.join("\n\n")
-          res = Prompt.yn('This task has prerequisites, have they been met?', true)
+          res = Prompt.yn('This task has prerequisites, have they been met?', default: true)
           Process.exit 1 unless res
 
         end
 
         @tasks.each do |task|
           if task.type == :block
-            warn Color.template("{bg}Running block {bw}#{title}{x}") if Howzit.options[:log_level] < 2
+            warn "{bg}Running block {bw}#{title}{x}".c if Howzit.options[:log_level] < 2
             block = task.action
             script = Tempfile.new('howzit_script')
             begin
@@ -49,21 +49,22 @@ module Howzit
               script.unlink
             end
           else
+            title = Howzit.options[:show_all_code] ? task.action : task.title
             case task.type
             when :include
               matches = Howzit.buildnote.find_topic(task.action)
               raise "Topic not found: #{task.action}" if matches.empty?
 
-              warn Color.template("{by}Running tasks from {bw}#{matches[0].title}{x}") if Howzit.options[:log_level] < 2
+              $stderr.puts "{by}Running tasks from {bw}#{matches[0].title}{x}".c if Howzit.options[:log_level] < 2
               output.push(matches[0].run(nested: true))
-              warn Color.template("{by}End include: #{matches[0].tasks.count} tasks") if Howzit.options[:log_level] < 2
+              $stderr.puts "{by}End include: #{matches[0].tasks.count} tasks".c if Howzit.options[:log_level] < 2
               tasks += matches[0].tasks.count
             when :run
-              warn Color.template("{bg}Running {bw}#{task.title}{x}") if Howzit.options[:log_level] < 2
+              $stderr.puts "{bg}Running {bw}#{title}{x}".c if Howzit.options[:log_level] < 2
               system(task.action)
               tasks += 1
             when :copy
-              warn Color.template("{bg}Copied {bw}#{task.title}{bg} to clipboard{x}") if Howzit.options[:log_level] < 2
+              $stderr.puts "{bg}Copied {bw}#{title}{bg} to clipboard{x}".c if Howzit.options[:log_level] < 2
               `echo #{Shellwords.escape(task.action)}'\\c'|pbcopy`
               tasks += 1
             when :open
@@ -73,9 +74,9 @@ module Howzit
           end
         end
       else
-        warn Color.template("{r}--run: No {br}@directive{xr} found in {bw}#{key}{x}")
+        warn "{r}--run: No {br}@directive{xr} found in {bw}#{key}{x}".c
       end
-      output.push(Color.template("{bm}Ran #{tasks} #{tasks == 1 ? 'task' : 'tasks'}{x}")) if Howzit.options[:log_level] < 2 && !nested
+      output.push("{bm}Ran #{tasks} #{tasks == 1 ? 'task' : 'tasks'}{x}".c) if Howzit.options[:log_level] < 2 && !nested
 
       puts postreqs.join("\n\n") unless postreqs.empty?
 
@@ -84,17 +85,17 @@ module Howzit
 
     def os_open(command)
       os = RbConfig::CONFIG['target_os']
-      out = Color.template("{bg}Opening {bw}#{command}")
+      out = "{bg}Opening {bw}#{command}".c
       case os
       when /darwin.*/i
-        warn Color.template("#{out} (macOS){x}") if Howzit.options[:log_level] < 2
+        warn "#{out} (macOS){x}".c if Howzit.options[:log_level] < 2
         `open #{Shellwords.escape(command)}`
       when /mingw|mswin/i
-        warn Color.template("#{out} (Windows){x}") if Howzit.options[:log_level] < 2
+        warn "#{out} (Windows){x}".c if Howzit.options[:log_level] < 2
         `start #{Shellwords.escape(command)}`
       else
         if 'xdg-open'.available?
-          warn Color.template("#{out} (Linux){x}") if Howzit.options[:log_level] < 2
+          warn "#{out} (Linux){x}".c if Howzit.options[:log_level] < 2
           `xdg-open #{Shellwords.escape(command)}`
         else
           warn out if Howzit.options[:log_level] < 2
@@ -120,7 +121,6 @@ module Howzit
         when /@(before|after|prereq|end)/
           next
         when /@include\((.*?)\)/
-
           m = Regexp.last_match
           matches = Howzit.buildnote.find_topic(m[1])
           unless matches.empty?
@@ -157,7 +157,7 @@ module Howzit
           m = Regexp.last_match
           cmd = m[1]
           obj = m[2]
-          title = m[3].nil? ? obj : m[3]
+          title = m[3].empty? ? obj : m[3]
           icon = case cmd
                  when 'run'
                    "\u{25B6}"
@@ -167,21 +167,21 @@ module Howzit
                    "\u{279A}"
                  end
 
-          output.push(Color.template("{bmK}#{icon} {bwK}#{title.gsub(/\\n/, '\​n')}{x}"))
+          output.push("{bmK}#{icon} {bwK}#{title.gsub(/\\n/, '\​n')}{x}".c)
         when /(`{3,})run *(.*?)$/i
           m = Regexp.last_match
           desc = m[2].length.positive? ? "Block: #{m[2]}" : 'Code Block'
-          output.push(Color.template("{bmK}\u{25B6} {bwK}#{desc}{x}\n```"))
+          output.push("{bmK}\u{25B6} {bwK}#{desc}{x}\n```".c)
         when /@@@run *(.*?)$/i
           m = Regexp.last_match
           desc = m[1].length.positive? ? "Block: #{m[1]}" : 'Code Block'
-          output.push(Color.template("{bmK}\u{25B6} {bwK}#{desc}{x}"))
+          output.push("{bmK}\u{25B6} {bwK}#{desc}{x}".c)
         else
-          l.wrap!(Howzit.options[:wrap]) if (Howzit.options[:wrap]).positive?
+          l.wrap!(Howzit.options[:wrap]) if Howzit.options[:wrap].positive?
           output.push(l)
         end
       end
-      output.push('') # FIXME: Is this where the extra line is coming from?
+      output.push('')
     end
 
     private
@@ -219,10 +219,10 @@ module Howzit
             runnable << Howzit::Task.new(:include, title, obj)
           when /run/i
             title = c[3] || obj
-            # warn Color.template("{bg}Running {bw}#{obj}{x}") if Howzit.options[:log_level] < 2
+            # warn "{bg}Running {bw}#{obj}{x}".c if Howzit.options[:log_level] < 2
             runnable << Howzit::Task.new(:run, title, obj)
           when /copy/i
-            # warn Color.template("{bg}Copied {bw}#{obj}{bg} to clipboard{x}") if Howzit.options[:log_level] < 2
+            # warn "{bg}Copied {bw}#{obj}{bg} to clipboard{x}".c if Howzit.options[:log_level] < 2
             runnable << Howzit::Task.new(:copy, title, Shellwords.escape(obj))
           when /open|url/i
             runnable << Howzit::Task.new(:open, title, obj)

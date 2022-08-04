@@ -28,6 +28,10 @@ module Howzit
       end
     end
 
+    def c
+      Color.template(self)
+    end
+
     def to_rx
       case Howzit.options[:matching]
       when 'exact'
