@@ -22,15 +22,27 @@ module Howzit
       wrap: 0
     }.deep_freeze
 
+    ##
+    ## Initialize a config object
+    ##
     def initialize
       load_options
-      @log = Howzit::ConsoleLogger.new(@options[:log_level].to_i)
     end
 
+    ##
+    ## Write a config to a file
+    ##
+    ## @param      config  The configuration
+    ##
     def write_config(config)
       File.open(config_file, 'w') { |f| f.puts config.to_yaml }
     end
 
+    ##
+    ## Test if a file should be ignored based on YAML file
+    ##
+    ## @param      filename  The filename to test
+    ##
     def should_ignore(filename)
       return false unless File.exist?(ignore_file)
 
@@ -48,10 +60,18 @@ module Howzit
       ignore
     end
 
+    ##
+    ## Find the template folder
+    ##
+    ## @return     [String] path to template folder
+    ##
     def template_folder
       File.join(config_dir, 'templates')
     end
 
+    ##
+    ## Initiate the editor for the config
+    ##
     def editor
       edit_config(DEFAULTS)
     end
@@ -92,12 +112,12 @@ module Howzit
 
     def create_config(d)
       unless File.directory?(config_dir)
-        @log.info "Creating config directory at #{config_dir}"
+        Howzit::ConsoleLogger.new(1).info "Creating config directory at #{config_dir}"
         FileUtils.mkdir_p(config_dir)
       end
 
       unless File.exist?(config_file)
-        @log.info "Writing fresh config file to #{config_file}"
+        Howzit::ConsoleLogger.new(1).info "Writing fresh config file to #{config_file}"
         write_config(d)
       end
       config_file

@@ -13,7 +13,7 @@ module Howzit
     attr_accessor :log_level
 
     def initialize(level = nil)
-      @log_level = level || Howzit.options[:log_level]
+      @log_level = level.to_i || Howzit.options[:log_level]
     end
 
     def reset_level
