@@ -65,7 +65,7 @@ module Howzit
               tasks += 1
             when :copy
               $stderr.puts "{bg}Copied {bw}#{title}{bg} to clipboard{x}".c if Howzit.options[:log_level] < 2
-              `echo #{Shellwords.escape(task.action)}'\\c'|pbcopy`
+              os_copy(task.action)
               tasks += 1
             when :open
               os_open(task.action)
@@ -81,6 +81,30 @@ module Howzit
       puts postreqs.join("\n\n") unless postreqs.empty?
 
       output
+    end
+
+    def os_copy(string)
+      os = RbConfig::CONFIG['target_os']
+      out = "{bg}Copying {bw}#{string}".c
+      case os
+      when /darwin.*/i
+        warn "#{out} (macOS){x}".c if Howzit.options[:log_level] < 2
+        `echo #{Shellwords.escape(string)}'\\c'|pbcopy`
+      when /mingw|mswin/i
+        warn "#{out} (Windows){x}".c if Howzit.options[:log_level] < 2
+        `echo #{Shellwords.escape(string)} | clip`
+      else
+        if 'xsel'.available?
+          warn "#{out} (Linux, xsel){x}".c if Howzit.options[:log_level] < 2
+          `echo #{Shellwords.escape(string)}'\\c'|xsel -i`
+        elsif 'xclip'.available?
+          warn "#{out} (Linux, xclip){x}".c if Howzit.options[:log_level] < 2
+          `echo #{Shellwords.escape(string)}'\\c'|xclip -i`
+        else
+          warn out if Howzit.options[:log_level] < 2
+          warn 'Unable to determine executable for clipboard.'
+        end
+      end
     end
 
     def os_open(command)
