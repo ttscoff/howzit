@@ -24,7 +24,7 @@ module Howzit
 
     def initialize
       load_options
-      @log = Howzit::ConsoleLogger.new(@options[:log_level])
+      @log = Howzit::ConsoleLogger.new(@options[:log_level].to_i)
     end
 
     def write_config(config)
