@@ -52,7 +52,13 @@ module Howzit
 
         @tasks.each do |task|
           if task.optional
-            q = %({bg}#{task.type.to_s.capitalize} {xw}"{bw}#{task.title}{xw}"{x}).c
+            note = if task.type == :include
+                     task_count = Howzit.buildnote.find_topic(task.action)[0].tasks.count
+                     " (#{task_count} tasks)"
+                   else
+                     ""
+                   end
+            q = %({bg}#{task.type.to_s.capitalize} {xw}"{bw}#{task.title}{xw}"#{note}{x}).c
             res = Prompt.yn(q, default: task.default)
             next unless res
 
@@ -81,7 +87,7 @@ module Howzit
 
               $stderr.puts "{by}Running tasks from {bw}#{matches[0].title}{x}".c if Howzit.options[:log_level] < 2
               output.push(matches[0].run(nested: true))
-              $stderr.puts "{by}End include: #{matches[0].tasks.count} tasks".c if Howzit.options[:log_level] < 2
+              $stderr.puts "{by}End include: #{matches[0].tasks.count} tasks{x}".c if Howzit.options[:log_level] < 2
               tasks += matches[0].tasks.count
             when :run
               $stderr.puts "{bg}Running {bw}#{title}{x}".c if Howzit.options[:log_level] < 2
