@@ -4,6 +4,7 @@ sudo: required
 dist: trusty
 cache: bundler
 rvm:
+  - ruby-2.6.4
   - ruby-2.7.0
   - ruby-3.0.1
 install:
