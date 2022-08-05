@@ -7,10 +7,21 @@ module Howzit
 
     attr_reader :metadata, :title
 
+    ##
+    ## Initialize a build note
+    ##
+    ## @param      file  [String] The path to the build note file
+    ## @param      args  [Array] additional args
+    ##
     def initialize(file: nil, args: [])
       @topics = []
       create_note if note_file.nil?
-      @metadata = Util.read_file(note_file).split(/^#/)[0].strip.get_metadata
+      content = Util.read_file(note_file)
+      if content.nil? || content.empty?
+        Howzit.console.warn('No content found in build note')
+      else
+        @metadata = content.split(/^#/)[0].strip.get_metadata
+      end
 
       read_help(file)
     end
@@ -19,14 +30,25 @@ module Howzit
       puts "#<Howzit::BuildNote @topics=[#{@topics.count}]>"
     end
 
+    ##
+    ## Public method to begin processing the build note based on command line options
+    ##
     def run
       process
     end
 
+    ##
+    ## Public method to open build note in editor
+    ##
     def edit
       edit_note
     end
 
+    ##
+    ## Find a topic based on a fuzzy match
+    ##
+    ## @param      term  [String] The search term
+    ##
     def find_topic(term)
       @topics.filter do |topic|
         rx = term.to_rx
@@ -34,11 +56,19 @@ module Howzit
       end
     end
 
+    ##
+    ## Call grep on all topics, filtering out those that don't match
+    ##
+    ## @param      term  [String] The search pattern
+    ##
     def grep(term)
       @topics.filter { |topic| topic.grep(term) }
     end
 
     # Output a list of topic titles
+    #
+    # @return     [String] formatted list of topics in build note
+    #
     def list
       output = []
       output.push("{bg}Topics:{x}\n".c)
@@ -48,14 +78,32 @@ module Howzit
       output.join("\n")
     end
 
+
+    ##
+    ## Return an array of topic titles
+    ##
+    ## @return     [Array] array of topic titles
+    ##
     def list_topics
       @topics.map { |topic| topic.title }
     end
 
+    ##
+    ## Return a list of topic titles suitable for shell completion
+    ##
+    ## @return     [String] newline-separated list of topic titles
+    ##
     def list_completions
       list_topics.join("\n")
     end
 
+    ##
+    ## Return a list of topics containing @directives,
+    ## suitable for shell completion
+    ##
+    ## @return     [String] newline-separated list of topic
+    ##             titles
+    ##
     def list_runnable_completions
       output = []
       @topics.each do |topic|
@@ -64,6 +112,12 @@ module Howzit
       output.join("\n")
     end
 
+    ##
+    ## Return a formatted list of topics containing
+    ## @directives suitable for console output
+    ##
+    ## @return     [String] formatted list
+    ##
     def list_runnable
       output = []
       output.push(%({bg}"Runnable" Topics:{x}\n).c)
@@ -82,6 +136,11 @@ module Howzit
       output.join("\n")
     end
 
+    ##
+    ## Read the help file contents
+    ##
+    ## @param      file  [String] The filepath
+    ##
     def read_file(file)
       read_help_file(file)
     end
@@ -210,6 +269,13 @@ module Howzit
       buildnotes.reverse
     end
 
+    ##
+    ## Test if the filename matches the conditions to be a build note
+    ##
+    ## @param      filename  [String] The filename to test
+    ##
+    ## @return     [Boolean] true if filename passes test
+    ##
     def build_note?(filename)
       return false if filename.downcase !~ /^(howzit[^.]*|build[^.]+)/
 
@@ -218,6 +284,11 @@ module Howzit
       true
     end
 
+    ##
+    ## Glob current directory for valid build note filenames
+    ##
+    ## @return     [String] file path
+    ##
     def glob_note
       filename = nil
       # Check for a build note file in the current folder. Filename must start
@@ -232,6 +303,13 @@ module Howzit
       filename
     end
 
+    ##
+    ## Search for a valid build note, checking current
+    ## directory, git top level directory, and parent
+    ## directories
+    ##
+    ## @return     [String] filepath
+    ##
     def find_note_file
       filename = glob_note
 
@@ -253,6 +331,11 @@ module Howzit
       File.expand_path(filename)
     end
 
+    ##
+    ## Search upstream directories for build notes
+    ##
+    ## @return     [Array] array of build note paths
+    ##
     def read_upstream
       buildnotes = glob_upstream
 
@@ -263,6 +346,13 @@ module Howzit
       topics_dict
     end
 
+    ##
+    ## Test to ensure that any `required` metadata in a
+    ## template is fulfilled by the build note
+    ##
+    ## @param      template  [String] The template to read
+    ##                       from
+    ##
     def ensure_requirements(template)
       t_leader = Util.read_file(template).split(/^#/)[0].strip
       if t_leader.length > 0
@@ -280,6 +370,11 @@ module Howzit
       end
     end
 
+    ##
+    ## Read a list of topics from an included template
+    ##
+    ## @param      content  [String] The template contents
+    ##
     def get_template_topics(content)
       leader = content.split(/^#/)[0].strip
 
@@ -327,10 +422,16 @@ module Howzit
       template_topics
     end
 
-    def include_file(m)
-      file = File.expand_path(m[1])
+    ##
+    ## Import the contents of a filename as new topics
+    ##
+    ## @param      mtch  [MatchData] the filename match from
+    ##                   the include directive
+    ##
+    def include_file(mtch)
+      file = File.expand_path(mtch[1])
 
-      return m[0] unless File.exist?(file)
+      return mtch[0] unless File.exist?(file)
 
       content = Util.read_file(file)
       home = ENV['HOME']
@@ -345,6 +446,11 @@ module Howzit
       end
     end
 
+    ##
+    ## Get the title of the build note (top level header)
+    ##
+    ## @param      truncate  [Integer] Truncate to width
+    ##
     def note_title(truncate = 0)
       help = Util.read_file(note_file)
       title = help.match(/(?:^(\S.*?)(?=\n==)|^# ?(.*?)$)/)
@@ -357,7 +463,13 @@ module Howzit
       title && truncate.positive? ? title.trunc(truncate) : title
     end
 
-    # Read in the build notes file and output a hash of "Title" => contents
+    # Read in the build notes file and output a hash of
+    # "Title" => contents
+    #
+    # @param      path  [String] The build note path
+    #
+    # @return     [Array] array of Topics
+    #
     def read_help_file(path = nil)
       topics = []
 
@@ -400,9 +512,18 @@ module Howzit
         topics.push(topic) unless find_topic(topic.title.sub(/^.+:/, '')).count.positive?
       end
 
+      if note_file && topics.empty?
+        Howzit.console.error("Note file found but no topics detected in #{note_file}")
+      end
+
       topics
     end
 
+    ##
+    ## Read build note and include upstream topics
+    ##
+    ## @param      path  [String] The build note path
+    ##
     def read_help(path = nil)
       @topics = read_help_file(path)
       return unless path.nil? && Howzit.options[:include_upstream]
@@ -414,6 +535,9 @@ module Howzit
       end
     end
 
+    ##
+    ## Open build note in editor
+    ##
     def edit_note
       editor = Howzit.options.fetch(:editor, ENV['EDITOR'])
 
@@ -431,7 +555,16 @@ module Howzit
       end
     end
 
-    def process_topic(topic, run, single = false)
+    ##
+    ## Run or print a topic
+    ##
+    ## @param      topic   [Topic] The topic
+    ## @param      run     [Boolean] execute directives if
+    ##                     true
+    ## @param      single  [Boolean] is being output as a
+    ##                     single topic
+    ##
+    def process_topic(topic, run, single: false)
       new_topic = topic.dup
 
       # Handle variable replacement
@@ -445,6 +578,9 @@ module Howzit
       output.nil? ? '' : output.join("\n")
     end
 
+    ##
+    ## Search and process the build note
+    ##
     def process
       output = []
 
@@ -537,10 +673,10 @@ module Howzit
 
       if !topic_matches.empty?
         # If we found a match
-        topic_matches.each { |topic_match| output.push(process_topic(topic_match, Howzit.options[:run], true)) }
+        topic_matches.each { |topic_match| output.push(process_topic(topic_match, Howzit.options[:run], single: true)) }
       else
         # If there's no argument or no match found, output all
-        topics.each { |k| output.push(process_topic(k, false, false)) }
+        topics.each { |k| output.push(process_topic(k, false, single: false)) }
       end
       Howzit.options[:paginate] = false if Howzit.options[:run]
       Util.show(output.join("\n").strip, Howzit.options)

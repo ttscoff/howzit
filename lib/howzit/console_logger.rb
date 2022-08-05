@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Available log levels
 LOG_LEVELS = {
   debug: 0,
   info: 1,

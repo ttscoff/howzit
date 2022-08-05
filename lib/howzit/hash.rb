@@ -41,7 +41,7 @@ class ::Hash
   end
 
   def stringify_keys!
-  	replace stringify_keys
+    replace stringify_keys
   end
 
   # Turn all keys into symbols
@@ -50,6 +50,6 @@ class ::Hash
   end
 
   def symbolize_keys!
-  	replace symbolize_keys
+    replace symbolize_keys
   end
 end

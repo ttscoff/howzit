@@ -24,11 +24,22 @@ require 'tty/screen'
 require 'tty/box'
 # require 'tty/prompt'
 
+# Main config dir
 CONFIG_DIR = '~/.config/howzit'
+
+# Config file name
 CONFIG_FILE = 'howzit.yaml'
+
+# Ignore file name
 IGNORE_FILE = 'ignore.yaml'
+
+# Available options for matching method
 MATCHING_OPTIONS = %w[partial exact fuzzy beginswith].freeze
+
+# Available options for multiple_matches method
 MULTIPLE_OPTIONS = %w[first best all choose].freeze
+
+# Available options for header formatting
 HEADER_FORMAT_OPTIONS = %w[border block].freeze
 
 # Main module for howzit

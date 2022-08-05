@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Howzit
+  # Task object
   class Task
     attr_reader :type, :title, :action, :parent, :optional, :default
 

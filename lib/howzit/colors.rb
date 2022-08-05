@@ -4,7 +4,9 @@
 module Howzit
   # Terminal output color functions.
   module Color
+    # Regexp to match excape sequences
     ESCAPE_REGEX = /(?<=\[)(?:(?:(?:[349]|10)[0-9]|[0-9])?;?)+(?=m)/.freeze
+
     # All available color names. Available as methods and string extensions.
     #
     # @example Use a color as a method. Color reset will be added to end of string.
@@ -79,6 +81,7 @@ module Howzit
       [:default, '0;39']
     ].map(&:freeze).freeze
 
+    # Array of attribute keys only
     ATTRIBUTE_NAMES = ATTRIBUTES.transpose.first
 
     # Returns true if Howzit::Color supports the +feature+.
