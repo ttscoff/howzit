@@ -8,14 +8,15 @@ module Howzit
         return default unless $stdout.isatty
 
         return default if Howzit.options[:default]
-
-        system 'stty cbreak'
+        tty_state = `stty -g`
+        system 'stty raw -echo cbreak isig'
         yn = color_single_options(default ? %w[Y n] : %w[y N])
         $stdout.syswrite "\e[1;37m#{prompt} #{yn}\e[1;37m? \e[0m"
         res = $stdin.sysread 1
         res.chomp!
         puts
         system 'stty cooked'
+        system "stty #{tty_state}"
         res.empty? ? default : res =~ /y/i
       end
 
