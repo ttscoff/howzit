@@ -1,3 +1,20 @@
+### 2.0.15
+
+2022-08-05 17:16
+
+#### IMPROVED
+
+- -R can take an argument to filter results
+- Show a topic preview when using fzf to select from available topics
+- Paginate help output
+- Refactor Topic.run
+
+#### FIXED
+
+- Invalid options for more pager
+- Error running grep command
+- Show method not accepting paginate option
+
 ### 2.0.14
 
 2022-08-05 13:24
