@@ -4,15 +4,40 @@ module Howzit
   # Util class
   module Util
     class << self
+
+      ##
+      ## Read a file with UTF-8 encoding and
+      ## leading/trailing whitespace removed
+      ##
+      ## @param      path  [String] The path to read
+      ##
+      ## @return     [String] UTF-8 encoded string
+      ##
       def read_file(path)
         IO.read(path).force_encoding('utf-8').strip
       end
 
+      ##
+      ## Test if an external command exists and is
+      ## executable. Removes additional arguments and passes
+      ## just the executable to #command_exist?
+      ##
+      ## @param      command  [String] The command
+      ##
+      ## @return     [Boolean] command is valid
+      ##
       def valid_command?(command)
         cmd = command.split(' ')[0]
         command_exist?(cmd)
       end
 
+      ##
+      ## Test if external command exists
+      ##
+      ## @param      command  [String] The command
+      ##
+      ## @return     [Boolean] command exists
+      ##
       def command_exist?(command)
         exts = ENV.fetch('PATHEXT', '').split(::File::PATH_SEPARATOR)
         if Pathname.new(command).absolute?

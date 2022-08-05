@@ -120,7 +120,7 @@ module Howzit
 
     ##
     ## Return a formatted list of topics containing
-    ## @directives suitable for console output
+    ## directives suitable for console output
     ##
     ## @return     [String] formatted list
     ##
@@ -276,37 +276,14 @@ module Howzit
     end
 
     ##
-    ## Test if the filename matches the conditions to be a build note
-    ##
-    ## @param      filename  [String] The filename to test
-    ##
-    ## @return     [Boolean] true if filename passes test
-    ##
-    def build_note?(filename)
-      return false if filename.downcase !~ /^(howzit[^.]*|build[^.]+)/
-
-      return false if Howzit.config.should_ignore(filename)
-
-      true
-    end
-
-    ##
     ## Glob current directory for valid build note filenames
+    ## (must start with "build" or "howzit" and have
+    ## extension of "txt", "md", or "markdown")
     ##
     ## @return     [String] file path
     ##
     def glob_note
-      filename = nil
-      # Check for a build note file in the current folder. Filename must start
-      # with "build" and have an extension of txt, md, or markdown.
-
-      Dir.glob('*.{txt,md,markdown}').each do |f|
-        if build_note?(f)
-          filename = f
-          break
-        end
-      end
-      filename
+      Dir.glob('*.{txt,md,markdown}').select(&:build_note?)[0]
     end
 
     ##

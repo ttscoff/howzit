@@ -5,11 +5,14 @@ module Howzit
   class Task
     attr_reader :type, :title, :action, :parent, :optional, :default
 
-    def initialize(type, title, action, parent = nil, optional: false, default: true)
-      @type = type
-      @title = title
-      @action = action.render_arguments
-      @parent = parent
+    ##
+    ## Initialize a Task object
+    ##
+    def initialize(params, optional: false, default: true)
+      @type = params[:type]
+      @title = params[:title]
+      @action = params[:action].render_arguments
+      @parent = params[:parent] || nil
       @optional = optional
       @default = default
     end
@@ -23,7 +26,7 @@ module Howzit
     end
 
     def to_list
-      "    * #{@type}: #{@title.gsub(/\\n/, '\​n')}"
+      "    * #{@type}: #{@title.preserve_escapes}"
     end
   end
 end

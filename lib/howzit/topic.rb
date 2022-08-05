@@ -107,6 +107,11 @@ module Howzit
       output
     end
 
+    ##
+    ## Platform-agnostic copy-to-clipboard
+    ##
+    ## @param      string  [String] The string to copy
+    ##
     def os_copy(string)
       os = RbConfig::CONFIG['target_os']
       out = "{bg}Copying {bw}#{string}".c
@@ -131,6 +136,11 @@ module Howzit
       end
     end
 
+    ##
+    ## Platform-agnostic open command
+    ##
+    ## @param      command  [String] The command
+    ##
     def os_open(command)
       os = RbConfig::CONFIG['target_os']
       out = "{bg}Opening {bw}#{command}".c
@@ -153,6 +163,11 @@ module Howzit
     end
 
     # Output a topic with fancy title and bright white text.
+    #
+    # @param      options  [Hash] The options
+    #
+    # @return     [Array] array of formatted lines
+    #
     def print_out(options = {})
       defaults = { single: false, header: true }
       opt = defaults.merge(options)
@@ -223,7 +238,7 @@ module Howzit
                    "\u{279A}"
                  end
 
-          output.push("{bmK}#{icon} {bwK}#{title.gsub(/\\n/, '\​n')}{x}#{option}".c)
+          output.push("{bmK}#{icon} {bwK}#{title.preserve_escapes}{x}#{option}".c)
         when /(?<fence>`{3,})run(?<optional>[!?]{1,2})? *(?<title>.*?)$/i
           m = Regexp.last_match.named_captures.symbolize_keys
           optional = m[:optional] =~ /[?!]+/ ? true : false
@@ -256,6 +271,11 @@ module Howzit
 
     private
 
+    ##
+    ## Collect all directives in the topic content
+    ##
+    ## @return     [Array] array of Task objects
+    ##
     def gather_tasks
       runnable = []
       @prereqs = @content.scan(/(?<=@before\n).*?(?=\n@end)/im).map(&:strip)
@@ -275,7 +295,12 @@ module Howzit
           default = c[:optional2] =~ /!/ ? false : true
           title = c[:title2].nil? ? '' : c[:title2].strip
           block = c[:block]&.strip
-          runnable << Howzit::Task.new(:block, title, block, optional: optional, default: default)
+          runnable << Howzit::Task.new({ type: :block,
+                                         title: title,
+                                         action: block,
+                                         parent: nil },
+                                       optional: optional,
+                                       default: default)
         else
           cmd = c[:cmd]
           optional = c[:optional] =~ /[?!]{1,2}/ ? true : false
@@ -294,15 +319,35 @@ module Howzit
             #   end
             #   runnable.concat(tasks)
             # end
-            runnable << Howzit::Task.new(:include, title, obj, optional: optional, default: default)
+            runnable << Howzit::Task.new({ type: :include,
+                                           title: title,
+                                           action: obj,
+                                           parent: nil },
+                                         optional: optional,
+                                         default: default)
           when /run/i
             # warn "{bg}Running {bw}#{obj}{x}".c if Howzit.options[:log_level] < 2
-            runnable << Howzit::Task.new(:run, title, obj, optional: optional, default: default)
+            runnable << Howzit::Task.new({ type: :run,
+                                           title: title,
+                                           action: obj,
+                                           parent: nil },
+                                         optional: optional,
+                                         default: default)
           when /copy/i
             # warn "{bg}Copied {bw}#{obj}{bg} to clipboard{x}".c if Howzit.options[:log_level] < 2
-            runnable << Howzit::Task.new(:copy, title, Shellwords.escape(obj), optional: optional, default: default)
+            runnable << Howzit::Task.new({ type: :copy,
+                                           title: title,
+                                           action: Shellwords.escape(obj),
+                                           parent: nil },
+                                         optional: optional,
+                                         default: default)
           when /open|url/i
-            runnable << Howzit::Task.new(:open, title, obj, optional: optional, default: default)
+            runnable << Howzit::Task.new({ type: :open,
+                                           title: title,
+                                           action: obj,
+                                           parent: nil },
+                                         optional: optional,
+                                         default: default)
           end
         end
       end

@@ -4,7 +4,18 @@ module Howzit
   # Command line prompt utils
   module Prompt
     class << self
-    	def yn(prompt, default: true)
+
+      ##
+      ## Display and read a Yes/No prompt
+      ##
+      ## @param      prompt   [String] The prompt string
+      ## @param      default  [Boolean] default value if
+      ##                      return is pressed or prompt is
+      ##                      skipped
+      ##
+      ## @return     [Boolean] result
+      ##
+      def yn(prompt, default: true)
         return default unless $stdout.isatty
 
         return default if Howzit.options[:default]
@@ -20,6 +31,14 @@ module Howzit
         res.empty? ? default : res =~ /y/i
       end
 
+      ##
+      ## Helper function to colorize the Y/N prompt
+      ##
+      ## @param      choices  [Array] The choices with
+      ##                      default capitalized
+      ##
+      ## @return     [String] colorized string
+      ##
       def color_single_options(choices = %w[y n])
         out = []
         choices.each do |choice|
@@ -33,6 +52,11 @@ module Howzit
         Color.template("{xg}[#{out.join('/')}{xg}]{x}")
       end
 
+      ##
+      ## Create a numbered list of options. Outputs directly to console, returns nothing
+      ##
+      ## @param      matches  [Array] The list items
+      ##
       def options_list(matches)
         counter = 1
         puts
@@ -43,6 +67,13 @@ module Howzit
         puts
       end
 
+      ##
+      ## Choose from a list of items. If fzf is available, uses that, otherwise generates its own list of options and accepts a numeric response
+      ##
+      ## @param      matches  [Array] The options list
+      ##
+      ## @return     [Array] the selected results
+      ##
       def choose(matches)
         if Util.command_exist?('fzf')
           settings = [
@@ -80,7 +111,7 @@ module Howzit
             end
             line = line == '' ? 1 : line.to_i
 
-            return matches[line - 1] if line.positive? && line <= matches.length
+            return [matches[line - 1]] if line.positive? && line <= matches.length
 
             puts 'Out of range'
             options_list(matches)

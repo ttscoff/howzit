@@ -3,7 +3,37 @@
 module Howzit
   # String Extensions
   module StringUtils
+    ##
+    ## Test if the filename matches the conditions to be a build note
+    ##
+    ## @return     [Boolean] true if filename passes test
+    ##
+    def build_note?
+      return false if downcase !~ /^(howzit[^.]*|build[^.]+)/
+
+      return false if Howzit.config.should_ignore(self)
+
+      true
+    end
+
+    ##
+    ## Replace slash escaped characters in a string with a
+    ## zero-width space that will prevent a shell from
+    ## interpreting them when output to console
+    ##
+    ## @return     [String] new string
+    ##
+    def preserve_escapes
+      gsub(/\\([a-z])/, '\​\1')
+    end
+
     # Convert a string to a valid YAML value
+    #
+    # @param      orig_value  The original value from which
+    #                         type will be determined
+    #
+    # @return     coerced value
+    #
     def to_config_value(orig_value = nil)
       if orig_value
         case orig_value.class.to_s
@@ -28,10 +58,21 @@ module Howzit
       end
     end
 
+    ##
+    ## Shortcut for calling Color.template
+    ##
+    ## @return     [String] colorized string
+    ##
     def c
       Color.template(self)
     end
 
+
+    ##
+    ## Convert a string to a regex object based on matching settings
+    ##
+    ## @return     [Regexp] Receive regex representation of the object.
+    ##
     def to_rx
       case Howzit.options[:matching]
       when 'exact'
@@ -50,9 +91,17 @@ module Howzit
       gsub(/\e\[[\d;]+m/, '').gsub(/\e\]1337;SetMark/,'')
     end
 
+    # Wrap text at a specified width.
+    #
     # Adapted from https://github.com/pazdera/word_wrap/,
-    # copyright (c) 2014, 2015  Radek Pazdera
-    # Distributed under the MIT License
+    # copyright (c) 2014, 2015  Radek Pazdera Distributed
+    # under the MIT License
+    #
+    # @param      width  [Integer] The width at which to
+    #                    wrap lines
+    #
+    # @return     [String] wrapped string
+    #
     def wrap(width)
       width ||= 80
       output = []
@@ -84,12 +133,19 @@ module Howzit
       output.join("\n")
     end
 
+    ##
+    ## Wrap string in place (destructive)
+    ##
+    ## @param      width  [Integer] The width at which to wrap
+    ##
     def wrap!(width)
       replace(wrap(width))
     end
 
     # Truncate string to nearest word
-    # @param len <number> max length of string
+    #
+    # @param      len   [Integer] max length of string
+    #
     def trunc(len)
       split(/ /).each_with_object([]) do |x, ob|
         break ob unless ob.join(' ').length + ' '.length + x.length <= len
@@ -98,10 +154,21 @@ module Howzit
       end.join(' ').strip
     end
 
+    ##
+    ## Truncate string in place (destructive)
+    ##
+    ## @param      len   [Integer] The length to truncate at
+    ##
     def trunc!(len)
       replace trunc(len)
     end
 
+    ##
+    ## Splits a line at nearest word break
+    ##
+    ## @param      width   [Integer] The width of the first segment
+    ## @param      indent  [String] The indent string
+    ##
     def split_line(width, indent = '')
       line = dup
       at = line.index(/\s/)
@@ -119,10 +186,23 @@ module Howzit
       end
     end
 
+    ##
+    ## Test if an executable is available on the system
+    ##
+    ## @return     [Boolean] executable is available
+    ##
     def available?
       Util.valid_command?(self)
     end
 
+    ##
+    ## Render [%variable] placeholders in a templated string
+    ##
+    ## @param      vars  [Hash] Key/value pairs of variable
+    ##                   values
+    ##
+    ## @return     [String] Rendered string
+    ##
     def render_template(vars)
       vars.each do |k, v|
         gsub!(/\[%#{k}(:.*?)?\]/, v)
@@ -131,10 +211,20 @@ module Howzit
       gsub(/\[%(.*?):(.*?)\]/, '\2')
     end
 
+    ##
+    ## Render [%variable] placeholders in place
+    ##
+    ## @param      vars  [Hash] Key/value pairs of variable values
+    ##
     def render_template!(vars)
       replace render_template(vars)
     end
 
+    ##
+    ## Render $X placeholders based on positional arguments
+    ##
+    ## @return     [String] rendered string
+    ##
     def render_arguments
       return self if Howzit.arguments.nil? || Howzit.arguments.empty?
 
@@ -145,6 +235,13 @@ module Howzit
       gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
     end
 
+    ##
+    ## Split the content at the first top-level header and
+    ## assume everything before it is metadata. Passes to
+    ## #get_metadata for processing
+    ##
+    ## @return     [Hash] key/value pairs
+    ##
     def extract_metadata
       if File.exist?(self)
         leader = Util.read_file(self).split(/^#/)[0].strip
@@ -154,6 +251,11 @@ module Howzit
       end
     end
 
+    ##
+    ## Examine text for multimarkdown-style metadata and return key/value pairs
+    ##
+    ## @return     [Hash] The metadata as key/value pairs
+    ##
     def get_metadata
       data = {}
       scan(/(?mi)^(\S[\s\S]+?): ([\s\S]*?)(?=\n\S[\s\S]*?:|\Z)/).each do |m|
@@ -162,6 +264,13 @@ module Howzit
       normalize_metadata(data)
     end
 
+    ##
+    ## Autocorrect some keys
+    ##
+    ## @param      meta  [Hash] The metadata
+    ##
+    ## @return     [Hash] corrected metadata
+    ##
     def normalize_metadata(meta)
       data = {}
       meta.each do |k, v|
@@ -177,15 +286,33 @@ module Howzit
       data
     end
 
+    ##
+    ## Test if iTerm markers should be output. Requires that
+    ## the $TERM_PROGRAM be iTerm and howzit is not running
+    ## directives or paginating output
+    ##
+    ## @return     [Boolean] should mark?
+    ##
     def should_mark_iterm?
       ENV['TERM_PROGRAM'] =~ /^iTerm/ && !Howzit.options[:run] && !Howzit.options[:paginate]
     end
 
+    ##
+    ## Output an iTerm marker
+    ##
+    ## @return     [String] ANSI escape sequence for iTerm
+    ##             marker
+    ##
     def iterm_marker
       "\e]1337;SetMark\a" if should_mark_iterm?
     end
 
     # Make a fancy title line for the topic
+    #
+    # @param      opts  [Hash] options
+    #
+    # @return     [String] formatted string
+    #
     def format_header(opts = {})
       title = dup
       options = {
