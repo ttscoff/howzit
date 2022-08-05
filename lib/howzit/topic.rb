@@ -56,52 +56,16 @@ module Howzit
                      task_count = Howzit.buildnote.find_topic(task.action)[0].tasks.count
                      " (#{task_count} tasks)"
                    else
-                     ""
+                     ''
                    end
             q = %({bg}#{task.type.to_s.capitalize} {xw}"{bw}#{task.title}{xw}"#{note}{x}).c
             res = Prompt.yn(q, default: task.default)
             next unless res
 
           end
-
-          if task.type == :block
-            Howzit.console.info "{bg}Running block {bw}#{title}{x}".c if Howzit.options[:log_level] < 2
-            block = task.action
-            script = Tempfile.new('howzit_script')
-            begin
-              script.write(block)
-              script.close
-              File.chmod(0777, script.path)
-              system(%(/bin/sh -c "#{script.path}"))
-              tasks += 1
-            ensure
-              script.close
-              script.unlink
-            end
-          else
-            title = Howzit.options[:show_all_code] ? task.action : task.title
-            case task.type
-            when :include
-              matches = Howzit.buildnote.find_topic(task.action)
-              raise "Topic not found: #{task.action}" if matches.empty?
-
-              $stderr.puts "{by}Running tasks from {bw}#{matches[0].title}{x}".c if Howzit.options[:log_level] < 2
-              output.push(matches[0].run(nested: true))
-              $stderr.puts "{by}End include: #{matches[0].tasks.count} tasks{x}".c if Howzit.options[:log_level] < 2
-              tasks += matches[0].tasks.count
-            when :run
-              $stderr.puts "{bg}Running {bw}#{title}{x}".c if Howzit.options[:log_level] < 2
-              system(task.action)
-              tasks += 1
-            when :copy
-              $stderr.puts "{bg}Copied {bw}#{title}{bg} to clipboard{x}".c if Howzit.options[:log_level] < 2
-              os_copy(task.action)
-              tasks += 1
-            when :open
-              os_open(task.action)
-              tasks += 1
-            end
-          end
+          run_output, total = task.run
+          output.concat(run_output)
+          tasks += total
         end
       else
         Howzit.console.warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c
@@ -111,61 +75,6 @@ module Howzit
       puts TTY::Box.frame("{bw}#{@postreqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols) unless @postreqs.empty?
 
       output
-    end
-
-    ##
-    ## Platform-agnostic copy-to-clipboard
-    ##
-    ## @param      string  [String] The string to copy
-    ##
-    def os_copy(string)
-      os = RbConfig::CONFIG['target_os']
-      out = "{bg}Copying {bw}#{string}".c
-      case os
-      when /darwin.*/i
-        $stderr.puts "#{out} (macOS){x}".c if Howzit.options[:log_level].zero?
-        `echo #{Shellwords.escape(string)}'\\c'|pbcopy`
-      when /mingw|mswin/i
-        $stderr.puts "#{out} (Windows){x}".c if Howzit.options[:log_level].zero?
-        `echo #{Shellwords.escape(string)} | clip`
-      else
-        if 'xsel'.available?
-          $stderr.puts "#{out} (Linux, xsel){x}".c if Howzit.options[:log_level].zero?
-          `echo #{Shellwords.escape(string)}'\\c'|xsel -i`
-        elsif 'xclip'.available?
-          $stderr.puts "#{out} (Linux, xclip){x}".c if Howzit.options[:log_level].zero?
-          `echo #{Shellwords.escape(string)}'\\c'|xclip -i`
-        else
-          $stderr.puts out if Howzit.options[:log_level].zero?
-          $stderr.puts 'Unable to determine executable for clipboard.'
-        end
-      end
-    end
-
-    ##
-    ## Platform-agnostic open command
-    ##
-    ## @param      command  [String] The command
-    ##
-    def os_open(command)
-      os = RbConfig::CONFIG['target_os']
-      out = "{bg}Opening {bw}#{command}".c
-      case os
-      when /darwin.*/i
-        Howzit.console.debug "#{out} (macOS){x}".c if Howzit.options[:log_level] < 2
-        `open #{Shellwords.escape(command)}`
-      when /mingw|mswin/i
-        Howzit.console.debug "#{out} (Windows){x}".c if Howzit.options[:log_level] < 2
-        `start #{Shellwords.escape(command)}`
-      else
-        if 'xdg-open'.available?
-          Howzit.console.debug "#{out} (Linux){x}".c if Howzit.options[:log_level] < 2
-          `xdg-open #{Shellwords.escape(command)}`
-        else
-          Howzit.console.debug out if Howzit.options[:log_level] < 2
-          Howzit.console.debug 'Unable to determine executable for `open`.'
-        end
-      end
     end
 
     # Output a topic with fancy title and bright white text.

@@ -36,6 +36,137 @@ module Howzit
     end
 
     ##
+    ## Execute a block type
+    ##
+    def run_block
+      Howzit.console.info "{bg}Running block {bw}#{@title}{x}".c if Howzit.options[:log_level] < 2
+      block = @action
+      script = Tempfile.new('howzit_script')
+      begin
+        script.write(block)
+        script.close
+        File.chmod(0o777, script.path)
+        system(%(/bin/sh -c "#{script.path}"))
+      ensure
+        script.close
+        script.unlink
+      end
+    end
+
+    ##
+    ## Execute an include task
+    ##
+    ## @return     [Integer] number of tasks executed
+    ##
+    def run_include
+      output = []
+      matches = Howzit.buildnote.find_topic(@action)
+      raise "Topic not found: #{@action}" if matches.empty?
+
+      $stderr.puts "{by}Running tasks from {bw}#{matches[0].title}{x}".c if Howzit.options[:log_level] < 2
+      output.concat(matches[0].run(nested: true))
+      $stderr.puts "{by}End include: #{matches[0].tasks.count} tasks{x}".c if Howzit.options[:log_level] < 2
+      [output, matches[0].tasks.count]
+    end
+
+    ##
+    ## Execute a run task
+    ##
+    def run_run
+      title = Howzit.options[:show_all_code] ? @action : @title
+      $stderr.puts "{bg}Running {bw}#{title}{x}".c if Howzit.options[:log_level] < 2
+      system(@action)
+    end
+
+    ##
+    ## Execute a copy task
+    ##
+    def run_copy
+      title = Howzit.options[:show_all_code] ? @action : @title
+      $stderr.puts "{bg}Copied {bw}#{title}{bg} to clipboard{x}".c if Howzit.options[:log_level] < 2
+      os_copy(@action)
+    end
+
+    ##
+    ## Platform-agnostic copy-to-clipboard
+    ##
+    ## @param      string  [String] The string to copy
+    ##
+    def os_copy(string)
+      os = RbConfig::CONFIG['target_os']
+      out = "{bg}Copying {bw}#{string}".c
+      case os
+      when /darwin.*/i
+        $stderr.puts "#{out} (macOS){x}".c if Howzit.options[:log_level].zero?
+        `echo #{Shellwords.escape(string)}'\\c'|pbcopy`
+      when /mingw|mswin/i
+        $stderr.puts "#{out} (Windows){x}".c if Howzit.options[:log_level].zero?
+        `echo #{Shellwords.escape(string)} | clip`
+      else
+        if 'xsel'.available?
+          $stderr.puts "#{out} (Linux, xsel){x}".c if Howzit.options[:log_level].zero?
+          `echo #{Shellwords.escape(string)}'\\c'|xsel -i`
+        elsif 'xclip'.available?
+          $stderr.puts "#{out} (Linux, xclip){x}".c if Howzit.options[:log_level].zero?
+          `echo #{Shellwords.escape(string)}'\\c'|xclip -i`
+        else
+          $stderr.puts out if Howzit.options[:log_level].zero?
+          $stderr.puts 'Unable to determine executable for clipboard.'
+        end
+      end
+    end
+
+    ##
+    ## Platform-agnostic open command
+    ##
+    ## @param      command  [String] The command
+    ##
+    def os_open(command)
+      os = RbConfig::CONFIG['target_os']
+      out = "{bg}Opening {bw}#{command}".c
+      case os
+      when /darwin.*/i
+        Howzit.console.debug "#{out} (macOS){x}".c if Howzit.options[:log_level] < 2
+        `open #{Shellwords.escape(command)}`
+      when /mingw|mswin/i
+        Howzit.console.debug "#{out} (Windows){x}".c if Howzit.options[:log_level] < 2
+        `start #{Shellwords.escape(command)}`
+      else
+        if 'xdg-open'.available?
+          Howzit.console.debug "#{out} (Linux){x}".c if Howzit.options[:log_level] < 2
+          `xdg-open #{Shellwords.escape(command)}`
+        else
+          Howzit.console.debug out if Howzit.options[:log_level] < 2
+          Howzit.console.debug 'Unable to determine executable for `open`.'
+        end
+      end
+    end
+
+    ##
+    ## Execute the task
+    ##
+    def run
+      output = []
+      tasks = 1
+      if @type == :block
+        run_block
+      else
+        case @type
+        when :include
+          output, tasks = run_include
+        when :run
+          run_run
+        when :copy
+          run_copy
+        when :open
+          os_open(@action)
+        end
+      end
+
+      [output, tasks]
+    end
+
+    ##
     ## Output terminal-formatted list item
     ##
     ## @return     [String] List representation of the object.
