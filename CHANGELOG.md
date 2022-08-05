@@ -1,3 +1,11 @@
+### 2.0.11
+
+2022-08-05 11:21
+
+#### IMPROVED
+
+- Update fish completions with all current command line options
+
 ### 2.0.10
 
 2022-08-05 08:17
