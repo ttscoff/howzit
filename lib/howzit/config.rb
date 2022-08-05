@@ -3,6 +3,7 @@ module Howzit
   class Config
     attr_reader :options
 
+    # Configuration defaults
     DEFAULTS = {
       color: true,
       config_editor: ENV['EDITOR'] || nil,
@@ -46,7 +47,7 @@ module Howzit
     def should_ignore(filename)
       return false unless File.exist?(ignore_file)
 
-      @ignore_patterns ||= YAML.safe_load(IO.read(ignore_file))
+      @ignore_patterns ||= YAML.safe_load(Util.read_file(ignore_file))
 
       ignore = false
 
@@ -78,6 +79,11 @@ module Howzit
 
     private
 
+    ##
+    ## Load command line options
+    ##
+    ## @return     [Hash] options with command line flags merged in
+    ##
     def load_options
       Color.coloring = $stdout.isatty
       flags = {
@@ -98,18 +104,38 @@ module Howzit
       @options = flags.merge(config)
     end
 
+    ##
+    ## Get the config directory
+    ##
+    ## @return     [String] path to config directory
+    ##
     def config_dir
       File.expand_path(CONFIG_DIR)
     end
 
+    ##
+    ## Get the config file
+    ##
+    ## @return     [String] path to config file
+    ##
     def config_file
       File.join(config_dir, CONFIG_FILE)
     end
 
+    ##
+    ## Get the ignore config file
+    ##
+    ## @return     [String] path to ignore config file
+    ##
     def ignore_file
       File.join(config_dir, IGNORE_FILE)
     end
 
+    ##
+    ## Create a new config file (and directory if needed)
+    ##
+    ## @param      d     [Hash] default configuration to write
+    ##
     def create_config(d)
       unless File.directory?(config_dir)
         Howzit::ConsoleLogger.new(1).info "Creating config directory at #{config_dir}"
@@ -123,14 +149,24 @@ module Howzit
       config_file
     end
 
+    ##
+    ## Load the config file
+    ##
+    ## @return     [Hash] configuration object
+    ##
     def load_config
       file = create_config(DEFAULTS)
-      config = YAML.load(IO.read(file))
+      config = YAML.load(Util.read_file(file))
       newconfig = config ? DEFAULTS.merge(config) : DEFAULTS
       write_config(newconfig)
       newconfig.dup
     end
 
+    ##
+    ## Open the config in an editor
+    ##
+    ## @param      d     [Hash] default config options
+    ##
     def edit_config(d)
       editor = Howzit.options.fetch(:config_editor, ENV['EDITOR'])
 

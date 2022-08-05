@@ -1,6 +1,10 @@
 module Howzit
   module Util
     class << self
+      def read_file(path)
+        IO.read(path).force_encoding('utf-8').strip
+      end
+
       def valid_command?(command)
         cmd = command.split(' ')[0]
         command_exist?(cmd)

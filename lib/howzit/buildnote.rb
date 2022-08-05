@@ -10,7 +10,7 @@ module Howzit
     def initialize(file: nil, args: [])
       @topics = []
       create_note if note_file.nil?
-      @metadata = IO.read(note_file).split(/^#/)[0].strip.get_metadata
+      @metadata = Util.read_file(note_file).split(/^#/)[0].strip.get_metadata
 
       read_help(file)
     end
@@ -262,7 +262,7 @@ module Howzit
     end
 
     def ensure_requirements(template)
-      t_leader = IO.read(template).split(/^#/)[0].strip
+      t_leader = Util.read_file(template).split(/^#/)[0].strip
       if t_leader.length > 0
         t_meta = t_leader.get_metadata
         if t_meta.key?('required')
@@ -330,7 +330,7 @@ module Howzit
 
       return m[0] unless File.exist?(file)
 
-      content = IO.read(file)
+      content = Util.read_file(file)
       home = ENV['HOME']
       short_path = File.dirname(file.sub(/^#{home}/, '~'))
       prefix = "#{short_path}/#{File.basename(file)}:"
@@ -344,7 +344,7 @@ module Howzit
     end
 
     def note_title(truncate = 0)
-      help = IO.read(note_file).strip
+      help = Util.read_file(note_file)
       title = help.match(/(?:^(\S.*?)(?=\n==)|^# ?(.*?)$)/)
       title = if title
                 title[1].nil? ? title[2] : title[1]
@@ -361,7 +361,7 @@ module Howzit
 
       filename = path.nil? ? note_file : path
 
-      help = IO.read(filename)
+      help = Util.read_file(filename)
 
       @title = note_title
 

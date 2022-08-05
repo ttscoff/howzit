@@ -25,9 +25,10 @@ module Howzit
     def run(nested: false)
       output = []
       tasks = 0
+      cols = TTY::Screen.columns > 60 ? 60 : TTY::Screen.columns
       if @tasks.count.positive?
         unless @prereqs.empty?
-          puts @prereqs.join("\n\n")
+          puts TTY::Box.frame("{bw}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
           res = Prompt.yn('This topic has prerequisites, have they been met?', default: true)
           Process.exit 1 unless res
 
@@ -85,7 +86,7 @@ module Howzit
       end
       output.push("{bm}Ran #{tasks} #{tasks == 1 ? 'task' : 'tasks'}{x}".c) if Howzit.options[:log_level] < 2 && !nested
 
-      puts postreqs.join("\n\n") unless postreqs.empty?
+      puts TTY::Box.frame("{bw}#{@postreqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols) unless @postreqs.empty?
 
       output
     end

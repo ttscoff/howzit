@@ -21,6 +21,7 @@ require 'tempfile'
 require 'yaml'
 
 require 'tty/screen'
+require 'tty/box'
 # require 'tty/prompt'
 
 CONFIG_DIR = '~/.config/howzit'
@@ -30,6 +31,7 @@ MATCHING_OPTIONS = %w[partial exact fuzzy beginswith].freeze
 MULTIPLE_OPTIONS = %w[first best all choose].freeze
 HEADER_FORMAT_OPTIONS = %w[border block].freeze
 
+# Main module for howzit
 module Howzit
   class << self
     attr_accessor :arguments, :cli_args

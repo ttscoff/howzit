@@ -147,7 +147,7 @@ module Howzit
 
     def extract_metadata
       if File.exist?(self)
-        leader = IO.read(self).split(/^#/)[0].strip
+        leader = Util.read_file(self).split(/^#/)[0].strip
         leader.length > 0 ? leader.get_metadata : {}
       else
         {}
