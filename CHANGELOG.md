@@ -1,3 +1,12 @@
+### 2.0.10
+
+2022-08-05 08:17
+
+#### IMPROVED
+
+- Provide more helpful feedback if no content is found in build note
+- Confirm whether the user wants to create a new note when one isn't found
+
 ### 2.0.9
 
 2022-08-05 07:29
