@@ -1,3 +1,11 @@
+### 2.0.12
+
+2022-08-05 11:27
+
+#### IMPROVED
+
+- Show how many tasks will be included when requesting confirmation for an include? directive
+
 ### 2.0.11
 
 2022-08-05 11:21
