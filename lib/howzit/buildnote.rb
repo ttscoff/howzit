@@ -15,10 +15,16 @@ module Howzit
     ##
     def initialize(file: nil, args: [])
       @topics = []
-      create_note if note_file.nil?
+      if note_file.nil?
+        res = Prompt.yn('No build notes file found, create one?', default: true)
+
+        create_note if res
+        Process.exit 0
+      end
       content = Util.read_file(note_file)
       if content.nil? || content.empty?
-        Howzit.console.warn('No content found in build note')
+        Howzit.console.error("{br}No content found in build note (#{note_file}){x}".c)
+        Process.exit 1
       else
         @metadata = content.split(/^#/)[0].strip.get_metadata
       end
@@ -361,8 +367,8 @@ module Howzit
           required = t_meta['required'].strip.split(/\s*,\s*/)
           required.each do |req|
             unless @metadata.keys.include?(req.downcase)
-              Howzit.console.error %({xr}ERROR: Missing required metadata key from template '{bw}#{File.basename(template, '.md')}{xr}'{x}).c
-              Howzit.console.error %({xr}Please define {by}#{req.downcase}{xr} in build notes{x}).c
+              Howzit.console.error %({bRw}ERROR:{xbr} Missing required metadata key from template '{bw}#{File.basename(template, '.md')}{xr}'{x}).c
+              Howzit.console.error %({br}Please define {by}#{req.downcase}{xr} in build notes{x}).c
               Process.exit 1
             end
           end
@@ -477,6 +483,11 @@ module Howzit
 
       help = Util.read_file(filename)
 
+      if help.nil? || help.empty?
+        Howzit.console.error("{br}No content found in #{filename}{x}".c)
+        Process.exit 1
+      end
+
       @title = note_title
 
       help.gsub!(/@include\((.*?)\)/) do
@@ -512,10 +523,6 @@ module Howzit
         topics.push(topic) unless find_topic(topic.title.sub(/^.+:/, '')).count.positive?
       end
 
-      if note_file && topics.empty?
-        Howzit.console.error("Note file found but no topics detected in #{note_file}")
-      end
-
       topics
     end
 
@@ -533,6 +540,12 @@ module Howzit
       upstream_topics.each do |topic|
         @topics.push(topic) unless find_topic(title.sub(/^.+:/, '')).count.positive?
       end
+
+      if note_file && @topics.empty?
+        Howzit.console.error("{br}Note file found but no topics detected in #{note_file}{x}".c)
+        Process.exit 1
+      end
+
     end
 
     ##
