@@ -19,6 +19,7 @@ module Howzit
         return default unless $stdout.isatty
 
         return default if Howzit.options[:default]
+
         tty_state = `stty -g`
         system 'stty raw -echo cbreak isig'
         yn = color_single_options(default ? %w[Y n] : %w[y N])
@@ -53,7 +54,8 @@ module Howzit
       end
 
       ##
-      ## Create a numbered list of options. Outputs directly to console, returns nothing
+      ## Create a numbered list of options. Outputs directly
+      ## to console, returns nothing
       ##
       ## @param      matches  [Array] The list items
       ##
@@ -68,7 +70,9 @@ module Howzit
       end
 
       ##
-      ## Choose from a list of items. If fzf is available, uses that, otherwise generates its own list of options and accepts a numeric response
+      ## Choose from a list of items. If fzf is available,
+      ## uses that, otherwise generates its own list of
+      ## options and accepts a numeric response
       ##
       ## @param      matches  [Array] The options list
       ##
