@@ -6,6 +6,7 @@ AllCops:
 
 Metrics/BlockLength:
   Exclude:
+    - Rakefile
     - bin/howzit
     - lib/*.rb
 

@@ -38,6 +38,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'yard', '~> 0.9.5'
   spec.add_development_dependency 'redcarpet', '~> 3.2'
   spec.add_development_dependency 'github-markup', '~> 1.3'
+  spec.add_development_dependency 'tty-spinner', '~> 0.9'
 
   spec.add_runtime_dependency 'mdless', '~> 1.0', '>= 1.0.28'
   spec.add_runtime_dependency 'tty-screen', '~> 0.8'
