@@ -1,3 +1,18 @@
+### 2.0.9
+
+2022-08-05 07:29
+
+#### IMPROVED
+
+- Avoid error trace on interrupt
+- Better stty settings for y/n prompt
+- Better coloring of default options in dialogs
+
+#### FIXED
+
+- Encoding issues with older ruby versions
+- Globbing for build notes was picking up files that contained "build" but not at the beginning of the filename
+
 ### 2.0.8
 
 2022-08-04 13:28
