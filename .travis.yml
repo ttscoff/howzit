@@ -13,4 +13,4 @@ install:
 script: "bundle exec rspec spec --exclude-pattern 'cli*'"
 branches:
   only:
-  - master
+  - main
