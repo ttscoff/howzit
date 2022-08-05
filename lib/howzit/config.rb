@@ -134,9 +134,9 @@ module Howzit
     ##
     ## Create a new config file (and directory if needed)
     ##
-    ## @param      d     [Hash] default configuration to write
+    ## @param      default     [Hash] default configuration to write
     ##
-    def create_config(d)
+    def create_config(default)
       unless File.directory?(config_dir)
         Howzit::ConsoleLogger.new(1).info "Creating config directory at #{config_dir}"
         FileUtils.mkdir_p(config_dir)
@@ -144,7 +144,7 @@ module Howzit
 
       unless File.exist?(config_file)
         Howzit::ConsoleLogger.new(1).info "Writing fresh config file to #{config_file}"
-        write_config(d)
+        write_config(default)
       end
       config_file
     end
@@ -165,9 +165,7 @@ module Howzit
     ##
     ## Open the config in an editor
     ##
-    ## @param      d     [Hash] default config options
-    ##
-    def edit_config(d)
+    def edit_config
       editor = Howzit.options.fetch(:config_editor, ENV['EDITOR'])
 
       raise 'No config_editor defined' if editor.nil?

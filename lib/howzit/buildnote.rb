@@ -89,7 +89,7 @@ module Howzit
     # Create a buildnotes skeleton
     def create_note
       trap('SIGINT') do
-        Howzit.console.info "\nCanceled"
+        Howzit.console.info "\nCancelled"
         exit!
       end
       default = !$stdout.isatty || Howzit.options[:default]
@@ -210,9 +210,11 @@ module Howzit
       buildnotes.reverse
     end
 
-    def is_build_notes(filename)
-      return false if filename.downcase !~ /(^howzit[^.]*|build[^.]+)/
+    def build_note?(filename)
+      return false if filename.downcase !~ /^(howzit[^.]*|build[^.]+)/
+
       return false if Howzit.config.should_ignore(filename)
+
       true
     end
 
@@ -222,7 +224,7 @@ module Howzit
       # with "build" and have an extension of txt, md, or markdown.
 
       Dir.glob('*.{txt,md,markdown}').each do |f|
-        if is_build_notes(f)
+        if build_note?(f)
           filename = f
           break
         end
