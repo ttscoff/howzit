@@ -8,7 +8,6 @@ rvm:
   - ruby-2.7.0
   - ruby-3.0.1
 install:
-  - gem uninstall bundler
   - gem install bundler --version '2.2.29'
   - bundle install
 script: "bundle exec rspec spec --exclude-pattern 'cli*'"
