@@ -1,3 +1,11 @@
+### 2.0.13
+
+2022-08-05 13:19
+
+#### IMPROVED
+
+- Add tests for more ruby versions via Docker
+
 ### 2.0.12
 
 2022-08-05 11:27
