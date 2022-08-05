@@ -55,7 +55,8 @@ module Howzit
     ##
     ## @param      term  [String] The search term
     ##
-    def find_topic(term)
+    def find_topic(term = nil)
+      return @topics if term.nil?
       @topics.filter do |topic|
         rx = term.to_rx
         topic.title.downcase =~ rx
@@ -127,7 +128,8 @@ module Howzit
     def list_runnable
       output = []
       output.push(%({bg}"Runnable" Topics:{x}\n).c)
-      @topics.each do |topic|
+
+      find_topic(Howzit.options[:for_topic]).each do |topic|
         s_out = []
 
         topic.tasks.each do |task|
@@ -620,15 +622,15 @@ module Howzit
 
       topic_matches = []
       if Howzit.options[:grep]
-        matches = grep_topics(Howzit.options[:grep])
+        matches = grep(Howzit.options[:grep])
         case Howzit.options[:multiple_matches]
         when :all
-          topic_matches.concat(matches.sort)
+          topic_matches.concat(matches.sort_by(&:title))
         else
-          topic_matches.concat(Prompt.choose(matches))
+          topic_matches.concat(Prompt.choose(matches.map(&:title), height: :max))
         end
       elsif Howzit.options[:choose]
-        titles = Prompt.choose(list_topics)
+        titles = Prompt.choose(list_topics, height: :max)
         titles.each { |title| topic_matches.push(find_topic(title)[0]) }
       # If there are arguments use those to search for a matching topic
       elsif !Howzit.cli_args.empty?

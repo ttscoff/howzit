@@ -78,15 +78,21 @@ module Howzit
       ##
       ## @return     [Array] the selected results
       ##
-      def choose(matches)
+      def choose(matches, height: :auto)
+        height = if height == :auto
+                   matches.count + 3
+                 else
+                   TTY::Screen.rows
+                 end
         if Util.command_exist?('fzf')
           settings = [
             '-0',
             '-1',
             '-m',
-            "--height=#{matches.count + 3}",
+            "--height=#{height}",
             '--header="Use tab to mark multiple selections, enter to display/run"',
-            '--prompt="Select a section > "'
+            '--prompt="Select a section > "',
+            '--preview="howzit {}"'
           ]
           res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf #{settings.join(' ')}`.strip
           if res.nil? || res.empty?

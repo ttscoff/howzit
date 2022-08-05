@@ -89,6 +89,7 @@ module Howzit
       flags = {
         choose: false,
         default: false,
+        for_topic: nil,
         grep: nil,
         list_runnable: false,
         list_runnable_titles: false,

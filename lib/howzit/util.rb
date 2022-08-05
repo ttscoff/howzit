@@ -90,7 +90,7 @@ module Howzit
           args = case pg
                  when 'delta'
                    '--pager="less -FXr"'
-                 when /^(less|more)$/
+                 when 'less'
                    '-FXr'
                  when 'bat'
                    if Howzit.options[:highlight]
@@ -153,6 +153,7 @@ module Howzit
         options = {
           color: true,
           highlight: false,
+          paginate: true,
           wrap: 0
         }
 
@@ -168,7 +169,7 @@ module Howzit
 
         output = `echo #{Shellwords.escape(string.strip)}#{pipes}`.strip
 
-        if Howzit.options[:paginate]
+        if options[:paginate] && Howzit.options[:paginate]
           page(output)
         else
           puts output

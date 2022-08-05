@@ -49,7 +49,8 @@ OptionParser.new do |opts|
     Howzit.options[:list_topics] = true
   end
 
-  opts.on('-R', '--list-runnable', 'List topics containing @ directives (verbose)') do
+  opts.on('-R', '--list-runnable [PATTERN]', 'List topics containing @ directives (verbose)') do |pat|
+    Howzit.options[:for_topic] = pat
     Howzit.options[:list_runnable] = true
   end
 
@@ -201,7 +202,7 @@ OptionParser.new do |opts|
   opts.separator("\n  Misc:\n\n") #=================================================================== MISC
 
   opts.on('-h', '--help', 'Display this screen') do
-    puts opts
+    Howzit::Util.page opts.to_s
     Process.exit 0
   end
 
