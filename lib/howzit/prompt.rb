@@ -25,12 +25,12 @@ module Howzit
         choices.each do |choice|
           case choice
           when /[A-Z]/
-            out.push(Color.template("{bg}#{choice}{xg}"))
+            out.push(Color.template("{bw}#{choice}{x}"))
           else
-            out.push(Color.template("{w}#{choice}"))
+            out.push(Color.template("{dw}#{choice}{xg}"))
           end
         end
-        Color.template("{g}[#{out.join('/')}{g}]{x}")
+        Color.template("{xg}[#{out.join('/')}{xg}]{x}")
       end
 
       def options_list(matches)

@@ -199,11 +199,11 @@ OptionParser.new do |opts|
   end
 end.parse!(args)
 
-trap('INT') {
+trap('INT') do
   puts
-  puts "Cancelled"
+  puts 'Cancelled'
   Process.exit 0
-}
+end
 
 Howzit.options[:multiple_matches] = Howzit.options[:multiple_matches].to_sym
 Howzit.options[:header_format] = Howzit.options[:header_format].to_sym

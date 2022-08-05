@@ -9,6 +9,12 @@ module Howzit
 
     attr_reader :title, :tasks, :prereqs, :postreqs
 
+    ##
+    ## Initialize a topic object
+    ##
+    ## @param      title    [String] The topic title
+    ## @param      content  [String] The raw topic content
+    ##
     def initialize(title, content)
       @title = title
       @content = content
@@ -17,19 +23,29 @@ module Howzit
       @tasks = gather_tasks
     end
 
+    ##
+    ## Search title and contents for a pattern
+    ##
+    ## @param      term  [String] the search pattern
+    ##
     def grep(term)
       @title =~ /#{term}/i || @content =~ /#{term}/i
     end
 
-    # Handle run command, execute directives
+    # Handle run command, execute directives in topic
     def run(nested: false)
       output = []
       tasks = 0
-      cols = TTY::Screen.columns > 60 ? 60 : TTY::Screen.columns
+      cols = begin
+        TTY::Screen.columns > 60 ? 60 : TTY::Screen.columns
+      rescue StandardError
+        60
+      end
+
       if @tasks.count.positive?
         unless @prereqs.empty?
-          puts TTY::Box.frame("{bw}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
-          res = Prompt.yn('This topic has prerequisites, have they been met?', default: true)
+          puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+          res = Prompt.yn('Have the above prerequisites been met?', default: true)
           Process.exit 1 unless res
 
         end
