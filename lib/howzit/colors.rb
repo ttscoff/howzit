@@ -243,6 +243,7 @@ module Howzit
 
     ATTRIBUTES.each do |c, v|
       new_method = <<-EOSCRIPT
+        # Color string as #{c}
         def #{c}(string = nil)
           result = ''
           result << "\e[#{v}m" if Howzit::Color.coloring?
@@ -266,6 +267,7 @@ module Howzit
 
       # Accept brightwhite in addition to boldwhite
       new_method = <<-EOSCRIPT
+        # color string as #{c}
         def #{c.to_s.sub(/bold/, 'bright')}(string = nil)
           result = ''
           result << "\e[#{v}m" if Howzit::Color.coloring?
@@ -286,6 +288,13 @@ module Howzit
       module_eval(new_method)
     end
 
+    ##
+    ## Generate escape codes for hex colors
+    ##
+    ## @param      hex   [String] The hexadecimal color code
+    ##
+    ## @return     [String] ANSI escape string
+    ##
     def rgb(hex)
       is_bg = hex.match(/^bg?#/) ? true : false
       hex_string = hex.sub(/^([fb]g?)?#/, '')

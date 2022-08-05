@@ -15,4 +15,10 @@ describe Howzit::Task do
       expect(task).to be_a Howzit::Task
     end
   end
+
+  describe ".to_s" do
+    it "outputs title string" do
+      expect(task.to_s).to match(/List Directory/)
+    end
+  end
 end

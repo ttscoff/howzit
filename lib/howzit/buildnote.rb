@@ -32,6 +32,11 @@ module Howzit
       read_help(file)
     end
 
+    ##
+    ## Inspect
+    ##
+    ## @return     description
+    ##
     def inspect
       puts "#<Howzit::BuildNote @topics=[#{@topics.count}]>"
     end
@@ -245,6 +250,11 @@ module Howzit
       Process.exit 0
     end
 
+    ##
+    ## Accessor method for note_file (path to located build note)
+    ##
+    ## @return     [String] path
+    ##
     def note_file
       @note_file ||= find_note_file
     end
@@ -583,7 +593,7 @@ module Howzit
         ARGV.length.times do
           ARGV.shift
         end
-        res = yn("No build notes file found, create one?", true)
+        res = yn("No build notes file found, create one?", false)
         create_note if res
         Process.exit 1
       end

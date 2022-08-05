@@ -55,18 +55,30 @@ module Howzit
       @config ||= Config.new
     end
 
+    ##
+    ## Array for tracking inclusions and avoiding duplicates in output
+    ##
     def inclusions
       @inclusions ||= []
     end
 
+    ##
+    ## Module storage for Howzit::Config.options
+    ##
     def options
       config.options
     end
 
+    ##
+    ## Module storage for buildnote
+    ##
     def buildnote
       @buildnote ||= BuildNote.new
     end
 
+    ##
+    ## Convenience method for logging with Howzit.console.warn, etc.
+    ##
     def console
       @console ||= Howzit::ConsoleLogger.new(options[:log_level])
     end

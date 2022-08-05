@@ -4,7 +4,6 @@ module Howzit
   # Util class
   module Util
     class << self
-
       ##
       ## Read a file with UTF-8 encoding and
       ## leading/trailing whitespace removed
