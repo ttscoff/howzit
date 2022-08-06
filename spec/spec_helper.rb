@@ -1,12 +1,11 @@
-require 'simplecov'
+# frozen_string_literal: true
 
-SimpleCov.formatter = if ENV['CI'] == 'true'
-                        SimpleCov::Formatter::Codecov
-                      else
-                        SimpleCov::Formatter::HTMLFormatter
-                      end
-
-SimpleCov.start
+unless ENV['CI'] == 'true'
+  # SimpleCov::Formatter::Codecov # For CI
+  require 'simplecov'
+  SimpleCov.formatter = SimpleCov::Formatter::HTMLFormatter
+  SimpleCov.start
+end
 
 require 'howzit'
 require 'cli-test'
