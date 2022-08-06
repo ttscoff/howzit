@@ -8,11 +8,21 @@ module Howzit
     ##
     ## Initialize a Task object
     ##
-    def initialize(params, optional: false, default: true)
-      @type = params[:type]
-      @title = params[:title]
-      @action = params[:action].render_arguments
-      @parent = params[:parent] || nil
+    ## @param      attributes  [Hash] the task attributes
+    ## @param      optional    [Boolean] Task requires
+    ##                         confirmation
+    ## @param      default     [Boolean] Default response
+    ##                         for confirmation dialog
+    ##
+    ## @option attributes :type [Symbol] task type (:block, :run, :include, :copy)
+    ## @option attributes :title [String] task title
+    ## @option attributes :action [String] task action
+    ## @option attributes :parent [String] title of nested (included) topic origin
+    def initialize(attributes, optional: false, default: true)
+      @type = attributes[:type] || :run
+      @title = attributes[:title] || nil
+      @action = attributes[:action].render_arguments || nil
+      @parent = attributes[:parent] || nil
       @optional = optional
       @default = default
     end
@@ -56,7 +66,7 @@ module Howzit
     ##
     ## Execute an include task
     ##
-    ## @return     [Integer] number of tasks executed
+    ## @return     [Array] [[Array] output, [Integer] number of tasks executed]
     ##
     def run_include
       output = []

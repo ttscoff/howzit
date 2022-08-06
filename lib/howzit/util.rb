@@ -116,6 +116,11 @@ module Howzit
 
       # Paginate the output
       def page(text)
+        unless $stdout.isatty
+          puts text
+          return
+        end
+
         read_io, write_io = IO.pipe
 
         input = $stdin

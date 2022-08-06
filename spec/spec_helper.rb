@@ -1,13 +1,12 @@
-# require 'simplecov'
+require 'simplecov'
 
-# SimpleCov.start
+SimpleCov.formatter = if ENV['CI'] == 'true'
+                        SimpleCov::Formatter::Codecov
+                      else
+                        SimpleCov::Formatter::HTMLFormatter
+                      end
 
-# if ENV['CI'] == 'true'
-#   require 'codecov'
-#   SimpleCov.formatter = SimpleCov::Formatter::Codecov
-# else
-#   SimpleCov.formatter = SimpleCov::Formatter::HTMLFormatter
-# end
+SimpleCov.start
 
 require 'howzit'
 require 'cli-test'

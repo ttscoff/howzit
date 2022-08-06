@@ -75,16 +75,24 @@ module Howzit
       ## options and accepts a numeric response
       ##
       ## @param      matches  [Array] The options list
+      ## @param      height   [Symbol] height of fzf menu
+      ##                      (:auto adjusts height to
+      ##                      number of options, anything
+      ##                      else gets max height for
+      ##                      terminal)
       ##
       ## @return     [Array] the selected results
       ##
       def choose(matches, height: :auto)
-        height = if height == :auto
-                   matches.count + 3
-                 else
-                   TTY::Screen.rows
-                 end
+        return [] if !$stdout.isatty || matches.count.zero?
+
         if Util.command_exist?('fzf')
+          height = if height == :auto
+                     matches.count + 3
+                   else
+                     TTY::Screen.rows
+                   end
+
           settings = [
             '-0',
             '-1',
@@ -101,6 +109,8 @@ module Howzit
           end
           return res.split(/\n/)
         end
+
+        return matches if matches.count == 1
 
         res = matches[0..9]
         stty_save = `stty -g`.chomp
@@ -126,7 +136,7 @@ module Howzit
             puts 'Out of range'
             options_list(matches)
           end
-        rescue Interrupt
+        ensure
           system('stty', stty_save)
           exit
         end
