@@ -11,23 +11,15 @@ module Howzit
     ## Initialize a build note
     ##
     ## @param      file  [String] The path to the build note file
-    ## @param      args  [Array] additional args
     ##
-    def initialize(file: nil, args: [])
+    def initialize(file: nil)
       @topics = []
-      if note_file.nil?
-        res = Prompt.yn('No build notes file found, create one?', default: true)
+      create_note(prompt: true) if note_file.nil?
 
-        create_note if res
-        Process.exit 0
-      end
       content = Util.read_file(note_file)
-      if content.nil? || content.empty?
-        Howzit.console.error("{br}No content found in build note (#{note_file}){x}".c)
-        Process.exit 1
-      else
-        @metadata = content.split(/^#/)[0].strip.get_metadata
-      end
+      raise "{br}No content found in build note (#{note_file}){x}".c if content.nil? || content.empty?
+
+      @metadata = content.split(/^#/)[0].strip.get_metadata
 
       read_help(file)
     end
@@ -56,12 +48,24 @@ module Howzit
     end
 
     ##
+    ## Public method to open a template in the editor
+    ##
+    ## @param      template  [String] The template title
+    ##
+    def edit_template(template)
+      file = template.sub(/(\.md)?$/i, '.md')
+      file = File.join(Howzit.config.template_folder, file)
+      edit_template_file(file)
+    end
+
+    ##
     ## Find a topic based on a fuzzy match
     ##
     ## @param      term  [String] The search term
     ##
     def find_topic(term = nil)
       return @topics if term.nil?
+
       @topics.filter do |topic|
         rx = term.to_rx
         topic.title.downcase =~ rx
@@ -137,15 +141,14 @@ module Howzit
       find_topic(Howzit.options[:for_topic]).each do |topic|
         s_out = []
 
-        topic.tasks.each do |task|
-          s_out.push(task.to_list)
-        end
+        topic.tasks.each { |task| s_out.push(task.to_list) }
 
-        unless s_out.empty?
-          output.push("- {bw}#{topic.title}{x}".c)
-          output.push(s_out.join("\n"))
-        end
+        next if s_out.empty?
+
+        output.push("- {bw}#{topic.title}{x}".c)
+        output.push(s_out.join("\n"))
       end
+
       output.join("\n")
     end
 
@@ -158,22 +161,75 @@ module Howzit
       read_help_file(file)
     end
 
-    # Create a buildnotes skeleton
-    def create_note
+    ##
+    ## Create a template file
+    ##
+    ## @param      file    [String] file path
+    ## @param      prompt  [Boolean] confirm file creation?
+    ##
+    def create_template_file(file, prompt: false)
       trap('SIGINT') do
         Howzit.console.info "\nCancelled"
         exit!
       end
+
       default = !$stdout.isatty || Howzit.options[:default]
+
+      if prompt && !default && !File.exist?(file)
+        res = Prompt.yn("{bg}Template {bw}#{File.basename(file)}{bg} not found, create it?{x}".c, default: true)
+        Process.exit 0 unless res
+      end
+
+      title = File.basename(file, '.md')
+
+      note = <<~EOBUILDNOTES
+        # #{title}
+
+        ## Template Topic
+
+      EOBUILDNOTES
+
+      if File.exist?(file) && !default
+        file = "{by}#{file}".c
+        unless Prompt.yn("Are you sure you want to overwrite #{file}", default: false)
+          puts 'Cancelled'
+          Process.exit 0
+        end
+      end
+
+      File.open(file, 'w') do |f|
+        f.puts note
+        puts "{by}Template {bw}#{title}{by} written to {bw}#{file}{x}".c
+      end
+
+      if File.exist?(file) && !default && Prompt.yn("{bg}Do you want to open {bw}#{file} {bg}for editing?{x}".c,
+                                                     default: false)
+        edit_template_file(file)
+      end
+
+      Process.exit 0
+    end
+
+    # Create a buildnotes skeleton
+    def create_note(prompt: false)
+      trap('SIGINT') do
+        Howzit.console.info "\nCancelled"
+        exit!
+      end
+
+      default = !$stdout.isatty || Howzit.options[:default]
+
+      if prompt && !default
+        res = Prompt.yn('No build notes file found, create one?', default: true)
+        Process.exit 0 unless res
+      end
+
       # First make sure there isn't already a buildnotes file
       if note_file
         fname = "{by}#{note_file}{bw}".c
         unless default
           res = Prompt.yn("#{fname} exists and appears to be a build note, continue anyway?", default: false)
-          unless res
-            puts 'Canceled'
-            Process.exit 0
-          end
+          Process.exit 0 unless res
         end
       end
 
@@ -228,9 +284,7 @@ module Howzit
 
       if File.exist?(fname) && !default
         file = "{by}#{fname}".c
-        res = Prompt.yn("Are you absolutely sure you want to overwrite #{file}", default: false)
-
-        unless res
+        unless Prompt.yn("Are you absolutely sure you want to overwrite #{file}", default: false)
           puts 'Canceled'
           Process.exit 0
         end
@@ -238,13 +292,12 @@ module Howzit
 
       File.open(fname, 'w') do |f|
         f.puts note
-        puts "{by}Build notes for #{title} written to #{fname}".c
+        puts "{by}Build notes for {bw}#{title}{by} written to {bw}#{fname}{x}".c
       end
 
-      if File.exist?(fname) && !default
-        res = Prompt.yn("{bg}Do you want to open {bw}#{file} {bg}for editing?{x}".c, default: false)
-
-        edit_note if res
+      if File.exist?(fname) && !default && Prompt.yn("{bg}Do you want to open {bw}#{fname} {bg}for editing?{x}".c,
+                                                     default: false)
+        edit_note
       end
 
       Process.exit 0
@@ -260,6 +313,139 @@ module Howzit
     end
 
     private
+
+    ##
+    ## Import the contents of a filename as new topics
+    ##
+    ## @param      mtch  [MatchData] the filename match from
+    ##                   the include directive
+    ##
+    def include_file(mtch)
+      file = File.expand_path(mtch[1])
+
+      return mtch[0] unless File.exist?(file)
+
+      content = Util.read_file(file)
+      home = ENV['HOME']
+      short_path = File.dirname(file.sub(/^#{home}/, '~'))
+      prefix = "#{short_path}/#{File.basename(file)}:"
+      parts = content.split(/^##+/)
+      parts.shift
+      if parts.empty?
+        content
+      else
+        "## #{parts.join('## ')}".gsub(/^(##+ *)(?=\S)/, "\\1#{prefix}")
+      end
+    end
+
+    ##
+    ## Test to ensure that any `required` metadata in a
+    ## template is fulfilled by the build note
+    ##
+    ## @param      template  [String] The template to read
+    ##                       from
+    ##
+    def ensure_requirements(template)
+      t_leader = Util.read_file(template).split(/^#/)[0].strip
+      if t_leader.length > 0
+        t_meta = t_leader.get_metadata
+        if t_meta.key?('required')
+          required = t_meta['required'].strip.split(/\s*,\s*/)
+          required.each do |req|
+            unless @metadata.keys.include?(req.downcase)
+              Howzit.console.error %({bRw}ERROR:{xbr} Missing required metadata key from template '{bw}#{File.basename(template, '.md')}{xr}'{x}).c
+              Howzit.console.error %({br}Please define {by}#{req.downcase}{xr} in build notes{x}).c
+              Process.exit 1
+            end
+          end
+        end
+      end
+    end
+
+    ##
+    ## Test a template string for bracketed subtopics
+    ##
+    ## @param      template  [String] The template name
+    ##
+    ## @return     [Array] [[String] updated template name, [Array]
+    ##             subtopic titles]
+    ##
+    def detect_subtopics(template)
+      subtopics = nil
+
+      if template =~ /\[(.*?)\]$/
+        subtopics = Regexp.last_match[1].split(/\s*\|\s*/).map { |t| t.gsub(/\*/, '.*?')}
+        template.sub!(/\[.*?\]$/, '').strip
+      end
+
+      [template, subtopics]
+    end
+
+    ##
+    ## Enumerate templates and read their associated files
+    ## into topics
+    ##
+    ## @param      templates  [Array] The templates to read
+    ##
+    ## @return     [Array] template topics
+    ##
+    def gather_templates(templates)
+      template_topics = []
+
+      templates.each do |template|
+        template, subtopics = detect_subtopics(template)
+
+        file = template.sub(/(\.md)?$/i, '.md')
+        file = File.join(Howzit.config.template_folder, file)
+
+        next unless File.exist?(file)
+
+        ensure_requirements(file)
+
+        template_topics.concat(read_template(template, file, subtopics))
+      end
+
+      template_topics
+    end
+
+    ##
+    ## Filter topics based on subtopic titles
+    ##
+    ## @param      note       [BuildNote] The note
+    ## @param      subtopics  [Array] The subtopics to
+    ##                        extract
+    ##
+    ## @return     [Array] extracted subtopics
+    ##
+    def extract_subtopics(note, subtopics)
+      template_topics = []
+
+      subtopics.each do |subtopic|
+        note.topics.each { |topic| template_topics.push(topic) if topic.title =~ /^(.*?:)?#{subtopic}$/i }
+      end
+
+      template_topics
+    end
+
+    ##
+    ## Read a template file
+    ##
+    ## @param      template   [String] The template title
+    ## @param      file       [String] The file path
+    ## @param      subtopics  [Array] The subtopics to
+    ##                        extract, nil to return all
+    ##
+    ## @return     [Array] extracted topics
+    ##
+    def read_template(template, file, subtopics = nil)
+      note = BuildNote.new(file: file)
+
+      template_topics = subtopics.nil? ? note.topics : extract_subtopics(note, subtopics)
+      template_topics.map do |topic|
+        topic.parent = template
+        topic
+      end
+    end
 
     ##
     ## Traverse up directory tree looking for build notes
@@ -342,30 +528,6 @@ module Howzit
     end
 
     ##
-    ## Test to ensure that any `required` metadata in a
-    ## template is fulfilled by the build note
-    ##
-    ## @param      template  [String] The template to read
-    ##                       from
-    ##
-    def ensure_requirements(template)
-      t_leader = Util.read_file(template).split(/^#/)[0].strip
-      if t_leader.length > 0
-        t_meta = t_leader.get_metadata
-        if t_meta.key?('required')
-          required = t_meta['required'].strip.split(/\s*,\s*/)
-          required.each do |req|
-            unless @metadata.keys.include?(req.downcase)
-              Howzit.console.error %({bRw}ERROR:{xbr} Missing required metadata key from template '{bw}#{File.basename(template, '.md')}{xr}'{x}).c
-              Howzit.console.error %({br}Please define {by}#{req.downcase}{xr} in build notes{x}).c
-              Process.exit 1
-            end
-          end
-        end
-      end
-    end
-
-    ##
     ## Read a list of topics from an included template
     ##
     ## @param      content  [String] The template contents
@@ -375,87 +537,17 @@ module Howzit
 
       template_topics = []
 
-      if leader.length > 0
-        data = leader.get_metadata
+      return template_topics if leader.empty?
 
-        if data.key?('template')
-          templates = data['template'].strip.split(/\s*,\s*/)
-          templates.each do |t|
-            tasks = nil
-            if t =~ /\[(.*?)\]$/
-              tasks = Regexp.last_match[1].split(/\s*,\s*/).map {|t| t.gsub(/\*/, '.*?')}
-              t = t.sub(/\[.*?\]$/, '').strip
-            end
+      data = leader.get_metadata
 
-            t_file = t.sub(/(\.md)?$/, '.md')
-            template = File.join(Howzit.config.template_folder, t_file)
-            if File.exist?(template)
-              ensure_requirements(template)
+      if data.key?('template')
+        templates = data['template'].strip.split(/\s*,\s*/)
 
-              t_topics = BuildNote.new(file: template)
-              if tasks
-                tasks.each do |task|
-                  t_topics.topics.each do |topic|
-                    if topic.title =~ /^(.*?:)?#{task}$/i
-                      topic.parent = t
-                      template_topics.push(topic)
-                    end
-                  end
-                end
-              else
-                t_topics.topics.map! do |topic|
-                  topic.parent = t
-                  topic
-                end
-
-                template_topics.concat(t_topics.topics)
-              end
-            end
-          end
-        end
+        template_topics.concat(gather_templates(templates))
       end
+
       template_topics
-    end
-
-    ##
-    ## Import the contents of a filename as new topics
-    ##
-    ## @param      mtch  [MatchData] the filename match from
-    ##                   the include directive
-    ##
-    def include_file(mtch)
-      file = File.expand_path(mtch[1])
-
-      return mtch[0] unless File.exist?(file)
-
-      content = Util.read_file(file)
-      home = ENV['HOME']
-      short_path = File.dirname(file.sub(/^#{home}/, '~'))
-      prefix = "#{short_path}/#{File.basename(file)}:"
-      parts = content.split(/^##+/)
-      parts.shift
-      if parts.empty?
-        content
-      else
-        "## #{parts.join('## ')}".gsub(/^(##+ *)(?=\S)/, "\\1#{prefix}")
-      end
-    end
-
-    ##
-    ## Get the title of the build note (top level header)
-    ##
-    ## @param      truncate  [Integer] Truncate to width
-    ##
-    def note_title(truncate = 0)
-      help = Util.read_file(note_file)
-      title = help.match(/(?:^(\S.*?)(?=\n==)|^# ?(.*?)$)/)
-      title = if title
-                title[1].nil? ? title[2] : title[1]
-              else
-                note_file.sub(/(\.\w+)?$/, '')
-              end
-
-      title && truncate.positive? ? title.trunc(truncate) : title
     end
 
     # Read in the build notes file and output a hash of
@@ -477,7 +569,7 @@ module Howzit
         Process.exit 1
       end
 
-      @title = note_title
+      @title = help.note_title(filename)
 
       help.gsub!(/@include\((.*?)\)/) do
         include_file(Regexp.last_match)
@@ -547,14 +639,33 @@ module Howzit
 
       raise "Invalid editor (#{editor})" unless Util.valid_command?(editor)
 
-      if note_file.nil?
-        res = Prompt.yn('No build notes file found, create one?', default: true)
+      create_note(prompt: true) if note_file.nil?
+      `#{editor} "#{note_file}"`
+    end
 
-        create_note if res
-        edit_note
-      else
-        `#{editor} "#{note_file}"`
-      end
+    ##
+    ## Public method to create a new template
+    ##
+    ## @param      template  [String] The template name
+    ##
+    def create_template(template)
+      file = template.sub(/(\.md)?$/i, '.md')
+      file = File.join(Howzit.config.template_folder, file)
+      create_template_file(file, prompt: false)
+    end
+
+    ##
+    ## Open template in editor
+    ##
+    def edit_template_file(file)
+      editor = Howzit.options.fetch(:editor, ENV['EDITOR'])
+
+      raise 'No editor defined' if editor.nil?
+
+      raise "Invalid editor (#{editor})" unless Util.valid_command?(editor)
+
+      create_template_file(file, prompt: true) unless File.exist?(file)
+      `#{editor} "#{file}"`
     end
 
     ##
@@ -589,17 +700,11 @@ module Howzit
       unless note_file
         Process.exit 0 if Howzit.options[:list_runnable_titles] || Howzit.options[:list_topic_titles]
 
-        # clear the buffer
-        ARGV.length.times do
-          ARGV.shift
-        end
-        res = yn("No build notes file found, create one?", false)
-        create_note if res
-        Process.exit 1
+        create_note(prompt: true)
       end
 
       if Howzit.options[:title_only]
-        out = note_title(20)
+        out = Util.read_file(note_file).note_title(note_file, 20)
         $stdout.print(out.strip)
         Process.exit(0)
       elsif Howzit.options[:output_title] && !Howzit.options[:run]

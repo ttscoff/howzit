@@ -17,6 +17,22 @@ module Howzit
     end
 
     ##
+    ## Get the title of the build note (top level header)
+    ##
+    ## @param      truncate  [Integer] Truncate to width
+    ##
+    def note_title(file, truncate = 0)
+      title = match(/(?:^(\S.*?)(?=\n==)|^# ?(.*?)$)/)
+      title = if title
+                title[1].nil? ? title[2] : title[1]
+              else
+                file.sub(/(\.\w+)?$/, '')
+              end
+
+      title && truncate.positive? ? title.trunc(truncate) : title
+    end
+
+    ##
     ## Replace slash escaped characters in a string with a
     ## zero-width space that will prevent a shell from
     ## interpreting them when output to console
@@ -275,9 +291,9 @@ module Howzit
       data = {}
       meta.each do |k, v|
         case k
-        when /^templ\w+$/
+        when /^te?m?pl(ate)?s?$/
           data['template'] = v
-        when /^req\w+$/
+        when /^req\w*$/
           data['required'] = v
         else
           data[k] = v

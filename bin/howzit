@@ -94,6 +94,11 @@ OptionParser.new do |opts|
     Process.exit 0
   end
 
+  opts.on('--edit-template NAME', 'Create or edit a template') do |template|
+    Howzit.buildnote.edit_template(template)
+    Process.exit 0
+  end
+
   opts.on('--config-get [KEY]', 'Display the configuration settings or setting for a specific key') do |k|
     if k.nil?
       Howzit::Config::DEFAULTS.sort_by { |key, _| key }.each do |key, _|
