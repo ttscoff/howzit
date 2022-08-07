@@ -1,3 +1,15 @@
+### 2.0.16
+
+2022-08-07 06:05
+
+#### NEW
+
+- --edit-template NAME will open a template in your editor, offering to create it if missing
+
+#### FIXED
+
+- If --show-code is given (or :show_all_code: is set to true), show content of @directives instead of title
+
 ### 2.0.15
 
 2022-08-05 17:16
