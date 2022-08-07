@@ -6,8 +6,7 @@ describe Howzit::Task do
   subject(:task) do
     Howzit::Task.new({ type: :run,
                        title: 'List Directory',
-                       action: 'ls',
-                       parent: nil })
+                       action: 'ls &> /dev/null' })
   end
 
   describe ".new" do
