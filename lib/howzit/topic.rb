@@ -137,6 +137,7 @@ module Howzit
           cmd = m[:cmd]
           obj = m[:action]
           title = m[:title].empty? ? obj : m[:title].strip
+          title = Howzit.options[:show_all_code] ? obj : title
           optional = m[:optional] =~ /[?!]+/ ? true : false
           default = m[:optional] =~ /!/ ? false : true
           option = if optional
@@ -222,7 +223,7 @@ module Howzit
           default = c[:optional] =~ /!/ ? false : true
           obj = c[:action]
           title = c[:title].nil? ? obj : c[:title].strip
-
+          title = Howzit.options[:show_all_code] ? obj : title
           case cmd
           when /include/i
             # matches = Howzit.buildnote.find_topic(obj)
