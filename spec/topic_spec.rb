@@ -83,5 +83,9 @@ describe Howzit::Topic do
     it 'prints a task title' do
       expect(topic.print_out({single: true, header: true}).join("\n").uncolor).to match(/▶ Null Output/)
     end
+    it 'prints task action with --show-code' do
+      Howzit.options[:show_all_code] = true
+      expect(topic.print_out({single: true, header: true}).join("\n").uncolor).to match(/▶ ls -1/)
+    end
   end
 end
