@@ -1,3 +1,12 @@
+### 2.0.21
+
+2022-08-08 13:16
+
+#### IMPROVED
+
+- Use os-agnostic copy function for --hook
+- Rename link title for --hook
+
 ### 2.0.20
 
 2022-08-08 11:38
