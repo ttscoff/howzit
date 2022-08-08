@@ -14,6 +14,7 @@ module Howzit
     ##
     def initialize(file: nil)
       file ||= note_file
+
       @topics = []
       create_note(prompt: true) if file.nil?
 
@@ -597,7 +598,7 @@ module Howzit
         lines = sect.split(/\n/)
         title = lines.slice!(0).strip
         prefix = ''
-        if path
+        if path && path != note_file
           if path =~ /#{Howzit.config.template_folder}/
             short_path = File.basename(path, '.md')
           else
