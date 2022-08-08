@@ -1,3 +1,11 @@
+### 2.0.18
+
+2022-08-08 03:48
+
+#### NEW
+
+- Use --ask to require confirmation of all tasks when running a topic
+
 ### 2.0.17
 
 2022-08-07 06:09
