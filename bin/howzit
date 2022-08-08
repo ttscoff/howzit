@@ -44,7 +44,7 @@ OptionParser.new do |opts|
 
   opts.separator "\n  Listing:\n\n" #=================================================================== LISTING
 
-  opts.on('-L', '--list-completions', 'List topics for completion') do
+  opts.on('-L', '--list-completions', 'List topics (completion-compatible)') do
     Howzit.options[:list_topics] = true
     Howzit.options[:list_topic_titles] = true
   end
@@ -98,11 +98,6 @@ OptionParser.new do |opts|
     Process.exit 0
   end
 
-  opts.on('--edit-template NAME', 'Create or edit a template') do |template|
-    Howzit.buildnote.edit_template(template)
-    Process.exit 0
-  end
-
   opts.on('--config-get [KEY]', 'Display the configuration settings or setting for a specific key') do |k|
     if k.nil?
       Howzit::Config::DEFAULTS.sort_by { |key, _| key }.each do |key, _|
@@ -136,14 +131,19 @@ OptionParser.new do |opts|
     Process.exit 0
   end
 
-  opts.on('--edit-config', "Edit configuration file using editor (#{Howzit.options[:editor]})") do
+  desc = %(Edit buildnotes file in current working directory using editor (#{File.basename(Howzit.options[:config_editor])}))
+  opts.on('-e', '--edit', desc) do
+    Howzit.buildnote.edit
+    Process.exit 0
+  end
+
+  opts.on('--edit-config', "Edit configuration file using editor (#{File.basename(Howzit.options[:editor])})") do
     Howzit.config.editor
     Process.exit 0
   end
 
-  desc = %(Edit buildnotes file in current working directory using editor (#{Howzit.options[:config_editor]}))
-  opts.on('-e', '--edit', desc) do
-    Howzit.buildnote.edit
+  opts.on('--edit-template NAME', 'Create or edit a template') do |template|
+    Howzit.buildnote.edit_template(template)
     Process.exit 0
   end
 
