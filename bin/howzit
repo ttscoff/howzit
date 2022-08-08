@@ -64,25 +64,27 @@ OptionParser.new do |opts|
   end
 
   opts.on('--templates', 'List available templates') do
+    out = []
     Dir.chdir(Howzit.config.template_folder)
     Dir.glob('*.md').each do |file|
       template = File.basename(file, '.md')
-      puts Howzit::Color.template("{Mk}template:{Yk}#{template}{x}")
-      puts Howzit::Color.template('{bk}[{bl}tasks{bk}]──────────────────────────────────────┐{x}')
+      out.push(Howzit::Color.template("{Mk}template:{Yk}#{template}{x}"))
+      out.push(Howzit::Color.template('{bk}[{bl}tasks{bk}]──────────────────────────────────────┐{x}'))
       metadata = file.extract_metadata
       topics = Howzit::BuildNote.new(file: file).topics
       topics.each do |topic|
-        puts Howzit::Color.template(" {bk}│{bw}-{x} {bcK}#{template}:#{topic.title.sub(/^.*?:/, '')}{x}")
+        out.push(Howzit::Color.template(" {bk}│{bw}-{x} {bcK}#{template}:#{topic.title.sub(/^.*?:/, '')}{x}"))
       end
       unless metadata.empty?
         meta = []
         meta << metadata['required'].split(/\s*,\s*/).map { |m| "*{bw}#{m}{xw}" } if metadata.key?('required')
         meta << metadata['optional'].split(/\s*,\s*/).map(&:to_s) if metadata.key?('optional')
-        puts Howzit::Color.template('{bk}[{bl}meta{bk}]───────────────────────────────────────┤{x}')
-        puts Howzit::Color.template(" {bk}│ {xw}#{meta.join(', ')}{x}")
+        out.push(Howzit::Color.template('{bk}[{bl}meta{bk}]───────────────────────────────────────┤{x}'))
+        out.push(Howzit::Color.template(" {bk}│ {xw}#{meta.join(', ')}{x}"))
       end
-      puts Howzit::Color.template(' {bk}└───────────────────────────────────────────┘{x}')
+      out.push(Howzit::Color.template(' {bk}└───────────────────────────────────────────┘{x}'))
     end
+    Howzit::Util.page out.join("\n")
     Process.exit 0
   end
 
