@@ -1,3 +1,16 @@
+### 2.0.20
+
+2022-08-08 11:38
+
+#### NEW
+
+- --hook command for macOS to copy a link to the build note to clipboard
+
+#### FIXED
+
+- Error on --edit-config
+- Fzf preview empty
+
 ### 2.0.19
 
 2022-08-08 06:18
