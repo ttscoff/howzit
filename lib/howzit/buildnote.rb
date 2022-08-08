@@ -13,11 +13,12 @@ module Howzit
     ## @param      file  [String] The path to the build note file
     ##
     def initialize(file: nil)
+      file ||= note_file
       @topics = []
-      create_note(prompt: true) if note_file.nil?
+      create_note(prompt: true) if file.nil?
 
-      content = Util.read_file(note_file)
-      raise "{br}No content found in build note (#{note_file}){x}".c if content.nil? || content.empty?
+      content = Util.read_file(file)
+      raise "{br}No content found in build note (#{file}){x}".c if content.nil? || content.empty?
 
       @metadata = content.split(/^#/)[0].strip.get_metadata
 

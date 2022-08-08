@@ -70,7 +70,7 @@ OptionParser.new do |opts|
       puts Howzit::Color.template("{Mk}template:{Yk}#{template}{x}")
       puts Howzit::Color.template('{bk}[{bl}tasks{bk}]──────────────────────────────────────┐{x}')
       metadata = file.extract_metadata
-      topics = Howzit.buildnote.read_file(file)
+      topics = Howzit::BuildNote.new(file: file).topics
       topics.each do |topic|
         puts Howzit::Color.template(" {bk}│{bw}-{x} {bcK}#{template}:#{topic.title.sub(/^.*?:/, '')}{x}")
       end
