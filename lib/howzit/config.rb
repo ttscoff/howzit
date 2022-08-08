@@ -87,6 +87,7 @@ module Howzit
     def load_options
       Color.coloring = $stdout.isatty
       flags = {
+        ask: false,
         choose: false,
         default: false,
         for_topic: nil,

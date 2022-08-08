@@ -20,6 +20,10 @@ OptionParser.new do |opts|
 
   opts.separator "  Behavior:\n\n" #=================================================================== BEHAVIOR
 
+  opts.on('--ask', 'Request confirmation for all tasks when running a topic') do
+    Howzit.options[:ask] = true
+  end
+
   opts.on('--default', 'Answer all prompts with default response') do
     Howzit.options[:default] = true
   end

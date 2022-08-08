@@ -73,9 +73,9 @@ module Howzit
       matches = Howzit.buildnote.find_topic(@action)
       raise "Topic not found: #{@action}" if matches.empty?
 
-      $stderr.puts "{by}Running tasks from {bw}#{matches[0].title}{x}".c if Howzit.options[:log_level] < 2
+      Howzit.console.info("{by}Running tasks from {bw}#{matches[0].title}{x}".c)
       output.concat(matches[0].run(nested: true))
-      $stderr.puts "{by}End include: #{matches[0].tasks.count} tasks{x}".c if Howzit.options[:log_level] < 2
+      Howzit.console.info("{by}End include: #{matches[0].tasks.count} tasks{x}".c)
       [output, matches[0].tasks.count]
     end
 
@@ -84,7 +84,7 @@ module Howzit
     ##
     def run_run
       title = Howzit.options[:show_all_code] ? @action : @title
-      $stderr.puts "{bg}Running {bw}#{title}{x}".c if Howzit.options[:log_level] < 2
+      Howzit.console.info("{bg}Running {bw}#{title}{x}".c)
       system(@action)
     end
 
@@ -93,7 +93,7 @@ module Howzit
     ##
     def run_copy
       title = Howzit.options[:show_all_code] ? @action : @title
-      $stderr.puts "{bg}Copied {bw}#{title}{bg} to clipboard{x}".c if Howzit.options[:log_level] < 2
+      Howzit.console.info("{bg}Copied {bw}#{title}{bg} to clipboard{x}".c)
       os_copy(@action)
     end
 
@@ -107,21 +107,21 @@ module Howzit
       out = "{bg}Copying {bw}#{string}".c
       case os
       when /darwin.*/i
-        $stderr.puts "#{out} (macOS){x}".c if Howzit.options[:log_level].zero?
+        Howzit.console.debug("#{out} (macOS){x}".c)
         `echo #{Shellwords.escape(string)}'\\c'|pbcopy`
       when /mingw|mswin/i
-        $stderr.puts "#{out} (Windows){x}".c if Howzit.options[:log_level].zero?
+        Howzit.console.debug("#{out} (Windows){x}".c)
         `echo #{Shellwords.escape(string)} | clip`
       else
         if 'xsel'.available?
-          $stderr.puts "#{out} (Linux, xsel){x}".c if Howzit.options[:log_level].zero?
+          Howzit.console.debug("#{out} (Linux, xsel){x}".c)
           `echo #{Shellwords.escape(string)}'\\c'|xsel -i`
         elsif 'xclip'.available?
-          $stderr.puts "#{out} (Linux, xclip){x}".c if Howzit.options[:log_level].zero?
+          Howzit.console.debug("#{out} (Linux, xclip){x}".c)
           `echo #{Shellwords.escape(string)}'\\c'|xclip -i`
         else
-          $stderr.puts out if Howzit.options[:log_level].zero?
-          $stderr.puts 'Unable to determine executable for clipboard.'
+          Howzit.console.debug(out)
+          Howzit.console.warn('Unable to determine executable for clipboard.')
         end
       end
     end

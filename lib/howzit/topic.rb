@@ -51,7 +51,7 @@ module Howzit
         end
 
         @tasks.each do |task|
-          if task.optional
+          if task.optional || Howzit.options[:ask]
             note = if task.type == :include
                      task_count = Howzit.buildnote.find_topic(task.action)[0].tasks.count
                      " (#{task_count} tasks)"
