@@ -74,7 +74,7 @@ module Howzit
     ## Initiate the editor for the config
     ##
     def editor
-      edit_config(DEFAULTS)
+      edit_config
     end
 
     private
