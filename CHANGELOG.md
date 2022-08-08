@@ -1,3 +1,16 @@
+### 2.0.22
+
+2022-08-08 13:49
+
+#### IMPROVED
+
+- Paginate output of --templates
+
+#### FIXED
+
+- --templates attempting to create new build note
+- Fix handling of paths when the same as note_file
+
 ### 2.0.21
 
 2022-08-08 13:16
