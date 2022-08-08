@@ -179,6 +179,61 @@ module Howzit
           puts output
         end
       end
+
+      ##
+      ## Platform-agnostic copy-to-clipboard
+      ##
+      ## @param      string  [String] The string to copy
+      ##
+      def os_copy(string)
+        os = RbConfig::CONFIG['target_os']
+        out = "{bg}Copying {bw}#{string}".c
+        case os
+        when /darwin.*/i
+          Howzit.console.debug("#{out} (macOS){x}".c)
+          `echo #{Shellwords.escape(string)}'\\c'|pbcopy`
+        when /mingw|mswin/i
+          Howzit.console.debug("#{out} (Windows){x}".c)
+          `echo #{Shellwords.escape(string)} | clip`
+        else
+          if 'xsel'.available?
+            Howzit.console.debug("#{out} (Linux, xsel){x}".c)
+            `echo #{Shellwords.escape(string)}'\\c'|xsel -i`
+          elsif 'xclip'.available?
+            Howzit.console.debug("#{out} (Linux, xclip){x}".c)
+            `echo #{Shellwords.escape(string)}'\\c'|xclip -i`
+          else
+            Howzit.console.debug(out)
+            Howzit.console.warn('Unable to determine executable for clipboard.')
+          end
+        end
+      end
+
+      ##
+      ## Platform-agnostic open command
+      ##
+      ## @param      command  [String] The command
+      ##
+      def os_open(command)
+        os = RbConfig::CONFIG['target_os']
+        out = "{bg}Opening {bw}#{command}".c
+        case os
+        when /darwin.*/i
+          Howzit.console.debug "#{out} (macOS){x}".c if Howzit.options[:log_level] < 2
+          `open #{Shellwords.escape(command)}`
+        when /mingw|mswin/i
+          Howzit.console.debug "#{out} (Windows){x}".c if Howzit.options[:log_level] < 2
+          `start #{Shellwords.escape(command)}`
+        else
+          if 'xdg-open'.available?
+            Howzit.console.debug "#{out} (Linux){x}".c if Howzit.options[:log_level] < 2
+            `xdg-open #{Shellwords.escape(command)}`
+          else
+            Howzit.console.debug out if Howzit.options[:log_level] < 2
+            Howzit.console.debug 'Unable to determine executable for `open`.'
+          end
+        end
+      end
     end
   end
 end

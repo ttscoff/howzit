@@ -153,11 +153,9 @@ OptionParser.new do |opts|
     Howzit.options[:grep] = pat
   end
 
-  if RbConfig::CONFIG['target_os'] =~ /darwin.*/i
-    opts.on('--hook', 'Copy a link to the build note file, ready for pasting into Hook.app or other notes') do
-      Howzit.buildnote.hook
-      Process.exit 0
-    end
+  opts.on('--hook', 'Copy a link to the build note file, ready for pasting into Hook.app or other notes') do
+    Howzit.buildnote.hook
+    Process.exit 0
   end
 
   opts.on('-r', '--run', 'Execute @run, @open, and/or @copy commands for given topic') do

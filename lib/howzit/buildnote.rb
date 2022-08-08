@@ -77,9 +77,9 @@ module Howzit
     ##
     def hook
       title = Util.read_file(note_file).note_title(note_file, 20)
-      title = "#{title} build notes"
+      title = "#{title} project notes"
       url = "[#{title}](file://#{note_file})"
-      `echo #{Shellwords.escape(url)}'\\c'|pbcopy`
+      Util.os_copy(url)
       Howzit.console.info('Link copied to clipboard.')
     end
 
