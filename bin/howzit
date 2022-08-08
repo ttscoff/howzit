@@ -131,13 +131,15 @@ OptionParser.new do |opts|
     Process.exit 0
   end
 
-  desc = %(Edit buildnotes file in current working directory using editor (#{File.basename(Howzit.options[:config_editor])}))
+  editor = File.basename(Howzit.options[:editor])
+  desc = %(Edit buildnotes file in current working directory using editor (#{editor}))
   opts.on('-e', '--edit', desc) do
     Howzit.buildnote.edit
     Process.exit 0
   end
 
-  opts.on('--edit-config', "Edit configuration file using editor (#{File.basename(Howzit.options[:editor])})") do
+  config_editor = File.basename(Howzit.options[:config_editor])
+  opts.on('--edit-config', "Edit configuration file using editor (#{config_editor})") do
     Howzit.config.editor
     Process.exit 0
   end
@@ -149,6 +151,13 @@ OptionParser.new do |opts|
 
   opts.on('--grep PATTERN', 'Display sections matching a search pattern') do |pat|
     Howzit.options[:grep] = pat
+  end
+
+  if RbConfig::CONFIG['target_os'] =~ /darwin.*/i
+    opts.on('--hook', 'Copy a link to the build note file, ready for pasting into Hook.app or other notes') do |pat|
+      Howzit.buildnote.hook
+      Process.exit 0
+    end
   end
 
   opts.on('-r', '--run', 'Execute @run, @open, and/or @copy commands for given topic') do

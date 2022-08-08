@@ -73,6 +73,17 @@ module Howzit
     end
 
     ##
+    ## Copy a link to the main build note file to clipboard (macOS only)
+    ##
+    def hook
+      title = Util.read_file(note_file).note_title(note_file, 20)
+      title = "#{title} build notes"
+      url = "[#{title}](file://#{note_file})"
+      `echo #{Shellwords.escape(url)}'\\c'|pbcopy`
+      Howzit.console.info('Link copied to clipboard.')
+    end
+
+    ##
     ## Call grep on all topics, filtering out those that don't match
     ##
     ## @param      term  [String] The search pattern

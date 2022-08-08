@@ -100,7 +100,7 @@ module Howzit
             "--height=#{height}",
             '--header="Use tab to mark multiple selections, enter to display/run"',
             '--prompt="Select a section > "',
-            '--preview="howzit {}"'
+            %(--preview="howzit --no-pager --header-format block --no-color --default --multiple first {}")
           ]
           res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf #{settings.join(' ')}`.strip
           if res.nil? || res.empty?
