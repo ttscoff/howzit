@@ -691,7 +691,7 @@ module Howzit
     ##                     single topic
     ##
     def process_topic(topic, run, single: false)
-      new_topic = topic.dup
+      new_topic = topic.is_a?(String) ? find_topic(topic)[0] : topic.dup
 
       # Handle variable replacement
       new_topic.content = new_topic.content.render_arguments
@@ -793,6 +793,7 @@ module Howzit
 
       if !topic_matches.empty?
         # If we found a match
+        topic_matches.map! { |topic| topic.is_a?(String) ? find_topic(topic)[0] : topic }
         topic_matches.each { |topic_match| output.push(process_topic(topic_match, Howzit.options[:run], single: true)) }
       else
         # If there's no argument or no match found, output all
