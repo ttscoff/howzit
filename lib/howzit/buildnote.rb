@@ -32,7 +32,7 @@ module Howzit
     ## @return     description
     ##
     def inspect
-      puts "#<Howzit::BuildNote @topics=[#{@topics.count}]>"
+      "#<Howzit::BuildNote @topics=[#{@topics.count}]>"
     end
 
     ##
@@ -205,14 +205,14 @@ module Howzit
       if File.exist?(file) && !default
         file = "{by}#{file}".c
         unless Prompt.yn("Are you sure you want to overwrite #{file}", default: false)
-          puts 'Cancelled'
+          Howzit.console.info('Cancelled')
           Process.exit 0
         end
       end
 
       File.open(file, 'w') do |f|
         f.puts note
-        puts "{by}Template {bw}#{title}{by} written to {bw}#{file}{x}".c
+        Howzit.console.info("{by}Template {bw}#{title}{by} written to {bw}#{file}{x}".c)
       end
 
       if File.exist?(file) && !default && Prompt.yn("{bg}Do you want to open {bw}#{file} {bg}for editing?{x}".c,
@@ -298,14 +298,14 @@ module Howzit
       if File.exist?(fname) && !default
         file = "{by}#{fname}".c
         unless Prompt.yn("Are you absolutely sure you want to overwrite #{file}", default: false)
-          puts 'Canceled'
+          Howzit.console.info('Canceled')
           Process.exit 0
         end
       end
 
       File.open(fname, 'w') do |f|
         f.puts note
-        puts "{by}Build notes for {bw}#{title}{by} written to {bw}#{fname}{x}".c
+        Howzit.console.info("{by}Build notes for {bw}#{title}{by} written to {bw}#{fname}{x}".c)
       end
 
       if File.exist?(fname) && !default && Prompt.yn("{bg}Do you want to open {bw}#{fname} {bg}for editing?{x}".c,
@@ -532,7 +532,6 @@ module Howzit
     ##
     def read_upstream
       buildnotes = glob_upstream
-
       topics_dict = []
       buildnotes.each do |path|
         topics_dict.concat(read_help_file(path))
@@ -627,12 +626,15 @@ module Howzit
     ##
     def read_help(path = nil)
       @topics = read_help_file(path)
-      return unless path.nil? && Howzit.options[:include_upstream]
+      return unless Howzit.options[:include_upstream]
 
-      upstream_topics = read_upstream
+      unless Howzit.has_read_upstream
+        upstream_topics = read_upstream
 
-      upstream_topics.each do |topic|
-        @topics.push(topic) unless find_topic(title.sub(/^.+:/, '')).count.positive?
+        upstream_topics.each do |topic|
+          @topics.push(topic) unless find_topic(topic.title.sub(/^.+:/, '')).count.positive?
+        end
+        Howzit.has_read_upstream = true
       end
 
       if note_file && @topics.empty?

@@ -82,5 +82,13 @@ module Howzit
     def console
       @console ||= Howzit::ConsoleLogger.new(options[:log_level])
     end
+
+    def has_read_upstream
+      @has_read_upstream ||= false
+    end
+
+    def has_read_upstream=(has_read)
+      @has_read_upstream = has_read
+    end
   end
 end
