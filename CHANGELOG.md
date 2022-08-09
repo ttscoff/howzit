@@ -1,3 +1,11 @@
+### 2.0.24
+
+2022-08-09 09:04
+
+#### FIXED
+
+- Avoid reading upstream files multiple times
+
 ### 2.0.23
 
 2022-08-09 05:51
