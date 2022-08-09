@@ -12,7 +12,7 @@ module Howzit
     ##
     ## @param      file  [String] The path to the build note file
     ##
-    def initialize(file: nil)
+    def initialize(file: nil, meta: nil)
       file ||= note_file
 
       @topics = []
@@ -21,7 +21,9 @@ module Howzit
       content = Util.read_file(file)
       raise "{br}No content found in build note (#{file}){x}".c if content.nil? || content.empty?
 
-      @metadata = content.split(/^#/)[0].strip.get_metadata
+      this_meta = content.split(/^#/)[0].strip.get_metadata
+
+      @metadata = meta.nil? ? this_meta : meta.merge(this_meta)
 
       read_help(file)
     end
@@ -451,11 +453,12 @@ module Howzit
     ## @return     [Array] extracted topics
     ##
     def read_template(template, file, subtopics = nil)
-      note = BuildNote.new(file: file)
+      note = BuildNote.new(file: file, meta: @metadata)
 
       template_topics = subtopics.nil? ? note.topics : extract_subtopics(note, subtopics)
       template_topics.map do |topic|
         topic.parent = template
+        topic.content = topic.content.render_template(@metadata)
         topic
       end
     end
@@ -607,6 +610,7 @@ module Howzit
           end
           title = "#{short_path}:#{title}"
         end
+
         topic = Topic.new(title, prefix + lines.join("\n").strip.render_template(@metadata))
 
         topics.push(topic)
