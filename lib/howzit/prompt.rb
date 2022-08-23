@@ -87,11 +87,7 @@ module Howzit
         return [] if !$stdout.isatty || matches.count.zero?
 
         if Util.command_exist?('fzf')
-          height = if height == :auto
-                     matches.count + 3
-                   else
-                     TTY::Screen.rows
-                   end
+          height = height == :auto ? matches.count + 3 : TTY::Screen.rows
 
           settings = [
             '-0',
