@@ -98,7 +98,7 @@ module Howzit
             '-1',
             '-m',
             "--height=#{height}",
-            '--header="Use tab to mark multiple selections, ctrl-a to select all, enter to display/run"',
+            '--header="Tab: add selection, ctrl-a/d: (de)select all, return: display/run"',
             '--bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all',
             '--prompt="Select a topic > "',
             %(--preview="howzit --no-pager --header-format block --no-color --default --multiple first {}")
