@@ -1,8 +1,10 @@
 ### 2.0.26
 
+2022-08-23 11:36
+
 #### IMPROVED
 
-- Add ctrl-a/d bindings to fzf menus (select/deselect all)
+- Add ctrl-a/d bindings to fzf menu for select/deselect all
 
 ### 2.0.25
 
