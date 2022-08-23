@@ -89,54 +89,84 @@ module Howzit
         if Util.command_exist?('fzf')
           height = height == :auto ? matches.count + 3 : TTY::Screen.rows
 
-          settings = [
-            '-0',
-            '-1',
-            '-m',
-            "--height=#{height}",
-            '--header="Tab: add selection, ctrl-a/d: (de)select all, return: display/run"',
-            '--bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all',
-            '--prompt="Select a topic > "',
-            %(--preview="howzit --no-pager --header-format block --no-color --default --multiple first {}")
-          ]
+          settings = fzf_options(height)
           res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf #{settings.join(' ')}`.strip
-          if res.nil? || res.empty?
-            Howzit.console.info 'Cancelled'
-            Process.exit 0
-          end
-          return res.split(/\n/)
+          return fzf_result(res)
         end
 
+        tty_menu(matches)
+      end
+
+      def fzf_result(res)
+        if res.nil? || res.empty?
+          Howzit.console.info 'Cancelled'
+          Process.exit 0
+        end
+        return res.split(/\n/)
+      end
+
+      def fzf_options(height)
+        [
+          '-0',
+          '-1',
+          '-m',
+          "--height=#{height}",
+          '--header="Tab: add selection, ctrl-a/d: (de)select all, return: display/run"',
+          '--bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all',
+          '--prompt="Select a topic > "',
+          %(--preview="howzit --no-pager --header-format block --no-color --default --multiple first {}")
+        ]
+      end
+
+      ##
+      ## Display a numeric menu on the TTY
+      ##
+      ## @param      matches  The matches from which to select
+      ##
+      def tty_menu(matches)
         return matches if matches.count == 1
 
-        res = matches[0..9]
-        stty_save = `stty -g`.chomp
+        @stty_save = `stty -g`.chomp
 
         trap('INT') do
-          system('stty', stty_save)
+          system('stty')
           exit
         end
 
         options_list(matches)
+        read_selection(matches)
+      end
 
-        begin
-          printf("Type 'q' to cancel, enter for first item", res.length)
-          while (line = Readline.readline(': ', true))
-            if line =~ /^[a-z]/i
-              system('stty', stty_save) # Restore
-              exit
-            end
-            line = line == '' ? 1 : line.to_i
+      ##
+      ## Read a single number response from the command line
+      ##
+      ## @param      matches  The matches
+      ##
+      def read_selection(matches)
+        printf "Type 'q' to cancel, enter for first item"
+        while (line = Readline.readline(': ', true))
+          line = read_num(line)
 
-            return [matches[line - 1]] if line.positive? && line <= matches.length
+          return [matches[line - 1]] if line.positive? && line <= matches.length
 
-            puts 'Out of range'
-            options_list(matches)
-          end
-        ensure
-          system('stty', stty_save)
+          puts 'Out of range'
+          read_selection(matches)
+        end
+      ensure
+        system('stty', @stty_save)
+      end
+
+      ##
+      ## Convert a response to an Integer
+      ##
+      ## @param      line  The response to convert
+      ##
+      def read_num(line)
+        if line =~ /^[a-z]/i
+          system('stty', @stty_save) # Restore
           exit
         end
+        line == '' ? 1 : line.to_i
       end
     end
   end
