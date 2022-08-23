@@ -98,8 +98,9 @@ module Howzit
             '-1',
             '-m',
             "--height=#{height}",
-            '--header="Use tab to mark multiple selections, enter to display/run"',
-            '--prompt="Select a section > "',
+            '--header="Use tab to mark multiple selections, ctrl-a to select all, enter to display/run"',
+            '--bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all',
+            '--prompt="Select a topic > "',
             %(--preview="howzit --no-pager --header-format block --no-color --default --multiple first {}")
           ]
           res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf #{settings.join(' ')}`.strip
