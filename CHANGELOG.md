@@ -1,3 +1,11 @@
+### 2.0.28
+
+2022-08-29 18:42
+
+#### IMPROVED
+
+- If a topic runs multiple directives, stop processing them if one returns a non-zero exit status
+
 ### 2.0.27
 
 2022-08-23 12:25
