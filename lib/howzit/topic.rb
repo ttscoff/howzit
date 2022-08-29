@@ -63,9 +63,15 @@ module Howzit
             next unless res
 
           end
-          run_output, total = task.run
+          run_output, total, success = task.run
+
           output.concat(run_output)
           tasks += total
+
+          unless success
+            Howzit.console.warn '{br}Error running task{bw} - non-zero exit, ending processing{x}'.c
+            break
+          end
         end
       else
         Howzit.console.warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c

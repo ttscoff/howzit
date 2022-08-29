@@ -56,11 +56,13 @@ module Howzit
         script.write(block)
         script.close
         File.chmod(0o777, script.path)
-        system(%(/bin/sh -c "#{script.path}"))
+        res = system(%(/bin/sh -c "#{script.path}"))
       ensure
         script.close
         script.unlink
       end
+
+      res
     end
 
     ##
@@ -85,7 +87,7 @@ module Howzit
     def run_run
       title = Howzit.options[:show_all_code] ? @action : @title
       Howzit.console.info("{bg}Running {bw}#{title}{x}".c)
-      system(@action)
+      return system(@action)
     end
 
     ##
@@ -95,6 +97,7 @@ module Howzit
       title = Howzit.options[:show_all_code] ? @action : @title
       Howzit.console.info("{bg}Copied {bw}#{title}{bg} to clipboard{x}".c)
       Util.os_copy(@action)
+      return true
     end
 
     ##
@@ -103,22 +106,22 @@ module Howzit
     def run
       output = []
       tasks = 1
-      if @type == :block
-        run_block
-      else
-        case @type
-        when :include
-          output, tasks = run_include
-        when :run
-          run_run
-        when :copy
-          run_copy
-        when :open
-          Util.os_open(@action)
-        end
-      end
+      res = if @type == :block
+              run_block
+            else
+              case @type
+              when :include
+                output, tasks = run_include
+              when :run
+                run_run
+              when :copy
+                run_copy
+              when :open
+                Util.os_open(@action)
+              end
+            end
 
-      [output, tasks]
+      [output, tasks, res]
     end
 
     ##
