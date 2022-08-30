@@ -1,3 +1,17 @@
+### 2.0.29
+
+2022-08-30 04:20
+
+#### NEW
+
+- --yes flag will answer yes to all prompts when executing
+- --force flag will continue executing directives after an error
+
+#### IMPROVED
+
+- A non-zero exit status on a run directive will stop processing additional directives
+- A little extra output formatting, more descriptive results logging
+
 ### 2.0.28
 
 2022-08-29 18:42
