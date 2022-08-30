@@ -19,6 +19,9 @@ module Howzit
     ## @option attributes :action [String] task action
     ## @option attributes :parent [String] title of nested (included) topic origin
     def initialize(attributes, optional: false, default: true)
+      @prefix = "{bw}\u{25B7}\u{25B7} {x}"
+      # arrow = "{bw}\u{279F}{x}"
+
       @type = attributes[:type] || :run
       @title = attributes[:title] || nil
       @action = attributes[:action].render_arguments || nil
@@ -49,7 +52,7 @@ module Howzit
     ## Execute a block type
     ##
     def run_block
-      Howzit.console.info "{bg}Running block {bw}#{@title}{x}".c if Howzit.options[:log_level] < 2
+      Howzit.console.info "#{@prefix}{bg}Running block {bw}#{@title}{x}".c if Howzit.options[:log_level] < 2
       block = @action
       script = Tempfile.new('howzit_script')
       begin
@@ -75,7 +78,7 @@ module Howzit
       matches = Howzit.buildnote.find_topic(@action)
       raise "Topic not found: #{@action}" if matches.empty?
 
-      Howzit.console.info("{by}Running tasks from {bw}#{matches[0].title}{x}".c)
+      Howzit.console.info("#{@prefix}{by}Running tasks from {bw}#{matches[0].title}{x}".c)
       output.concat(matches[0].run(nested: true))
       Howzit.console.info("{by}End include: #{matches[0].tasks.count} tasks{x}".c)
       [output, matches[0].tasks.count]
@@ -86,7 +89,7 @@ module Howzit
     ##
     def run_run
       title = Howzit.options[:show_all_code] ? @action : @title
-      Howzit.console.info("{bg}Running {bw}#{title}{x}".c)
+      Howzit.console.info("#{@prefix}{bg}Running {bw}#{title}{x}".c)
       return system(@action)
     end
 
@@ -95,7 +98,7 @@ module Howzit
     ##
     def run_copy
       title = Howzit.options[:show_all_code] ? @action : @title
-      Howzit.console.info("{bg}Copied {bw}#{title}{bg} to clipboard{x}".c)
+      Howzit.console.info("#{@prefix}{bg}Copied {bw}#{title}{bg} to clipboard{x}".c)
       Util.os_copy(@action)
       return true
     end

@@ -227,7 +227,7 @@ module Howzit
       def template(input)
         input = input.join(' ') if input.is_a? Array
         fmt = input.gsub(/%/, '%%')
-        fmt = fmt.gsub(/\{(\w+)\}/) do
+        fmt = fmt.gsub(/(?<!\\u)\{(\w+)\}/i) do
           Regexp.last_match(1).split('').map { |c| "%<#{c}>s" }.join('')
         end
 

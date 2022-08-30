@@ -20,13 +20,15 @@ OptionParser.new do |opts|
 
   opts.separator "  Behavior:\n\n" #=================================================================== BEHAVIOR
 
-  opts.on('--ask', 'Request confirmation for all tasks when running a topic') do
-    Howzit.options[:ask] = true
-  end
+  opts.on('--ask', 'Request confirmation for all tasks when running a topic') { Howzit.options[:ask] = true }
 
   opts.on('--default', 'Answer all prompts with default response') do
+    raise '--default cannot be used with --yes' if Howzit.options[:yes]
+
     Howzit.options[:default] = true
   end
+
+  opts.on('-f', '--force', 'Continue executing after an error') { Howzit.options[:force] = true }
 
   opts.on('-m', '--matching TYPE', MATCHING_OPTIONS,
           'Topics matching type', "(#{MATCHING_OPTIONS.join(', ')})") do |c|
@@ -40,6 +42,12 @@ OptionParser.new do |opts|
 
   opts.on('-u', '--[no-]upstream', 'Traverse up parent directories for additional build notes') do |p|
     Howzit.options[:include_upstream] = p
+  end
+
+  opts.on('-y', '--yes', 'Answer yes to all prompts') do
+    raise '--default cannot be used with --yes' if Howzit.options[:default]
+
+    Howzit.options[:yes] = true
   end
 
   opts.separator "\n  Listing:\n\n" #=================================================================== LISTING

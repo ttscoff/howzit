@@ -91,6 +91,7 @@ module Howzit
         choose: false,
         default: false,
         for_topic: nil,
+        force: false,
         grep: nil,
         list_runnable: false,
         list_runnable_titles: false,
@@ -99,7 +100,8 @@ module Howzit
         quiet: false,
         run: false,
         title_only: false,
-        verbose: false
+        verbose: false,
+        yes: false
       }
 
       config = load_config

@@ -7,7 +7,7 @@ module Howzit
 
     attr_accessor :content
 
-    attr_reader :title, :tasks, :prereqs, :postreqs
+    attr_reader :title, :tasks, :prereqs, :postreqs, :results
 
     ##
     ## Initialize a topic object
@@ -21,6 +21,7 @@ module Howzit
       @parent = nil
       @nest_level = 0
       @tasks = gather_tasks
+      @results = { total: 0, success: 0, errors: 0, message: ''.c }
     end
 
     ##
@@ -35,7 +36,7 @@ module Howzit
     # Handle run command, execute directives in topic
     def run(nested: false)
       output = []
-      tasks = 0
+
       cols = begin
         TTY::Screen.columns > 60 ? 60 : TTY::Screen.columns
       rescue StandardError
@@ -66,17 +67,33 @@ module Howzit
           run_output, total, success = task.run
 
           output.concat(run_output)
-          tasks += total
+          @results[:total] += total
 
-          unless success
-            Howzit.console.warn '{br}Error running task{bw} - non-zero exit, ending processing{x}'.c
-            break
+          if success
+            @results[:success] += total
+          else
+            Howzit.console.warn %({bw}\u{2297} {br}Error running task {bw}"#{task.title}"{x}).c
+
+            @results[:errors] += total
+
+            break unless Howzit.options[:force]
           end
         end
+
+        total = "{bw}#{@results[:total]}{by} #{@results[:total] == 1 ? 'task' : 'tasks'}".c
+        errors = "{bw}#{@results[:errors]}{by} #{@results[:errors] == 1 ? 'error' : 'errors'}".c
+        @results[:message] += if @results[:errors].zero?
+                                "{bg}\u{2713} {by}Ran #{total}{x}"
+                              elsif Howzit.options[:force]
+                                "{br}\u{2715} {by}Completed #{total} with #{errors}{x}".c
+                              else
+                                "{br}\u{2715} {by}Ran #{total}, terminated due to error{x}".c
+                              end
       else
         Howzit.console.warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c
       end
-      output.push("{bm}Ran #{tasks} #{tasks == 1 ? 'task' : 'tasks'}{x}".c) if Howzit.options[:log_level] < 2 && !nested
+
+      output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested
 
       puts TTY::Box.frame("{bw}#{@postreqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols) unless @postreqs.empty?
 

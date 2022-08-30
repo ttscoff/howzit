@@ -18,6 +18,8 @@ module Howzit
       def yn(prompt, default: true)
         return default unless $stdout.isatty
 
+        return true if Howzit.options[:yes]
+
         return default if Howzit.options[:default]
 
         tty_state = `stty -g`
