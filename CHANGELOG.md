@@ -1,3 +1,11 @@
+### 2.0.30
+
+2022-08-31 07:15
+
+#### FIXED
+
+- Formatting of --help and --version commands
+
 ### 2.0.29
 
 2022-08-30 04:20
