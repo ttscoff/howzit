@@ -83,7 +83,7 @@ module Howzit
         total = "{bw}#{@results[:total]}{by} #{@results[:total] == 1 ? 'task' : 'tasks'}".c
         errors = "{bw}#{@results[:errors]}{by} #{@results[:errors] == 1 ? 'error' : 'errors'}".c
         @results[:message] += if @results[:errors].zero?
-                                "{bg}\u{2713} {by}Ran #{total}{x}"
+                                "{bg}\u{2713} {by}Ran #{total}{x}".c
                               elsif Howzit.options[:force]
                                 "{br}\u{2715} {by}Completed #{total} with #{errors}{x}".c
                               else
