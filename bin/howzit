@@ -11,7 +11,7 @@ args = parts[0] ? Shellwords.shellsplit(parts[0]) : []
 Howzit.arguments = parts[1] ? Shellwords.shellsplit(parts[1]) : []
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: #{__FILE__} [OPTIONS] [TOPIC]"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [OPTIONS] [TOPIC]"
   opts.separator ''
   opts.separator 'Show build notes for the current project (buildnotes.md).
   Include a topic name to see just that topic, or no argument to display all.'
@@ -233,7 +233,7 @@ OptionParser.new do |opts|
   end
 
   opts.on('-v', '--version', 'Display version number') do
-    puts "how v#{Howzit::VERSION}"
+    puts "#{File.basename(__FILE__)} v#{Howzit::VERSION}"
     Process.exit 0
   end
 end.parse!(args)
