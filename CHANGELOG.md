@@ -1,3 +1,11 @@
+### 2.0.31
+
+2022-08-31 07:17
+
+#### FIXED
+
+- Color template formatting of task output
+
 ### 2.0.30
 
 2022-08-31 07:15
