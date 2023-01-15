@@ -83,7 +83,6 @@ module Howzit
       Color.template(self)
     end
 
-
     ##
     ## Convert a string to a regex object based on matching settings
     ##
