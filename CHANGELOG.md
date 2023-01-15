@@ -1,3 +1,11 @@
+### 2.0.34
+
+2023-01-15 13:32
+
+#### FIXED
+
+- Fail to partial match include commands after running fzf
+
 ### 2.0.33
 
 2023-01-15 13:26
