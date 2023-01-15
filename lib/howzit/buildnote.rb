@@ -786,8 +786,10 @@ module Howzit
             else
               titles = matches.map { |topic| topic.title }
               res = Prompt.choose(titles)
+              old_matching = Howzit.options[:matching]
               Howzit.options[:matching] = 'exact'
               res.each { |title| topic_matches.concat(find_topic(title)) }
+              Howzit.options[:matching] = old_matching
             end
           end
         end
