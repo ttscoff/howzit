@@ -1,3 +1,11 @@
+### 2.0.32
+
+2023-01-15 10:46
+
+#### IMPROVED
+
+- When using fzf chooser, make matching exact to avoid running multiple topics
+
 ### 2.0.31
 
 2022-08-31 07:17
