@@ -95,7 +95,7 @@ module Howzit
       when 'beginswith'
         /^#{self}/i
       when 'fuzzy'
-        /#{split(//).join('.*?')}/i
+        /#{split(//).join('.{0,3}?')}/i
       else
         /#{self}/i
       end
@@ -241,13 +241,26 @@ module Howzit
     ## @return     [String] rendered string
     ##
     def render_arguments
-      return self if Howzit.arguments.nil? || Howzit.arguments.empty?
-
-      gsub!(/\$(\d+)/) do |m|
-        idx = m[1].to_i - 1
-        Howzit.arguments.length > idx ? Howzit.arguments[idx] : m
+      str = dup
+      str.gsub!(/\$\{(?<name>[A-Z]+(?::.*?)?)\}/i) do |mtch|
+        m = Regexp.last_match
+        arg, default = m['name'].split(/:/).map(&:strip)
+        Howzit.named_arguments.key?(arg) && !Howzit.named_arguments[arg].nil? ? Howzit.named_arguments[arg] : default
       end
-      gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
+
+      str.gsub!(/\$\{?(\d+)\}?/) do
+        m = Regexp.last_match
+        arg, default = m[1].split(/:/)
+        idx = arg.to_i - 1
+        if Howzit.arguments.length > idx
+          Howzit.arguments[idx]
+        elsif default
+          default
+        else
+          m[0]
+        end
+      end
+      Howzit.arguments.nil? ? str : str.gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
     end
 
     ##

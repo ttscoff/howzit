@@ -9,6 +9,7 @@ Howzit::Color.coloring = $stdout.isatty
 parts = Shellwords.shelljoin(ARGV).split(/ -- /)
 args = parts[0] ? Shellwords.shellsplit(parts[0]) : []
 Howzit.arguments = parts[1] ? Shellwords.shellsplit(parts[1]) : []
+Howzit.named_arguments = {}
 
 OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [OPTIONS] [TOPIC]"

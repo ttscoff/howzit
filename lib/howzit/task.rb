@@ -3,7 +3,7 @@
 module Howzit
   # Task object
   class Task
-    attr_reader :type, :title, :action, :parent, :optional, :default
+    attr_reader :type, :title, :action, :arguments, :parent, :optional, :default
 
     ##
     ## Initialize a Task object
@@ -21,11 +21,14 @@ module Howzit
     def initialize(attributes, optional: false, default: true)
       @prefix = "{bw}\u{25B7}\u{25B7} {x}"
       # arrow = "{bw}\u{279F}{x}"
+      @arguments = attributes[:arguments] || []
 
       @type = attributes[:type] || :run
       @title = attributes[:title] || nil
-      @action = attributes[:action].render_arguments || nil
       @parent = attributes[:parent] || nil
+
+      @action = attributes[:action].render_arguments || nil
+
       @optional = optional
       @default = default
     end
@@ -36,7 +39,7 @@ module Howzit
     ## @return     [String] description
     ##
     def inspect
-      %(<#Howzit::Task @type=:#{@type} @title="#{@title}" @block?=#{@action.split(/\n/).count > 1}>)
+      %(<#Howzit::Task @type=:#{@type} @title="#{@title}" @arguments=#{@arguments} @block?=#{@action.split(/\n/).count > 1}>)
     end
 
     ##
@@ -75,8 +78,10 @@ module Howzit
     ##
     def run_include
       output = []
-      matches = Howzit.buildnote.find_topic(@action)
-      raise "Topic not found: #{@action}" if matches.empty?
+      action = @action
+
+      matches = Howzit.buildnote.find_topic(action)
+      raise "Topic not found: #{action}" if matches.empty?
 
       Howzit.console.info("#{@prefix}{by}Running tasks from {bw}#{matches[0].title}{x}".c)
       output.concat(matches[0].run(nested: true))

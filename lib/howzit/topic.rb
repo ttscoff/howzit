@@ -7,7 +7,7 @@ module Howzit
 
     attr_accessor :content
 
-    attr_reader :title, :tasks, :prereqs, :postreqs, :results
+    attr_reader :title, :tasks, :prereqs, :postreqs, :results, :named_args
 
     ##
     ## Initialize a topic object
@@ -20,8 +20,31 @@ module Howzit
       @content = content
       @parent = nil
       @nest_level = 0
+      @named_args = {}
+      arguments
+
       @tasks = gather_tasks
       @results = { total: 0, success: 0, errors: 0, message: ''.c }
+    end
+
+    # Get named arguments from title
+    def arguments
+      return unless @title =~ /\(.*?\) *$/
+
+      a = @title.match(/\((?<args>.*?)\) *$/)
+      args = a['args'].split(/ *, */).each(&:strip)
+
+      args.each_with_index do |arg, idx|
+        arg_name, default = arg.split(/:/).map(&:strip)
+
+        @named_args[arg_name] = if Howzit.arguments.count >= idx + 1
+                                  Howzit.arguments[idx]
+                                else
+                                  default
+                                end
+      end
+
+      @title = @title.sub(/\(.*?\) *$/, '').strip
     end
 
     ##
@@ -121,11 +144,19 @@ module Howzit
         case l
         when /@(before|after|prereq|end)/
           next
-        when /@include(?<optional>[!?]{1,2})?\((?<action>.*?)\)/
+        when /@include(?<optional>[!?]{1,2})?\((?<action>[^\)]+)\)/
           m = Regexp.last_match.named_captures.symbolize_keys
-          matches = Howzit.buildnote.find_topic(m[:action])
+
+          if m[:action] =~ / *\[(.*?)\] *$/
+            Howzit.named_arguments = @named_args
+            Howzit.arguments = Regexp.last_match(1).split(/ *, */).map!(&:render_arguments)
+          end
+
+          matches = Howzit.buildnote.find_topic(m[:action].sub(/ *\[.*?\] *$/, ''))
+
           unless matches.empty?
             i_topic = matches[0]
+
             rule = '{kKd}'
             color = '{Kyd}'
             option = if i_topic.tasks.empty?
@@ -149,13 +180,14 @@ module Howzit
               output.push("#{'> ' * @nest_level}#{title} included above".format_header(options))
             elsif opt[:single]
               @nest_level += 1
+
               output.concat(i_topic.print_out({ single: true, header: false }))
               output.push("#{'> ' * @nest_level}...".format_header(options))
               @nest_level -= 1
             end
             Howzit.inclusions.push(i_topic)
           end
-        when /@(?<cmd>run|copy|open|url|include)(?<optional>[?!]{1,2})?\((?<action>.*?)\) *(?<title>.*?)$/
+        when /@(?<cmd>run|copy|open|url)(?<optional>[?!]{1,2})?\((?<action>.*?)\) *(?<title>.*?)$/
           m = Regexp.last_match.named_captures.symbolize_keys
           cmd = m[:cmd]
           obj = m[:action]
@@ -205,7 +237,8 @@ module Howzit
           output.push(l)
         end
       end
-      output.push('')
+      Howzit.named_arguments = @named_args
+      output.push('').map(&:render_arguments)
     end
 
     private
@@ -228,6 +261,7 @@ module Howzit
       @content.scan(rx) { matches << Regexp.last_match }
       matches.each do |m|
         c = m.named_captures.symbolize_keys
+        Howzit.named_arguments = @named_args
 
         if c[:cmd].nil?
           optional = c[:optional2] =~ /[?!]{1,2}/ ? true : false
@@ -237,7 +271,7 @@ module Howzit
           runnable << Howzit::Task.new({ type: :block,
                                          title: title,
                                          action: block,
-                                         parent: nil },
+                                         parent: self },
                                        optional: optional,
                                        default: default)
         else
@@ -258,10 +292,20 @@ module Howzit
             #   end
             #   runnable.concat(tasks)
             # end
+            args = []
+            if title =~ /\[(.*?)\] *$/
+              Howzit.named_arguments = @named_args
+              args = Regexp.last_match(1).split(/ *, */).map(&:render_arguments)
+              Howzit.arguments = args
+              arguments
+              title.sub!(/ *\[.*?\] *$/, '')
+            end
+
             runnable << Howzit::Task.new({ type: :include,
+                                           arguments: Howzit.named_arguments,
                                            title: title,
                                            action: obj,
-                                           parent: nil },
+                                           parent: self },
                                          optional: optional,
                                          default: default)
           when /run/i
@@ -269,7 +313,7 @@ module Howzit
             runnable << Howzit::Task.new({ type: :run,
                                            title: title,
                                            action: obj,
-                                           parent: nil },
+                                           parent: self },
                                          optional: optional,
                                          default: default)
           when /copy/i
@@ -277,14 +321,14 @@ module Howzit
             runnable << Howzit::Task.new({ type: :copy,
                                            title: title,
                                            action: Shellwords.escape(obj),
-                                           parent: nil },
+                                           parent: self },
                                          optional: optional,
                                          default: default)
           when /open|url/i
             runnable << Howzit::Task.new({ type: :open,
                                            title: title,
                                            action: obj,
-                                           parent: nil },
+                                           parent: self },
                                          optional: optional,
                                          default: default)
           end

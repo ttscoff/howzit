@@ -21,6 +21,7 @@ Howzit is a tool that allows you to keep Markdown-formatted notes about a projec
 - Inside of git repositories, howzit will work from subdirectories, assuming build notes are in top level of repo
 - Templates for easily including repeat tasks
 - Grep topics for pattern and choose from matches
+- Use positional and named variables when executing tasks
 
 ## Getting Started
 

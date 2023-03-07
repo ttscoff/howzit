@@ -45,7 +45,7 @@ HEADER_FORMAT_OPTIONS = %w[border block].freeze
 # Main module for howzit
 module Howzit
   class << self
-    attr_accessor :arguments, :cli_args
+    attr_accessor :arguments, :named_arguments, :cli_args
     ##
     ## Holds a Configuration object with methods and a @settings hash
     ##

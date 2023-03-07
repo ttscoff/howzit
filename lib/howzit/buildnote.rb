@@ -69,10 +69,9 @@ module Howzit
     ##
     def find_topic(term = nil)
       return @topics if term.nil?
-
       @topics.filter do |topic|
         rx = term.to_rx
-        topic.title.downcase =~ rx
+        topic.title.downcase.sub(/ *\(.*?\) *$/, '') =~ rx
       end
     end
 
@@ -108,7 +107,6 @@ module Howzit
       end
       output.join("\n")
     end
-
 
     ##
     ## Return an array of topic titles
@@ -218,7 +216,7 @@ module Howzit
       end
 
       if File.exist?(file) && !default && Prompt.yn("{bg}Do you want to open {bw}#{file} {bg}for editing?{x}".c,
-                                                     default: false)
+                                                    default: false)
         edit_template_file(file)
       end
 
@@ -364,6 +362,7 @@ module Howzit
       t_leader = Util.read_file(template).split(/^#/)[0].strip
       if t_leader.length > 0
         t_meta = t_leader.get_metadata
+
         if t_meta.key?('required')
           required = t_meta['required'].strip.split(/\s*,\s*/)
           required.each do |req|
@@ -699,14 +698,12 @@ module Howzit
     def process_topic(topic, run, single: false)
       new_topic = topic.is_a?(String) ? find_topic(topic)[0] : topic.dup
 
-      # Handle variable replacement
-      new_topic.content = new_topic.content.render_arguments
-
       output = if run
                  new_topic.run
                else
                  new_topic.print_out({ single: single })
                end
+
       output.nil? ? '' : output.join("\n")
     end
 
@@ -755,6 +752,7 @@ module Howzit
       end
 
       topic_matches = []
+
       if Howzit.options[:grep]
         matches = grep(Howzit.options[:grep])
         case Howzit.options[:multiple_matches]
