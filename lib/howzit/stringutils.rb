@@ -242,25 +242,25 @@ module Howzit
     ##
     def render_arguments
       str = dup
-      str.gsub!(/\$\{(?<name>[A-Z0-9_]+(?::.*?)?)\}/i) do |mtch|
+      str.render_named_placeholders
+      str.render_numeric_placeholders
+      Howzit.arguments.nil? ? str : str.gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
+    end
+
+    def render_named_placeholders
+      gsub!(/\$\{(?<name>[A-Z0-9_]+(?::.*?)?)\}/i) do
         m = Regexp.last_match
         arg, default = m['name'].split(/:/).map(&:strip)
         Howzit.named_arguments.key?(arg) && !Howzit.named_arguments[arg].nil? ? Howzit.named_arguments[arg] : default
       end
+    end
 
-      str.gsub!(/\$\{?(\d+)\}?/) do
-        m = Regexp.last_match
-        arg, default = m[1].split(/:/)
+    def render_numeric_placeholders
+      gsub!(/\$\{?(\d+)\}?/) do
+        arg, default = Regexp.last_match(1).split(/:/)
         idx = arg.to_i - 1
-        if Howzit.arguments.length > idx
-          Howzit.arguments[idx]
-        elsif default
-          default
-        else
-          m[0]
-        end
+        Howzit.arguments.length > idx ? Howzit.arguments[idx] : default || Regexp.last_match(0)
       end
-      Howzit.arguments.nil? ? str : str.gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
     end
 
     ##
@@ -289,7 +289,10 @@ module Howzit
       scan(/(?mi)^(\S[\s\S]+?): ([\s\S]*?)(?=\n\S[\s\S]*?:|\Z)/).each do |m|
         data[m[0].strip.downcase] = m[1]
       end
-      normalize_metadata(data)
+      out = normalize_metadata(data)
+      Howzit.named_arguments ||= {}
+      Howzit.named_arguments = out.merge(Howzit.named_arguments)
+      out
     end
 
     ##
