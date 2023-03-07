@@ -2,6 +2,10 @@
 
 2023-03-07 09:47
 
+#### FIXED
+
+- Allow variables names to contain numbers and underscores
+
 ### 2.1.0
 
 2023-03-07 09:24
