@@ -242,7 +242,7 @@ module Howzit
     ##
     def render_arguments
       str = dup
-      str.gsub!(/\$\{(?<name>[A-Z]+(?::.*?)?)\}/i) do |mtch|
+      str.gsub!(/\$\{(?<name>[A-Z0-9_]+(?::.*?)?)\}/i) do |mtch|
         m = Regexp.last_match
         arg, default = m['name'].split(/:/).map(&:strip)
         Howzit.named_arguments.key?(arg) && !Howzit.named_arguments[arg].nil? ? Howzit.named_arguments[arg] : default
