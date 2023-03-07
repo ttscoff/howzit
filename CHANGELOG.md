@@ -1,3 +1,11 @@
+### 2.1.2
+
+2023-03-07 10:24
+
+#### IMPROVED
+
+- Merge metadata into named variables so they're also available as ${NAME}
+
 ### 2.1.1
 
 2023-03-07 09:47
