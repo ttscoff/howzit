@@ -1,3 +1,11 @@
+### 2.1.4
+
+2023-03-07 12:52
+
+#### NEW
+
+- A theme file is automatically created where you can change the default output of any color that Howzit outputs. They can be 2-3 digit ANSI escape codes, or '#XXXXXX' RGB hex codes
+
 ### 2.1.3
 
 2023-03-07 11:21
