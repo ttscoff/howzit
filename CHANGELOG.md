@@ -1,3 +1,11 @@
+### 2.1.3
+
+2023-03-07 11:21
+
+#### FIXED
+
+- Annoying warning about color template format string having too many arguments
+
 ### 2.1.2
 
 2023-03-07 10:24
