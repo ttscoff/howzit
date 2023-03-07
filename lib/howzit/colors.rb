@@ -237,7 +237,7 @@ module Howzit
                    Y: bgyellow, C: bgcyan, M: bgmagenta, R: bgred,
                    d: dark, b: bold, u: underline, i: italic, x: reset }
 
-        format(fmt, colors) unless fmt.empty?
+        fmt.empty? ? input : format(fmt, colors)
       end
     end
 
