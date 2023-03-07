@@ -237,7 +237,7 @@ module Howzit
                    Y: bgyellow, C: bgcyan, M: bgmagenta, R: bgred,
                    d: dark, b: bold, u: underline, i: italic, x: reset }
 
-        format(fmt, colors)
+        format(fmt, colors) unless fmt.empty?
       end
     end
 
@@ -304,7 +304,7 @@ module Howzit
       %w[r g b].each do |e|
         t << parts[e].hex
       end
-      color =
+
       "\e[#{is_bg ? '48' : '38'};2;#{t.join(';')}m"
     end
 
