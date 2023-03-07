@@ -205,6 +205,49 @@ module Howzit
         @coloring ||= true
       end
 
+      def translate_rgb(code)
+        return code if code !~ /#[A-Z0-9]{3,6}/i
+
+        rgb(code)
+      end
+
+      ##
+      ## Generate escape codes for hex colors
+      ##
+      ## @param      hex   [String] The hexadecimal color code
+      ##
+      ## @return     [String] ANSI escape string
+      ##
+      def rgb(hex)
+        is_bg = hex.match(/^bg?#/) ? true : false
+        hex_string = hex.sub(/^([fb]g?)?#/, '')
+
+        parts = hex_string.match(/(?<r>..)(?<g>..)(?<b>..)/)
+        t = []
+        %w[r g b].each do |e|
+          t << parts[e].hex
+        end
+
+        "\e[#{is_bg ? '48' : '38'};2;#{t.join(';')}"
+      end
+
+      # Merge config file colors into attributes
+      def configured_colors
+        color_file = File.join(File.expand_path(CONFIG_DIR), COLOR_FILE)
+        if File.exist?(color_file)
+          colors = YAML.load(Util.read_file(color_file))
+          return ATTRIBUTES unless !colors.nil? && colors.is_a?(Hash)
+
+          attrs = ATTRIBUTES.to_h
+          attrs = attrs.merge(colors.symbolize_keys)
+          new_colors = {}
+          attrs.each { |k, v| new_colors[k] = translate_rgb(v) }
+          new_colors.to_a
+        else
+          ATTRIBUTES
+        end
+      end
+
       ##
       ## Convert a template string to a colored string.
       ## Colors are specified with single letters inside
@@ -241,7 +284,9 @@ module Howzit
       end
     end
 
-    ATTRIBUTES.each do |c, v|
+    # Dynamically generate methods for each color name. Each
+    # resulting method can be called with a string or a block.
+    configured_colors.each do |c, v|
       new_method = <<-EOSCRIPT
         # Color string as #{c}
         def #{c}(string = nil)
@@ -286,26 +331,6 @@ module Howzit
       EOSCRIPT
 
       module_eval(new_method)
-    end
-
-    ##
-    ## Generate escape codes for hex colors
-    ##
-    ## @param      hex   [String] The hexadecimal color code
-    ##
-    ## @return     [String] ANSI escape string
-    ##
-    def rgb(hex)
-      is_bg = hex.match(/^bg?#/) ? true : false
-      hex_string = hex.sub(/^([fb]g?)?#/, '')
-
-      parts = hex_string.match(/(?<r>..)(?<g>..)(?<b>..)/)
-      t = []
-      %w[r g b].each do |e|
-        t << parts[e].hex
-      end
-
-      "\e[#{is_bg ? '48' : '38'};2;#{t.join(';')}m"
     end
 
     # Regular expression that is used to scan for ANSI-sequences while

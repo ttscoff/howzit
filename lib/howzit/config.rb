@@ -23,6 +23,45 @@ module Howzit
       wrap: 0
     }.deep_freeze
 
+    DEFAULT_COLORS = [
+      [:black,              30],
+      [:red,                31],
+      [:green,              32],
+      [:yellow,             33],
+      [:blue,               34],
+      [:magenta,            35],
+      [:purple,             35],
+      [:cyan,               36],
+      [:white,              37],
+      [:bgblack,            40],
+      [:bgred,              41],
+      [:bggreen,            42],
+      [:bgyellow,           43],
+      [:bgblue,             44],
+      [:bgmagenta,          45],
+      [:bgpurple,           45],
+      [:bgcyan,             46],
+      [:bgwhite,            47],
+      [:boldblack,          90],
+      [:boldred,            91],
+      [:boldgreen,          92],
+      [:boldyellow,         93],
+      [:boldblue,           94],
+      [:boldmagenta,        95],
+      [:boldpurple,         95],
+      [:boldcyan,           96],
+      [:boldwhite,          97],
+      [:boldbgblack,       100],
+      [:boldbgred,         101],
+      [:boldbggreen,       102],
+      [:boldbgyellow,      103],
+      [:boldbgblue,        104],
+      [:boldbgmagenta,     105],
+      [:boldbgpurple,      105],
+      [:boldbgcyan,        106],
+      [:boldbgwhite,       107]
+    ].to_h.deep_freeze
+
     ##
     ## Initialize a config object
     ##
@@ -37,6 +76,15 @@ module Howzit
     ##
     def write_config(config)
       File.open(config_file, 'w') { |f| f.puts config.to_yaml }
+    end
+
+    ##
+    ## Write a theme to a file
+    ##
+    ## @param      config  The configuration
+    ##
+    def write_theme(config)
+      File.open(theme_file, 'w') { |f| f.puts config.to_yaml }
     end
 
     ##
@@ -105,6 +153,7 @@ module Howzit
       }
 
       config = load_config
+      load_theme
       @options = flags.merge(config)
     end
 
@@ -124,6 +173,15 @@ module Howzit
     ##
     def config_file
       File.join(config_dir, CONFIG_FILE)
+    end
+
+    ##
+    ## Get the theme file
+    ##
+    ## @return     [String] path to config file
+    ##
+    def theme_file
+      File.join(config_dir, COLOR_FILE)
     end
 
     ##
@@ -154,6 +212,24 @@ module Howzit
     end
 
     ##
+    ## Create a new config file (and directory if needed)
+    ##
+    ## @param      default     [Hash] default configuration to write
+    ##
+    def create_theme(default)
+      unless File.directory?(config_dir)
+        Howzit::ConsoleLogger.new(1).info "Creating theme directory at #{config_dir}"
+        FileUtils.mkdir_p(config_dir)
+      end
+
+      unless File.exist?(theme_file)
+        Howzit::ConsoleLogger.new(1).info "Writing fresh theme file to #{theme_file}"
+        write_theme(default)
+      end
+      theme_file
+    end
+
+    ##
     ## Load the config file
     ##
     ## @return     [Hash] configuration object
@@ -163,6 +239,19 @@ module Howzit
       config = YAML.load(Util.read_file(file))
       newconfig = config ? DEFAULTS.merge(config) : DEFAULTS
       write_config(newconfig)
+      newconfig.dup
+    end
+
+    ##
+    ## Load the theme file
+    ##
+    ## @return     [Hash] configuration object
+    ##
+    def load_theme
+      file = create_theme(DEFAULT_COLORS)
+      config = YAML.load(Util.read_file(file))
+      newconfig = config ? DEFAULT_COLORS.merge(config) : DEFAULT_COLORS
+      write_theme(newconfig)
       newconfig.dup
     end
 
