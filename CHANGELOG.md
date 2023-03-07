@@ -1,3 +1,12 @@
+### 2.1.0
+
+2023-03-07 09:24
+
+#### NEW
+
+- Use TOPIC_TITLE (var1, var2) to have access to ${var1} ${var2} in text and scripts, populated with positional variables on the command line
+- Add a default (fallback) value to any variable placeholder with ${var_name:default value}
+
 ### 2.0.34
 
 2023-01-15 13:32
