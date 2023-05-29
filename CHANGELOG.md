@@ -1,3 +1,11 @@
+### 2.1.7
+
+2023-05-29 12:59
+
+#### FIXED
+
+- Handle variable replacements on lines containing colons outside of variable
+
 ### 2.1.6
 
 2023-05-29 12:42
