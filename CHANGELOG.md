@@ -1,3 +1,11 @@
+### 2.1.6
+
+2023-05-29 12:42
+
+#### FIXED
+
+- Remove empty undefined variables with no default
+
 ### 2.1.5
 
 2023-04-12 15:13

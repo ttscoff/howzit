@@ -212,7 +212,7 @@ module Howzit
     end
 
     ##
-    ## Create a new config file (and directory if needed)
+    ## Create a new theme file (and directory if needed)
     ##
     ## @param      default     [Hash] default configuration to write
     ##
