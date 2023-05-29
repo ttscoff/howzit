@@ -22,7 +22,7 @@ RSpec.configure do |c|
   end
 
   c.after(:each) do
-    # delete_buildnote
+    delete_buildnote
   end
 end
 
