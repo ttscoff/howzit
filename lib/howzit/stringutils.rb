@@ -223,7 +223,11 @@ module Howzit
         gsub!(/\[%#{k}(:.*?)?\]/, v)
       end
 
-      gsub(/\[%(.*?):(.*?)\]/, '\2')
+      # Replace empty variables with default
+      gsub!(/\[%(.*?):(.*?)\]/, '\2')
+
+      # Remove remaining empty variables
+      gsub(/\[%(.*?)\]/, '')
     end
 
     ##
