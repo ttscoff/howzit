@@ -206,7 +206,7 @@ module Howzit
       end
 
       def translate_rgb(code)
-        return code if code !~ /#[A-Z0-9]{3,6}/i
+        return code if code.to_s !~ /#[A-Z0-9]{3,6}/i
 
         rgb(code)
       end
