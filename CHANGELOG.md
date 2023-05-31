@@ -1,3 +1,11 @@
+### 2.1.8
+
+2023-05-31 11:58
+
+#### FIXED
+
+- Colors.rb error when code is integer
+
 ### 2.1.7
 
 2023-05-29 12:59
