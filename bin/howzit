@@ -97,6 +97,17 @@ OptionParser.new do |opts|
     Process.exit 0
   end
 
+  opts.on('--templates-c', 'List available templates in a format for completion') do
+    out = []
+    Dir.chdir(Howzit.config.template_folder)
+    Dir.glob('*.md').each do |file|
+      template = File.basename(file, '.md')
+      out.push(template)
+    end
+    puts out.join("\n")
+    Process.exit 0
+  end
+
   opts.on('--title-only', 'Output title only') do
     Howzit.options[:output_title] = true
     Howzit.options[:title_only] = true

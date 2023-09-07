@@ -38,7 +38,7 @@ You can install `howzit` by running:
 
     gem install howzit
 
-If you run into permission errors using the above command, you'll need to either use `sudo` (`sudo gem install howzit`) or if you're using Homebrew, you have the option to install via [brew-gem](https://github.com/sportngin/brew-gem):
+If you run into permission errors using the above command, you'll need to use `gem install --user-install howzit`. If that fails, either use `sudo` (`sudo gem install howzit`) or if you're using Homebrew, you have the option to install via [brew-gem](https://github.com/sportngin/brew-gem):
 
     brew install brew-gem
     brew gem install howzit
