@@ -1,3 +1,11 @@
+### 2.1.9
+
+2023-09-07 11:02
+
+#### NEW
+
+- Add --templates-c to get a completion-compatible list of available templates
+
 ### 2.1.8
 
 2023-05-31 11:58
