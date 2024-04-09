@@ -1,3 +1,11 @@
+### 2.1.10
+
+2024-04-09 14:59
+
+#### NEW
+
+- --no option (opposite of --yes) to answer no to all yes/no prompts
+
 ### 2.1.9
 
 2023-09-07 11:02
