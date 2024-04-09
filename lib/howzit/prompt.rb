@@ -4,7 +4,6 @@ module Howzit
   # Command line prompt utils
   module Prompt
     class << self
-
       ##
       ## Display and read a Yes/No prompt
       ##
@@ -19,6 +18,8 @@ module Howzit
         return default unless $stdout.isatty
 
         return true if Howzit.options[:yes]
+
+        return false if Howzit.options[:no]
 
         return default if Howzit.options[:default]
 

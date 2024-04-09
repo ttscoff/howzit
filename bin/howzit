@@ -24,7 +24,7 @@ OptionParser.new do |opts|
   opts.on('--ask', 'Request confirmation for all tasks when running a topic') { Howzit.options[:ask] = true }
 
   opts.on('--default', 'Answer all prompts with default response') do
-    raise '--default cannot be used with --yes' if Howzit.options[:yes]
+    raise '--default cannot be used with --yes or --no' if Howzit.options[:yes] || Howzit.options[:no]
 
     Howzit.options[:default] = true
   end
@@ -49,6 +49,12 @@ OptionParser.new do |opts|
     raise '--default cannot be used with --yes' if Howzit.options[:default]
 
     Howzit.options[:yes] = true
+  end
+
+  opts.on('-n', '--no', 'Answer no to all prompts') do
+    raise '--default cannot be used with --no' if Howzit.options[:default]
+
+    Howzit.options[:no] = true
   end
 
   opts.separator "\n  Listing:\n\n" #=================================================================== LISTING
