@@ -361,7 +361,7 @@ module Howzit
 
       case Howzit.options[:header_format]
       when :block
-        Color.template("#{options[:color]}\u{258C}#{title}#{should_mark_iterm? && options[:mark] ? iterm_marker : ''}{x}")
+        Color.template("\n\n#{options[:color]}\u{258C}#{title}#{should_mark_iterm? && options[:mark] ? iterm_marker : ''}{x}")
       else
         cols = TTY::Screen.columns
 
@@ -373,7 +373,7 @@ module Howzit
                else
                  options[:hr] * (cols - title.uncolor.length)
                end
-        Color.template("#{title}#{tail}{x}")
+        Color.template("\n\n#{title}#{tail}{x}")
       end
     end
   end

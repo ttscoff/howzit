@@ -704,7 +704,7 @@ module Howzit
                  new_topic.print_out({ single: single })
                end
 
-      output.nil? ? '' : output.join("\n")
+      output.nil? ? '' : output.join("\n\n")
     end
 
     ##
