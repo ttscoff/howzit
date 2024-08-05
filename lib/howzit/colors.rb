@@ -227,8 +227,13 @@ module Howzit
       def template(input)
         input = input.join(' ') if input.is_a? Array
         fmt = input.gsub(/%/, '%%')
-        fmt = fmt.gsub(/(?<!\\u)\{(\w+)\}/i) do
-          Regexp.last_match(1).split('').map { |c| "%<#{c}>s" }.join('')
+        fmt = fmt.gsub(/(?<!\\)\{(\w+)\}/i) do
+          m = Regexp.last_match(1)
+          if m =~ /^[wkglycmrWKGLYCMRdbuix]+$/
+            m.split('').map { |c| "%<#{c}>s" }.join('')
+          else
+            Regexp.last_match(0)
+          end
         end
 
         colors = { w: white, k: black, g: green, l: blue,

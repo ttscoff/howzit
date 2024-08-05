@@ -208,6 +208,11 @@ module Howzit
       output.push('')
     end
 
+    include Comparable
+    def <=>(topic)
+      @title <=> topic.title
+    end
+
     private
 
     ##
