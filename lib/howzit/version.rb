@@ -3,5 +3,5 @@
 # Primary module for this gem.
 module Howzit
   # Current Howzit version.
-  VERSION = '2.1.12'
+  VERSION = '2.1.13'
 end
