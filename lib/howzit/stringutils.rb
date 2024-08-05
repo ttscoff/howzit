@@ -103,7 +103,7 @@ module Howzit
 
     # Just strip out color codes when requested
     def uncolor
-      gsub(/\e\[[\d;]+m/, '').gsub(/\e\]1337;SetMark/,'')
+      gsub(/\e\[[\d;]+m/, '').gsub(/\e\]1337;SetMark/, '')
     end
 
     # Wrap text at a specified width.
@@ -277,7 +277,7 @@ module Howzit
     def extract_metadata
       if File.exist?(self)
         leader = Util.read_file(self).split(/^#/)[0].strip
-        leader.length > 0 ? leader.get_metadata : {}
+        leader.length.positive? ? leader.get_metadata : {}
       else
         {}
       end
@@ -365,7 +365,7 @@ module Howzit
       else
         cols = TTY::Screen.columns
 
-        cols = Howzit.options[:wrap] if (Howzit.options[:wrap]).positive? && cols > Howzit.options[:wrap]
+        cols = Howzit.options[:wrap] if Howzit.options[:wrap].positive? && cols > Howzit.options[:wrap]
         title = Color.template("#{options[:border]}#{options[:hr] * 2}( #{options[:color]}#{title}#{options[:border]} )")
 
         tail = if should_mark_iterm?

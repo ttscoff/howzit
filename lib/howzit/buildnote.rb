@@ -69,6 +69,7 @@ module Howzit
     ##
     def find_topic(term = nil)
       return @topics if term.nil?
+
       @topics.filter do |topic|
         rx = term.to_rx
         topic.title.downcase.sub(/ *\(.*?\) *$/, '') =~ rx
@@ -114,7 +115,7 @@ module Howzit
     ## @return     [Array] array of topic titles
     ##
     def list_topics
-      @topics.map { |topic| topic.title }
+      @topics.map(&:title)
     end
 
     ##
@@ -360,19 +361,21 @@ module Howzit
     ##
     def ensure_requirements(template)
       t_leader = Util.read_file(template).split(/^#/)[0].strip
-      if t_leader.length > 0
-        t_meta = t_leader.get_metadata
+      return unless t_leader.length.positive?
 
-        if t_meta.key?('required')
-          required = t_meta['required'].strip.split(/\s*,\s*/)
-          required.each do |req|
-            unless @metadata.keys.include?(req.downcase)
-              Howzit.console.error %({bRw}ERROR:{xbr} Missing required metadata key from template '{bw}#{File.basename(template, '.md')}{xr}'{x}).c
-              Howzit.console.error %({br}Please define {by}#{req.downcase}{xr} in build notes{x}).c
-              Process.exit 1
-            end
-          end
-        end
+      t_meta = t_leader.get_metadata
+
+      return unless t_meta.key?('required')
+
+      required = t_meta['required'].strip.split(/\s*,\s*/)
+      required.each do |req|
+        next if @metadata.keys.include?(req.downcase)
+
+        Howzit.console.error %({bRw}ERROR:{xbr} Missing required metadata key from template '{bw}#{File.basename(
+          template, '.md'
+        )}{xr}'{x}).c
+        Howzit.console.error %({br}Please define {by}#{req.downcase}{xr} in build notes{x}).c
+        Process.exit 1
       end
     end
 
@@ -388,7 +391,7 @@ module Howzit
       subtopics = nil
 
       if template =~ /\[(.*?)\]$/
-        subtopics = Regexp.last_match[1].split(/\s*\|\s*/).map { |t| t.gsub(/\*/, '.*?')}
+        subtopics = Regexp.last_match[1].split(/\s*\|\s*/).map { |t| t.gsub(/\*/, '.*?') }
         template.sub!(/\[.*?\]$/, '').strip
       end
 
@@ -640,11 +643,10 @@ module Howzit
         Howzit.has_read_upstream = true
       end
 
-      if note_file && @topics.empty?
-        Howzit.console.error("{br}Note file found but no topics detected in #{note_file}{x}".c)
-        Process.exit 1
-      end
+      return unless note_file && @topics.empty?
 
+      Howzit.console.error("{br}Note file found but no topics detected in #{note_file}{x}".c)
+      Process.exit 1
     end
 
     ##
@@ -782,7 +784,7 @@ module Howzit
             when :all
               topic_matches.concat(matches)
             else
-              titles = matches.map { |topic| topic.title }
+              titles = matches.map(&:title)
               res = Prompt.choose(titles)
               old_matching = Howzit.options[:matching]
               Howzit.options[:matching] = 'exact'

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Howzit
   # Config Class
   class Config
@@ -95,7 +97,7 @@ module Howzit
     def should_ignore(filename)
       return false unless File.exist?(ignore_file)
 
-      @ignore_patterns ||= YAML.safe_load(Util.read_file(ignore_file))
+      @ignore_patterns ||= YAML.load(Util.read_file(ignore_file))
 
       ignore = false
 

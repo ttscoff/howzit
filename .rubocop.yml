@@ -1,14 +1,50 @@
+require:
+  - rubocop-rspec
+  - rubocop-rake
+
 AllCops:
   Include:
     - Gemfile
     - Guardfile
     - Rakefile
+    - bin/howzit
+    - lib/**/*.rb
+
+Style/StringLiterals:
+  Enabled: true
+  EnforcedStyle: single_quotes
+
+Style/StringLiteralsInInterpolation:
+  Enabled: true
+  EnforcedStyle: single_quotes
+
+Layout/LineLength:
+  Max: 120
+
+Metrics/MethodLength:
+  Max: 40
 
 Metrics/BlockLength:
+  Max: 40
   Exclude:
     - Rakefile
     - bin/howzit
     - lib/*.rb
+
+Metrics/ClassLength:
+  Max: 300
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+Metrics/PerceivedComplexity:
+  Max: 30
+
+Metrics/AbcSize:
+  Max: 45
+
+Metrics/CyclomaticComplexity:
+  Max: 15
 
 Style/RegexpLiteral:
   Exclude:

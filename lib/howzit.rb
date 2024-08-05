@@ -50,6 +50,7 @@ require 'tty/box'
 module Howzit
   class << self
     attr_accessor :arguments, :named_arguments, :cli_args
+
     ##
     ## Holds a Configuration object with methods and a @settings hash
     ##
@@ -91,8 +92,6 @@ module Howzit
       @has_read_upstream ||= false
     end
 
-    def has_read_upstream=(has_read)
-      @has_read_upstream = has_read
-    end
+    attr_writer :has_read_upstream
   end
 end

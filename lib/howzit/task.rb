@@ -39,7 +39,7 @@ module Howzit
     ## @return     [String] description
     ##
     def inspect
-      %(<#Howzit::Task @type=:#{@type} @title="#{@title}" @arguments=#{@arguments} @block?=#{@action.split(/\n/).count > 1}>)
+      %(<#Howzit::Task @type=:#{@type} @title="#{@title}" @action="#{@action}" @arguments=#{@arguments} @block?=#{@action.split(/\n/).count > 1}>)
     end
 
     ##
@@ -95,7 +95,7 @@ module Howzit
     def run_run
       title = Howzit.options[:show_all_code] ? @action : @title
       Howzit.console.info("#{@prefix}{bg}Running {bw}#{title}{x}".c)
-      return system(@action)
+      system(@action)
     end
 
     ##
@@ -105,7 +105,7 @@ module Howzit
       title = Howzit.options[:show_all_code] ? @action : @title
       Howzit.console.info("#{@prefix}{bg}Copied {bw}#{title}{bg} to clipboard{x}".c)
       Util.os_copy(@action)
-      return true
+      true
     end
 
     ##

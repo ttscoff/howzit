@@ -56,15 +56,28 @@ module Howzit
       @title =~ /#{term}/i || @content =~ /#{term}/i
     end
 
+    def ask_task(task)
+      note = if task.type == :include
+               task_count = Howzit.buildnote.find_topic(task.action)[0].tasks.count
+               " (#{task_count} tasks)"
+             else
+               ''
+             end
+      q = %({bg}#{task.type.to_s.capitalize} {xw}"{bw}#{task.title}{xw}"#{note}{x}).c
+      Prompt.yn(q, default: task.default)
+    end
+
+    def check_cols
+      TTY::Screen.columns > 60 ? 60 : TTY::Screen.columns
+    rescue StandardError
+      60
+    end
+
     # Handle run command, execute directives in topic
     def run(nested: false)
       output = []
 
-      cols = begin
-        TTY::Screen.columns > 60 ? 60 : TTY::Screen.columns
-      rescue StandardError
-        60
-      end
+      cols = check_cols
 
       if @tasks.count.positive?
         unless @prereqs.empty?
@@ -75,18 +88,8 @@ module Howzit
         end
 
         @tasks.each do |task|
-          if task.optional || Howzit.options[:ask]
-            note = if task.type == :include
-                     task_count = Howzit.buildnote.find_topic(task.action)[0].tasks.count
-                     " (#{task_count} tasks)"
-                   else
-                     ''
-                   end
-            q = %({bg}#{task.type.to_s.capitalize} {xw}"{bw}#{task.title}{xw}"#{note}{x}).c
-            res = Prompt.yn(q, default: task.default)
-            next unless res
+          next if (task.optional || Howzit.options[:ask]) && !ask_task(task)
 
-          end
           run_output, total, success = task.run
 
           output.concat(run_output)
@@ -123,6 +126,116 @@ module Howzit
       output
     end
 
+    def title_option(color, topic, keys, opt)
+      option = colored_option(color, topic, keys)
+      "#{opt[:single] ? 'From' : 'Include'} #{topic.title}#{option}:"
+    end
+
+    def colored_option(color, topic, keys)
+      if topic.tasks.empty?
+        ''
+      else
+        optional = keys[:optional] =~ /[?!]+/ ? true : false
+        default = keys[:optional] =~ /!/ ? false : true
+        if optional
+          colored_yn(color, default)
+        else
+          ''
+        end
+      end
+    end
+
+    def colored_yn(color, default)
+      if default
+        " {xKk}[{gbK}Y{xKk}/{dbwK}n{xKk}]{x}#{color}".c
+      else
+        " {xKk}[{dbwK}y{xKk}/{bgK}N{xKk}]{x}#{color}".c
+      end
+    end
+
+    ##
+    ## Handle an include statement
+    ##
+    ## @param      keys  [Hash] The symbolized keys and values from the regex
+    ##                   that found the statement
+    ## @param      opt   [Hash] Options
+    ##
+    def process_include(keys, opt)
+      output = []
+
+      if keys[:action] =~ / *\[(.*?)\] *$/
+        Howzit.named_arguments = @named_args
+        Howzit.arguments = Regexp.last_match(1).split(/ *, */).map!(&:render_arguments)
+      end
+
+      matches = Howzit.buildnote.find_topic(keys[:action].sub(/ *\[.*?\] *$/, ''))
+
+      return [] if matches.empty?
+
+      topic = matches[0]
+
+      rule = '{kKd}'
+      color = '{Kyd}'
+      title = title_option(color, topic, keys, opt)
+      options = { color: color, hr: '.', border: rule }
+
+      output.push("#{'> ' * @nest_level}#{title}".format_header(options)) unless Howzit.inclusions.include?(topic)
+
+      if opt[:single] && Howzit.inclusions.include?(topic)
+        output.push("#{'> ' * @nest_level}#{title} included above".format_header(options))
+      elsif opt[:single]
+        @nest_level += 1
+
+        output.concat(topic.print_out({ single: true, header: false }))
+        output.push("#{'> ' * @nest_level}...".format_header(options))
+        @nest_level -= 1
+      end
+      Howzit.inclusions.push(topic)
+
+      output
+    end
+
+    def color_directive_yn(keys)
+      optional, default = define_optional(keys[:optional])
+      if optional
+        default ? ' {xk}[{g}Y{xk}/{dbw}n{xk}]{x}'.c : ' {xk}[{dbw}y{xk}/{g}N{xk}]{x}'.c
+      else
+        ''
+      end
+    end
+
+    def process_directive(keys)
+      cmd = keys[:cmd]
+      obj = keys[:action]
+      title = keys[:title].empty? ? obj : keys[:title].strip
+      title = Howzit.options[:show_all_code] ? obj : title
+      option = color_directive_yn(keys)
+      icon = case cmd
+             when 'run'
+               "\u{25B6}"
+             when 'copy'
+               "\u{271A}"
+             when /open|url/
+               "\u{279A}"
+             end
+
+      "{bmK}#{icon} {bwK}#{title.preserve_escapes}{x}#{option}".c
+    end
+
+    def define_optional(optional)
+      is_optional = optional =~ /[?!]+/ ? true : false
+      default = optional =~ /!/ ? false : true
+      [is_optional, default]
+    end
+
+    def title_code_block(keys)
+      if keys[:title].length.positive?
+        "Block: #{keys[:title]}#{color_directive_yn(keys)}"
+      else
+        "Code Block#{color_directive_yn(keys)}"
+      end
+    end
+
     # Output a topic with fancy title and bright white text.
     #
     # @param      options  [Hash] The options
@@ -139,99 +252,23 @@ module Howzit
         output.push('')
       end
       topic = @content.dup
-      topic.gsub!(/(?mi)^(`{3,})run([?!]*) *([^\n]*)[\s\S]*?\n\1\s*$/, '@@@run\2 \3') unless Howzit.options[:show_all_code]
+      unless Howzit.options[:show_all_code]
+        topic.gsub!(/(?mix)^(`{3,})run([?!]*)\s*
+                    ([^\n]*)[\s\S]*?\n\1\s*$/, '@@@run\2 \3')
+      end
       topic.split(/\n/).each do |l|
         case l
         when /@(before|after|prereq|end)/
           next
-        when /@include(?<optional>[!?]{1,2})?\((?<action>[^\)]+)\)/
-          m = Regexp.last_match.named_captures.symbolize_keys
-
-          if m[:action] =~ / *\[(.*?)\] *$/
-            Howzit.named_arguments = @named_args
-            Howzit.arguments = Regexp.last_match(1).split(/ *, */).map!(&:render_arguments)
-          end
-
-          matches = Howzit.buildnote.find_topic(m[:action].sub(/ *\[.*?\] *$/, ''))
-
-          unless matches.empty?
-            i_topic = matches[0]
-
-            rule = '{kKd}'
-            color = '{Kyd}'
-            option = if i_topic.tasks.empty?
-                       ''
-                     else
-                       optional = m[:optional] =~ /[?!]+/ ? true : false
-                       default = m[:optional] =~ /!/ ? false : true
-                       if optional
-                         default ? " {xKk}[{gbK}Y{xKk}/{dbwK}n{xKk}]{x}#{color}".c : " {xKk}[{dbwK}y{xKk}/{bgK}N{xKk}]{x}#{color}".c
-                       else
-                         ''
-                       end
-                     end
-            title = "#{opt[:single] ? 'From' : 'Include'} #{i_topic.title}#{option}:"
-            options = { color: color, hr: '.', border: rule }
-            unless Howzit.inclusions.include?(i_topic)
-              output.push("#{'> ' * @nest_level}#{title}".format_header(options))
-            end
-
-            if opt[:single] && Howzit.inclusions.include?(i_topic)
-              output.push("#{'> ' * @nest_level}#{title} included above".format_header(options))
-            elsif opt[:single]
-              @nest_level += 1
-
-              output.concat(i_topic.print_out({ single: true, header: false }))
-              output.push("#{'> ' * @nest_level}...".format_header(options))
-              @nest_level -= 1
-            end
-            Howzit.inclusions.push(i_topic)
-          end
+        when /@include(?<optional>[!?]{1,2})?\((?<action>[^)]+)\)/
+          output.concat(process_include(Regexp.last_match.named_captures.symbolize_keys, opt))
         when /@(?<cmd>run|copy|open|url)(?<optional>[?!]{1,2})?\((?<action>.*?)\) *(?<title>.*?)$/
-          m = Regexp.last_match.named_captures.symbolize_keys
-          cmd = m[:cmd]
-          obj = m[:action]
-          title = m[:title].empty? ? obj : m[:title].strip
-          title = Howzit.options[:show_all_code] ? obj : title
-          optional = m[:optional] =~ /[?!]+/ ? true : false
-          default = m[:optional] =~ /!/ ? false : true
-          option = if optional
-                     default ? ' {xk}[{g}Y{xk}/{dbw}n{xk}]{x}'.c : ' {xk}[{dbw}y{xk}/{g}N{xk}]{x}'.c
-                   else
-                     ''
-                   end
-          icon = case cmd
-                 when 'run'
-                   "\u{25B6}"
-                 when 'copy'
-                   "\u{271A}"
-                 when /open|url/
-                   "\u{279A}"
-                 end
-
-          output.push("{bmK}#{icon} {bwK}#{title.preserve_escapes}{x}#{option}".c)
+          output.push(process_directive(Regexp.last_match.named_captures.symbolize_keys))
         when /(?<fence>`{3,})run(?<optional>[!?]{1,2})? *(?<title>.*?)$/i
-          m = Regexp.last_match.named_captures.symbolize_keys
-          optional = m[:optional] =~ /[?!]+/ ? true : false
-          default = m[:optional] =~ /!/ ? false : true
-          option = if optional
-                     default ? ' {xk}[{g}Y{xk}/{dbw}n{xk}]{x}'.c : ' {xk}[{dbw}y{xk}/{g}N{xk}]{x}'.c
-                   else
-                     ''
-                   end
-          desc = m[:title].length.positive? ? "Block: #{m[:title]}#{option}" : "Code Block#{option}"
+          desc = title_code_block(Regexp.last_match.named_captures.symbolize_keys)
           output.push("{bmK}\u{25B6} {bwK}#{desc}{x}\n```".c)
         when /@@@run(?<optional>[!?]{1,2})? *(?<title>.*?)$/i
-          m = Regexp.last_match.named_captures.symbolize_keys
-          optional = m[:optional] =~ /[?!]+/ ? true : false
-          default = m[:optional] =~ /!/ ? false : true
-          option = if optional
-                     default ? ' {xk}[{g}Y{xk}/{dbw}n{xk}]{x}'.c : ' {xk}[{dbw}y{xk}/{g}N{xk}]{x}'.c
-                   else
-                     ''
-                   end
-          desc = m[:title].length.positive? ? "Block: #{m[:title]}#{option}" : "Code Block#{option}"
-          output.push("{bmK}\u{25B6} {bwK}#{desc}{x}".c)
+          output.push("{bmK}\u{25B6} {bwK}#{title_code_block(Regexp.last_match.named_captures.symbolize_keys)}{x}".c)
         else
           l.wrap!(Howzit.options[:wrap]) if Howzit.options[:wrap].positive?
           output.push(l)
@@ -242,8 +279,42 @@ module Howzit
     end
 
     include Comparable
-    def <=>(topic)
-      @title <=> topic.title
+    def <=>(other)
+      @title <=> other.title
+    end
+
+    def define_task_args(keys)
+      cmd = keys[:cmd]
+      obj = keys[:action]
+      title = keys[:title].nil? ? obj : keys[:title].strip
+      title = Howzit.options[:show_all_code] ? obj : title
+      task_args = { type: :include,
+                    arguments: nil,
+                    title: title,
+                    action: obj,
+                    parent: self }
+      case cmd
+      when /include/i
+        if title =~ /\[(.*?)\] *$/
+          Howzit.named_arguments = @named_args
+          args = Regexp.last_match(1).split(/ *, */).map(&:render_arguments)
+          Howzit.arguments = args
+          arguments
+          title.sub!(/ *\[.*?\] *$/, '')
+        end
+
+        task_args[:type] = :include
+        task_args[:arguments] = Howzit.named_arguments
+      when /run/i
+        task_args[:type] = :run
+      when /copy/i
+        task_args[:type] = :copy
+        task_args[:action] = Shellwords.escape(obj)
+      when /open|url/i
+        task_args[:type] = :open
+      end
+
+      task_args
     end
 
     private
@@ -269,8 +340,7 @@ module Howzit
         Howzit.named_arguments = @named_args
 
         if c[:cmd].nil?
-          optional = c[:optional2] =~ /[?!]{1,2}/ ? true : false
-          default = c[:optional2] =~ /!/ ? false : true
+          optional, default = define_optional(c[:optional2])
           title = c[:title2].nil? ? '' : c[:title2].strip
           block = c[:block]&.strip
           runnable << Howzit::Task.new({ type: :block,
@@ -280,63 +350,10 @@ module Howzit
                                        optional: optional,
                                        default: default)
         else
-          cmd = c[:cmd]
-          optional = c[:optional] =~ /[?!]{1,2}/ ? true : false
-          default = c[:optional] =~ /!/ ? false : true
-          obj = c[:action]
-          title = c[:title].nil? ? obj : c[:title].strip
-          title = Howzit.options[:show_all_code] ? obj : title
-          case cmd
-          when /include/i
-            # matches = Howzit.buildnote.find_topic(obj)
-            # unless matches.empty? || Howzit.inclusions.include?(matches[0].title)
-            #   tasks = matches[0].tasks.map do |inc|
-            #     Howzit.inclusions.push(matches[0].title)
-            #     inc.parent = matches[0]
-            #     inc
-            #   end
-            #   runnable.concat(tasks)
-            # end
-            args = []
-            if title =~ /\[(.*?)\] *$/
-              Howzit.named_arguments = @named_args
-              args = Regexp.last_match(1).split(/ *, */).map(&:render_arguments)
-              Howzit.arguments = args
-              arguments
-              title.sub!(/ *\[.*?\] *$/, '')
-            end
-
-            runnable << Howzit::Task.new({ type: :include,
-                                           arguments: Howzit.named_arguments,
-                                           title: title,
-                                           action: obj,
-                                           parent: self },
-                                         optional: optional,
-                                         default: default)
-          when /run/i
-            # warn "{bg}Running {bw}#{obj}{x}".c if Howzit.options[:log_level] < 2
-            runnable << Howzit::Task.new({ type: :run,
-                                           title: title,
-                                           action: obj,
-                                           parent: self },
-                                         optional: optional,
-                                         default: default)
-          when /copy/i
-            # warn "{bg}Copied {bw}#{obj}{bg} to clipboard{x}".c if Howzit.options[:log_level] < 2
-            runnable << Howzit::Task.new({ type: :copy,
-                                           title: title,
-                                           action: Shellwords.escape(obj),
-                                           parent: self },
-                                         optional: optional,
-                                         default: default)
-          when /open|url/i
-            runnable << Howzit::Task.new({ type: :open,
-                                           title: title,
-                                           action: obj,
-                                           parent: self },
-                                         optional: optional,
-                                         default: default)
-          end
+          optional, default = define_optional(c[:optional])
+          runnable << Howzit::Task.new(define_task_args(c),
+                                       optional: optional,
+                                       default: default)
         end
       end
 

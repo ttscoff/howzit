@@ -211,6 +211,33 @@ module Howzit
       end
 
       ##
+      ## Platform-agnostic paste-from-clipboard
+      ##
+      def os_paste
+        os = RbConfig::CONFIG['target_os']
+        out = "{bg}Pasting from clipboard".c
+        case os
+        when /darwin.*/i
+          Howzit.console.debug("#{out} (macOS){x}".c)
+          `pbpaste`
+        when /mingw|mswin/i
+          Howzit.console.debug("#{out} (Windows){x}".c)
+          `cat /dev/clipboard`
+        else
+          if 'xsel'.available?
+            Howzit.console.debug("#{out} (Linux, xsel){x}".c)
+            `xsel --clipboard --output`
+          elsif 'xclip'.available?
+            Howzit.console.debug("#{out} (Linux, xclip){x}".c)
+            `xclip -selection clipboard -o`
+          else
+            Howzit.console.debug(out)
+            Howzit.console.warn('Unable to determine executable for clipboard.')
+          end
+        end
+      end
+
+      ##
       ## Platform-agnostic open command
       ##
       ## @param      command  [String] The command

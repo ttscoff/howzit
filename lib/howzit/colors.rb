@@ -5,7 +5,7 @@ module Howzit
   # Terminal output color functions.
   module Color
     # Regexp to match excape sequences
-    ESCAPE_REGEX = /(?<=\[)(?:(?:(?:[349]|10)[0-9]|[0-9])?;?)+(?=m)/.freeze
+    ESCAPE_REGEX = /(?<=\[)(?:(?:(?:[349]|10)[0-9]|[0-9])?;?)+(?=m)/
 
     # All available color names. Available as methods and string extensions.
     #
@@ -113,7 +113,9 @@ module Howzit
         compiled = ''
         normalize_color.split('').each do |char|
           compiled += char
-          valid_color = compiled if Color.attributes.include?(compiled.to_sym) || compiled =~ /^([fb]g?)?#([a-f0-9]{6})$/i
+          if Color.attributes.include?(compiled.to_sym) || compiled =~ /^([fb]g?)?#([a-f0-9]{6})$/i
+            valid_color = compiled
+          end
         end
 
         valid_color
@@ -354,13 +356,12 @@ module Howzit
       %w[r g b].each do |e|
         t << parts[e].hex
       end
-      color =
       "\e[#{is_bg ? '48' : '38'};2;#{t.join(';')}m"
     end
 
     # Regular expression that is used to scan for ANSI-sequences while
     # uncoloring strings.
-    COLORED_REGEXP = /\e\[(?:(?:[349]|10)[0-7]|[0-9])?m/.freeze
+    COLORED_REGEXP = /\e\[(?:(?:[349]|10)[0-7]|[0-9])?m/
 
     # Returns an uncolored version of the string, that is all
     # ANSI-sequences are stripped from the string.

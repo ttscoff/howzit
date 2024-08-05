@@ -105,7 +105,7 @@ module Howzit
           Howzit.console.info 'Cancelled'
           Process.exit 0
         end
-        return res.split(/\n/)
+        res.split(/\n/)
       end
 
       def fzf_options(height)
