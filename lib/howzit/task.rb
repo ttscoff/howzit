@@ -95,6 +95,7 @@ module Howzit
     def run_run
       title = Howzit.options[:show_all_code] ? @action : @title
       Howzit.console.info("#{@prefix}{bg}Running {bw}#{title}{x}".c)
+      ENV['HOWZIT_SCRIPTS'] = File.expand_path('~/.config/howzit/scripts')
       system(@action)
     end
 
