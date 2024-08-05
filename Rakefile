@@ -75,3 +75,5 @@ task :dockertest, :version, :login do |_, args|
   puts res
   # puts commit&.empty? ? "Error commiting Docker tag #{img}" : "Committed Docker tag #{img}"
 end
+
+task package: :build

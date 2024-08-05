@@ -83,7 +83,6 @@ module Howzit
       Color.template(self)
     end
 
-
     ##
     ## Convert a string to a regex object based on matching settings
     ##
@@ -96,7 +95,7 @@ module Howzit
       when 'beginswith'
         /^#{self}/i
       when 'fuzzy'
-        /#{split(//).join('.*?')}/i
+        /#{split(//).join('.{0,3}?')}/i
       else
         /#{self}/i
       end
@@ -224,7 +223,11 @@ module Howzit
         gsub!(/\[%#{k}(:.*?)?\]/, v)
       end
 
-      gsub(/\[%(.*?):(.*?)\]/, '\2')
+      # Replace empty variables with default
+      gsub!(/\[%([^\]]+?):(.*?)\]/, '\2')
+
+      # Remove remaining empty variables
+      gsub(/\[%.*?\]/, '')
     end
 
     ##
@@ -242,13 +245,26 @@ module Howzit
     ## @return     [String] rendered string
     ##
     def render_arguments
-      return self if Howzit.arguments.nil? || Howzit.arguments.empty?
+      str = dup
+      str.render_named_placeholders
+      str.render_numeric_placeholders
+      Howzit.arguments.nil? ? str : str.gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
+    end
 
-      gsub!(/\$(\d+)/) do |m|
-        idx = m[1].to_i - 1
-        Howzit.arguments.length > idx ? Howzit.arguments[idx] : m
+    def render_named_placeholders
+      gsub!(/\$\{(?<name>[A-Z0-9_]+(?::.*?)?)\}/i) do
+        m = Regexp.last_match
+        arg, default = m['name'].split(/:/).map(&:strip)
+        Howzit.named_arguments.key?(arg) && !Howzit.named_arguments[arg].nil? ? Howzit.named_arguments[arg] : default
       end
-      gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
+    end
+
+    def render_numeric_placeholders
+      gsub!(/\$\{?(\d+)\}?/) do
+        arg, default = Regexp.last_match(1).split(/:/)
+        idx = arg.to_i - 1
+        Howzit.arguments.length > idx ? Howzit.arguments[idx] : default || Regexp.last_match(0)
+      end
     end
 
     ##
@@ -277,7 +293,10 @@ module Howzit
       scan(/(?mi)^(\S[\s\S]+?): ([\s\S]*?)(?=\n\S[\s\S]*?:|\Z)/).each do |m|
         data[m[0].strip.downcase] = m[1]
       end
-      normalize_metadata(data)
+      out = normalize_metadata(data)
+      Howzit.named_arguments ||= {}
+      Howzit.named_arguments = out.merge(Howzit.named_arguments)
+      out
     end
 
     ##

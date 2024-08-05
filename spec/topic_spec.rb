@@ -30,8 +30,8 @@ describe Howzit::Topic do
   end
 
   describe '.tasks' do
-    it 'has 2 tasks' do
-      expect(topic.tasks.count).to eq 2
+    it 'has 3 tasks' do
+      expect(topic.tasks.count).to eq 3
     end
   end
 

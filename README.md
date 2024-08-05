@@ -21,6 +21,7 @@ Howzit is a tool that allows you to keep Markdown-formatted notes about a projec
 - Inside of git repositories, howzit will work from subdirectories, assuming build notes are in top level of repo
 - Templates for easily including repeat tasks
 - Grep topics for pattern and choose from matches
+- Use positional and named variables when executing tasks
 
 ## Getting Started
 
@@ -36,6 +37,11 @@ Howzit is a tool that allows you to keep Markdown-formatted notes about a projec
 You can install `howzit` by running:
 
     gem install howzit
+
+If you run into permission errors using the above command, you'll need to use `gem install --user-install howzit`. If that fails, either use `sudo` (`sudo gem install howzit`) or if you're using Homebrew, you have the option to install via [brew-gem](https://github.com/sportngin/brew-gem):
+
+    brew install brew-gem
+    brew gem install howzit
 
 ### Usage
 

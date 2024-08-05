@@ -28,6 +28,8 @@ end
 
 def save_buildnote
   note = <<~EONOTE
+    defined: this is defined
+
     # Howzit Test
 
     ## Topic Balogna
@@ -39,6 +41,11 @@ def save_buildnote
     @run(ls -1 &> /dev/null) Null Output
     @include(Topic Tropic)
 
+    ```run
+    #!/usr/bin/env ruby
+    title = "[%undefined]".empty? ? "[%defined]" : "[%undefined]"
+    ```
+
     @after
     This should be a postrequisite.
     @end
@@ -49,6 +56,8 @@ def save_buildnote
 
     - It has a list in it
     - That's pretty fun, right?
+    - Defined: '[%defined]'
+    - Undefined: '[%undefined]'
 
     ## Topic Tropic
 

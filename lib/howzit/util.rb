@@ -39,6 +39,7 @@ module Howzit
       ##
       def command_exist?(command)
         exts = ENV.fetch('PATHEXT', '').split(::File::PATH_SEPARATOR)
+        command = File.expand_path(command) if command =~ /^~/
         if Pathname.new(command).absolute?
           ::File.exist?(command) || exts.any? { |ext| ::File.exist?("#{command}#{ext}") }
         else

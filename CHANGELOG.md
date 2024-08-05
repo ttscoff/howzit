@@ -1,3 +1,112 @@
+### 2.1.10
+
+2024-04-09 14:59
+
+#### NEW
+
+- --no option (opposite of --yes) to answer no to all yes/no prompts
+
+### 2.1.9
+
+2023-09-07 11:02
+
+#### NEW
+
+- Add --templates-c to get a completion-compatible list of available templates
+
+### 2.1.8
+
+2023-05-31 11:58
+
+#### FIXED
+
+- Colors.rb error when code is integer
+
+### 2.1.7
+
+2023-05-29 12:59
+
+#### FIXED
+
+- Handle variable replacements on lines containing colons outside of variable
+
+### 2.1.6
+
+2023-05-29 12:42
+
+#### FIXED
+
+- Remove empty undefined variables with no default
+
+### 2.1.5
+
+2023-04-12 15:13
+
+#### FIXED
+
+- Allow tilde in path to editor
+
+### 2.1.4
+
+2023-03-07 12:52
+
+#### NEW
+
+- A theme file is automatically created where you can change the default output of any color that Howzit outputs. They can be 2-3 digit ANSI escape codes, or '#XXXXXX' RGB hex codes
+
+### 2.1.3
+
+2023-03-07 11:21
+
+#### FIXED
+
+- Annoying warning about color template format string having too many arguments
+
+### 2.1.2
+
+2023-03-07 10:24
+
+#### IMPROVED
+
+- Merge metadata into named variables so they're also available as ${NAME}
+
+### 2.1.1
+
+2023-03-07 09:47
+
+#### FIXED
+
+- Allow variables names to contain numbers and underscores
+
+### 2.1.0
+
+2023-03-07 09:24
+
+#### NEW
+
+- Use TOPIC_TITLE (var1, var2) to have access to ${var1} ${var2} in text and scripts, populated with positional variables on the command line
+- Add a default (fallback) value to any variable placeholder with ${var_name:default value}
+
+### 2.0.34
+
+2023-01-15 13:32
+
+#### FIXED
+
+- Fail to partial match include commands after running fzf
+
+### 2.0.33
+
+2023-01-15 13:26
+
+### 2.0.32
+
+2023-01-15 10:46
+
+#### IMPROVED
+
+- When using fzf chooser, make matching exact to avoid running multiple topics
+
 ### 2.0.31
 
 2022-08-31 07:17
