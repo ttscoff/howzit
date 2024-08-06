@@ -1,3 +1,11 @@
+### 2.1.14
+
+2024-08-06 16:36
+
+#### IMPROVED
+
+- Better algorithm for best match when `multiple_matches: best` is set
+
 ### 2.1.13
 
 2024-08-05 12:04
