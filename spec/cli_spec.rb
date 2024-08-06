@@ -15,7 +15,7 @@ describe 'CLI' do
     execute_script('bin/howzit', use_bundler: true, args: %w[-L])
     expect(last_execution).to be_successful
     expect(last_execution.stdout).to match(/Topic Balogna/)
-    expect(last_execution.stdout.split(/\n/).count).to eq 3
+    expect(last_execution.stdout.split(/\n/).count).to eq 4
   end
 
   it 'lists available tasks' do

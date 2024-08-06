@@ -2,12 +2,12 @@
 # Howzit
 
 [![Gem](https://img.shields.io/gem/v/howzit.svg)](https://rubygems.org/gems/howzit)
-[![Travis](https://api.travis-ci.com/ttscoff/howzit.svg?branch=main)](https://travis-ci.org/makenew/ruby-gem)
 [![GitHub license](https://img.shields.io/github/license/ttscoff/howzit.svg)](./LICENSE.txt)
-<!--END GITHUB-->
+
 A command-line reference tool for tracking project build systems
 
 Howzit is a tool that allows you to keep Markdown-formatted notes about a project's tools and procedures. It functions as an easy lookup for notes about a particular task, as well as a task runner to automatically execute appropriate commands.
+<!--END GITHUB-->
 
 ## Features
 

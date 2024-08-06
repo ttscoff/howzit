@@ -780,7 +780,7 @@ module Howzit
             when :first
               topic_matches.push(matches[0])
             when :best
-              topic_matches.push(matches.sort.min_by { |t| t.title.length })
+              topic_matches.push(matches.sort_by { |a| [a.title.comp_distance(s), a.title.length] })
             when :all
               topic_matches.concat(matches)
             else

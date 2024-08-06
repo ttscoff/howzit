@@ -2,7 +2,6 @@
 # Howzit
 
 [![Gem](https://img.shields.io/gem/v/howzit.svg)](https://rubygems.org/gems/howzit)
-[![Travis](https://api.travis-ci.com/ttscoff/howzit.svg?branch=main)](https://travis-ci.org/makenew/ruby-gem)
 [![GitHub license](https://img.shields.io/github/license/ttscoff/howzit.svg)](./LICENSE.txt)
 
 A command-line reference tool for tracking project build systems

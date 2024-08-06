@@ -63,6 +63,10 @@ def save_buildnote
 
     Bermuda, Bahama, something something wanna.
     @copy(Balogna) Just some balogna
+
+    ## Happy Bgagngagnga
+
+    This one is just to throw things off
   EONOTE
   File.open('builda.md', 'w') { |f| f.puts note }
 end

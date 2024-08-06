@@ -3,6 +3,86 @@
 module Howzit
   # String Extensions
   module StringUtils
+    ## Compare strings and return a distance
+    ##
+    ## @param      other  [String] The string to compare
+    ## @param      term   [String] The search term
+    ##
+    ## @return [Float] distance
+    def comp_distance(term)
+      chars = term.split(//)
+      contains_count(chars) + distance(chars)
+    end
+
+    ##
+    ## Number of matching characters the string contains
+    ##
+    ## @param      chars [String|Array]  The characters
+    ##
+    def contains_count(chars)
+      chars = chars.split(//) if chars.is_a?(String)
+      count = 0
+      chars.each { |char| count += 1 if self =~ /#{char}/i }
+      count
+    end
+
+    ##
+    ## Determine if characters are in order
+    ##
+    ## @param      chars  [String|Array] The characters
+    ##
+    ## @return [Boolean] characters are in order
+    ##
+    def in_order(chars)
+      chars = chars.split(//) if chars.is_a?(String)
+      position = 0
+      in_order = 0
+      chars.each do |char|
+        new_pos = self[position..] =~ /#{char}/i
+        if new_pos
+          position += new_pos
+          in_order += 1
+        end
+      end
+      in_order
+    end
+
+    ##
+    ## Determine if a series of characters are all within a given distance of
+    ## each other in the String
+    ##
+    ## @param      chars     [String|Array] The characters
+    ## @param      distance  [Number] The distance
+    ##
+    ## @return     [Boolean] true if within distance
+    ##
+    def in_distance?(chars, distance)
+      chars = chars.split(//) if chars.is_a?(String)
+      rx = Regexp.new(chars.join(".{,#{distance}}"), 'i')
+      self =~ rx ? true : false
+    end
+
+    ##
+    ## Determine the minimum distance between characters that they all still
+    ## fall within
+    ##
+    ## @param      chars  [Array] The characters
+    ##
+    ## @return     [Number] distance
+    ##
+    def distance(chars)
+      distance = 0
+      max = self.length - chars.length
+      return max unless in_order(chars) == chars.length
+
+      while distance < max
+        return distance if in_distance?(chars, distance)
+
+        distance += 1
+      end
+      distance
+    end
+
     ##
     ## Test if the filename matches the conditions to be a build note
     ##
