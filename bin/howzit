@@ -159,15 +159,13 @@ OptionParser.new do |opts|
     Process.exit 0
   end
 
-  editor = File.basename(Howzit.options[:editor])
-  desc = %(Edit buildnotes file in current working directory using editor (#{editor}))
+  desc = %(Edit buildnotes file in current working directory using default editor)
   opts.on('-e', '--edit', desc) do
     Howzit.buildnote.edit
     Process.exit 0
   end
 
-  config_editor = File.basename(Howzit.options[:config_editor])
-  opts.on('--edit-config', "Edit configuration file using editor (#{config_editor})") do
+  opts.on('--edit-config', "Edit configuration file using default editor") do
     Howzit.config.editor
     Process.exit 0
   end
