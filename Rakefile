@@ -70,20 +70,28 @@ task :dockertest, :version, :login do |_, args|
     file = 'docker/Dockerfile'
   end
 
-  puts `docker build . --file #{file} -t #{img}`
+  d_spinner = TTY::Spinner.new("[:spinner] Setting up Docker", hide_cursor: true, format: :dots)
+  d_spinner.auto_spin
+  `docker build . --file #{file} -t #{img} &> /dev/null`
+  d_spinner.success
+  d_spinner.stop
 
   exec "docker run -v #{File.dirname(__FILE__)}:/howzit -it #{img} /bin/bash -l" if args[:login]
 
-  spinner = TTY::Spinner.new("[:spinner] Running tests #{img}", hide_cursor: true)
+  spinner = TTY::Spinner.new("[:spinner] Running tests #{img}", hide_cursor: true, format: :dots)
 
   spinner.auto_spin
   res = `docker run --rm -v #{File.dirname(__FILE__)}:/howzit -it #{img}`
-  # commit = puts `bash -c "docker commit $(docker ps -a|grep #{img}|awk '{print $1}'|head -n 1) #{img}"`.strip
-  spinner.success
+  commit = `bash -c "docker commit $(docker ps -a|grep #{img}|awk '{print $1}'|head -n 1) #{img}"`.strip
+  if $?.exitstatus == 0
+    spinner.success
+  else
+    spinner.error
+    puts res
+  end
   spinner.stop
 
-  puts res
-  # puts commit&.empty? ? "Error commiting Docker tag #{img}" : "Committed Docker tag #{img}"
+  puts commit&.empty? ? "Error commiting Docker tag #{img}" : "Committed Docker tag #{img}"
 end
 
 desc 'Alias for build'
