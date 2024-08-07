@@ -69,6 +69,7 @@ def save_buildnote
     This one is just to throw things off
   EONOTE
   File.open('builda.md', 'w') { |f| f.puts note }
+  # puts "Saved to builda.md: #{File.exist?('builda.md')}"
 end
 
 def delete_buildnote

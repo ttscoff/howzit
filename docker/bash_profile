@@ -1,6 +1,7 @@
 #!/bin/bash
 export GLI_DEBUG=true
 export EDITOR="/usr/bin/vim"
+export PATH=$PATH:$GEM_HOME/bin
 alias b="bundle exec bin/howzit"
 
 shopt -s nocaseglob

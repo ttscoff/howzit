@@ -3,7 +3,7 @@ FROM ruby:2.6
 RUN mkdir /howzit
 WORKDIR /howzit
 # COPY ./ /howzit/
-RUN gem install bundler:2.2.17
+RUN gem install bundler:2.2.29
 RUN apt-get update -y
 RUN apt-get install -y less vim
 COPY ./docker/inputrc /root/.inputrc

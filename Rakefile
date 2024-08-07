@@ -6,6 +6,13 @@ require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 require 'yard'
 require 'tty-spinner'
+require 'rdoc/task'
+
+Rake::RDocTask.new do |rd|
+  rd.main = 'README.rdoc'
+  rd.rdoc_files.include('README.rdoc', 'lib/**/*.rb', 'bin/**/*')
+  rd.title = 'Howzit'
+end
 
 task default: %i[test yard]
 
@@ -41,17 +48,20 @@ task :dockertest, :version, :login do |_, args|
   args.with_defaults(version: 'all', login: false)
   case args[:version]
   when /^a/
-    %w[6 7 3].each do |v|
+    %w[2 3 32].each do |v|
       Rake::Task['dockertest'].reenable
       Rake::Task['dockertest'].invoke(v, false)
     end
     Process.exit 0
+  when /^32/
+    img = 'howzittest32'
+    file = 'docker/Dockerfile-3.2'
   when /^3/
     img = 'howzittest3'
     file = 'docker/Dockerfile-3.0'
-  when /6$/
-    img = 'howzittest26'
-    file = 'docker/Dockerfile-2.6'
+  # when /6$/
+  #   img = 'howzittest26'
+  #   file = 'docker/Dockerfile-2.6'
   when /(^2|7$)/
     img = 'howzittest27'
     file = 'docker/Dockerfile-2.7'
@@ -64,7 +74,7 @@ task :dockertest, :version, :login do |_, args|
 
   exec "docker run -v #{File.dirname(__FILE__)}:/howzit -it #{img} /bin/bash -l" if args[:login]
 
-  spinner = TTY::Spinner.new('[:spinner] Running tests ...', hide_cursor: true)
+  spinner = TTY::Spinner.new("[:spinner] Running tests #{img}", hide_cursor: true)
 
   spinner.auto_spin
   res = `docker run --rm -v #{File.dirname(__FILE__)}:/howzit -it #{img}`

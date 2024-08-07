@@ -1,4 +1,6 @@
 #!/bin/bash
 
 bundle install
-rake test
+export EDITOR="/usr/bin/vim"
+export PATH=$PATH:$GEM_HOME/bin
+rake spec

@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 describe Howzit::BuildNote do
-  subject(:how) { @hz }
+  subject(:how) { Howzit.buildnote('builda.md') }
 
   describe ".note_file" do
     it "locates a build note file" do

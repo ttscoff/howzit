@@ -127,6 +127,31 @@ module Howzit
       edit_config
     end
 
+    ## Update editor config
+    def update_editor
+      puts 'No $EDITOR defined, no value in config'
+      editor = Prompt.read_editor
+      if editor.nil?
+        'Cancelled, no editor stored.'
+        Process.exit 1
+      end
+      update_config_option({ config_editor: editor, editor: editor })
+      puts "Default editor set to #{editor}, modify in config file"
+      editor
+    end
+
+    ##
+    ## Update a config option and resave config file
+    ##
+    ## @param      options    [Hash] key value pairs
+    ##
+    def update_config_option(options)
+      options.each do |key, value|
+        Howzit.options[key] = value
+      end
+      write_config(Howzit.options)
+    end
+
     private
 
     ##
@@ -263,13 +288,15 @@ module Howzit
     def edit_config
       editor = Howzit.options.fetch(:config_editor, ENV['EDITOR'])
 
+      editor = update_editor if editor.nil?
+
       raise 'No config_editor defined' if editor.nil?
 
       # raise "Invalid editor (#{editor})" unless Util.valid_command?(editor)
 
       load_config
       if Util.valid_command?(editor.split(/ /).first)
-        system %(#{editor} "#{config_file}")
+        exec %(#{editor} "#{config_file}")
       else
         `open -a "#{editor}" "#{config_file}"`
       end

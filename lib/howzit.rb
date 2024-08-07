@@ -77,8 +77,8 @@ module Howzit
     ##
     ## Module storage for buildnote
     ##
-    def buildnote
-      @buildnote ||= BuildNote.new
+    def buildnote(file = nil)
+      @buildnote ||= BuildNote.new(file: file)
     end
 
     ##

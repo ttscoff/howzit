@@ -499,7 +499,7 @@ module Howzit
     ## @return     [String] file path
     ##
     def glob_note
-      Dir.glob('*.{txt,md,markdown}').select(&:build_note?)[0]
+      Dir.glob('*.{txt,md,markdown}').select(&:build_note?).sort[0]
     end
 
     ##
@@ -655,12 +655,14 @@ module Howzit
     def edit_note
       editor = Howzit.options.fetch(:editor, ENV['EDITOR'])
 
+      editor = Howzit.config.update_editor if editor.nil?
+
       raise 'No editor defined' if editor.nil?
 
       raise "Invalid editor (#{editor})" unless Util.valid_command?(editor)
 
       create_note(prompt: true) if note_file.nil?
-      `#{editor} "#{note_file}"`
+      exec %(#{editor} "#{note_file}")
     end
 
     ##
@@ -679,6 +681,8 @@ module Howzit
     ##
     def edit_template_file(file)
       editor = Howzit.options.fetch(:editor, ENV['EDITOR'])
+
+      editor = Howzit.config.update_editor if editor.nil?
 
       raise 'No editor defined' if editor.nil?
 

@@ -160,6 +160,22 @@ module Howzit
       end
 
       ##
+      ## Request editor
+      ##
+      def read_editor(default = nil)
+        @stty_save = `stty -g`.chomp
+
+        default ||= 'vim'
+        prompt = "Define a default editor command (default #{default}): "
+        res = Readline.readline(prompt, true).squeeze(' ').strip
+        res = default if res.empty?
+
+        Util.valid_command?(res) ? res : default
+      ensure
+        system('stty', @stty_save)
+      end
+
+      ##
       ## Convert a response to an Integer
       ##
       ## @param      line  The response to convert

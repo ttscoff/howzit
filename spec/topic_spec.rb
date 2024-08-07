@@ -21,7 +21,10 @@ describe Howzit::Topic do
 end
 
 describe Howzit::Topic do
-  subject(:topic) { @hz.find_topic('Topic Balogna')[0] }
+  subject(:topic) {
+    bn = Howzit.buildnote
+    bn.find_topic('Topic Balogna')[0]
+  }
 
   describe '.title' do
     it 'has the correct title' do
