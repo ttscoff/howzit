@@ -1,3 +1,13 @@
+### 2.1.15
+
+2024-08-07 13:10
+
+#### FIXED
+
+- Prompt for editor when $EDITOR is not defined
+- Use exec for CLI editors provide a separate process
+- Remove tests for editor in main executable
+
 ### 2.1.14
 
 2024-08-06 16:36
