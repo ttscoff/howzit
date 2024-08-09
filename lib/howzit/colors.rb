@@ -5,7 +5,7 @@ module Howzit
   # Terminal output color functions.
   module Color
     # Regexp to match excape sequences
-    ESCAPE_REGEX = /(?<=\[)(?:(?:(?:[349]|10)[0-9]|[0-9])?;?)+(?=m)/
+    ESCAPE_REGEX = /(?<=\[)(?:(?:(?:[349]|10)[0-9]|[0-9])?;?)+(?=m)/.freeze
 
     # All available color names. Available as methods and string extensions.
     #
@@ -361,7 +361,7 @@ module Howzit
 
     # Regular expression that is used to scan for ANSI-sequences while
     # uncoloring strings.
-    COLORED_REGEXP = /\e\[(?:(?:[349]|10)[0-7]|[0-9])?m/
+    COLORED_REGEXP = /\e\[(?:(?:[349]|10)[0-7]|[0-9])?m/.freeze
 
     # Returns an uncolored version of the string, that is all
     # ANSI-sequences are stripped from the string.

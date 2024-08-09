@@ -21,7 +21,7 @@ module Howzit
       content = Util.read_file(file)
       raise "{br}No content found in build note (#{file}){x}".c if content.nil? || content.empty?
 
-      this_meta = content.split(/^#/)[0].strip.get_metadata
+      this_meta = content.split(/^#/)[0].strip.metadata
 
       @metadata = meta.nil? ? this_meta : meta.merge(this_meta)
 
@@ -363,7 +363,7 @@ module Howzit
       t_leader = Util.read_file(template).split(/^#/)[0].strip
       return unless t_leader.length.positive?
 
-      t_meta = t_leader.get_metadata
+      t_meta = t_leader.metadata
 
       return unless t_meta.key?('required')
 
@@ -556,7 +556,7 @@ module Howzit
 
       return template_topics if leader.empty?
 
-      data = leader.get_metadata
+      data = leader.metadata
 
       if data.key?('template')
         templates = data['template'].strip.split(/\s*,\s*/)

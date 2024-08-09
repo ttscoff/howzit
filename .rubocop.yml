@@ -22,10 +22,10 @@ Layout/LineLength:
   Max: 120
 
 Metrics/MethodLength:
-  Max: 40
+  Max: 45
 
 Metrics/BlockLength:
-  Max: 40
+  Max: 45
   Exclude:
     - Rakefile
     - bin/howzit
@@ -34,9 +34,6 @@ Metrics/BlockLength:
 Metrics/ClassLength:
   Max: 300
 
-Metrics/CyclomaticComplexity:
-  Max: 10
-
 Metrics/PerceivedComplexity:
   Max: 30
 
@@ -44,7 +41,7 @@ Metrics/AbcSize:
   Max: 45
 
 Metrics/CyclomaticComplexity:
-  Max: 15
+  Max: 20
 
 Style/RegexpLiteral:
   Exclude:

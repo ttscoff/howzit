@@ -38,7 +38,7 @@ module Howzit
       position = 0
       in_order = 0
       chars.each do |char|
-        new_pos = self[position..] =~ /#{char}/i
+        new_pos = self[position..-1] =~ /#{char}/i
         if new_pos
           position += new_pos
           in_order += 1
@@ -350,14 +350,14 @@ module Howzit
     ##
     ## Split the content at the first top-level header and
     ## assume everything before it is metadata. Passes to
-    ## #get_metadata for processing
+    ## #metadata for processing
     ##
     ## @return     [Hash] key/value pairs
     ##
     def extract_metadata
       if File.exist?(self)
         leader = Util.read_file(self).split(/^#/)[0].strip
-        leader.length.positive? ? leader.get_metadata : {}
+        leader.length.positive? ? leader.metadata : {}
       else
         {}
       end
@@ -368,7 +368,7 @@ module Howzit
     ##
     ## @return     [Hash] The metadata as key/value pairs
     ##
-    def get_metadata
+    def metadata
       data = {}
       scan(/(?mi)^(\S[\s\S]+?): ([\s\S]*?)(?=\n\S[\s\S]*?:|\Z)/).each do |m|
         data[m[0].strip.downcase] = m[1]

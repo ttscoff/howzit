@@ -132,7 +132,7 @@ module Howzit
       puts 'No $EDITOR defined, no value in config'
       editor = Prompt.read_editor
       if editor.nil?
-        'Cancelled, no editor stored.'
+        puts 'Cancelled, no editor stored.'
         Process.exit 1
       end
       update_config_option({ config_editor: editor, editor: editor })
