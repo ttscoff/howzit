@@ -453,7 +453,7 @@ module Howzit
                else
                  options[:hr] * (cols - title.uncolor.length)
                end
-        Color.template("\n\n#{title}#{tail}{x}")
+        Color.template("\n\n#{title}#{tail}{x}\n\n")
       end
     end
   end

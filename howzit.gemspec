@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = '>= 2.6.0'
 
   spec.add_development_dependency 'bundler', '~> 2.2'
-  spec.add_development_dependency 'rake', '~> 11.2'
+  spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'bump', '~> 0.5'
 
   spec.add_development_dependency 'guard', '~> 2.11'
@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'guard-rspec', '~> 4.5'
 
   spec.add_development_dependency 'rubocop', '~> 0.28'
-  spec.add_development_dependency 'rspec', '~> 3.1'
+  spec.add_development_dependency 'rspec', '~> 3.13'
   spec.add_development_dependency 'cli-test', '~> 1.0'
   spec.add_development_dependency 'simplecov', '~> 0.9'
   # spec.add_development_dependency 'codecov', '~> 0.1'

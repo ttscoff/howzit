@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-
+require 'bundler/setup'
 require 'bump/tasks'
 require 'bundler/gem_tasks'
 require 'rspec/core/rake_task'
@@ -7,6 +7,13 @@ require 'rubocop/rake_task'
 require 'yard'
 require 'tty-spinner'
 require 'rdoc/task'
+
+module TempFixForRakeLastComment
+  def last_comment
+    last_description
+  end
+end
+Rake::Application.send :include, TempFixForRakeLastComment
 
 Rake::RDocTask.new do |rd|
   rd.main = 'README.rdoc'
