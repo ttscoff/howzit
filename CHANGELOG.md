@@ -1,3 +1,11 @@
+### 2.1.18
+
+2025-01-01 09:53
+
+#### IMPROVED
+
+- Include named arguments when listing runnable topics
+
 ### 2.1.16
 
 2024-08-13 10:59
