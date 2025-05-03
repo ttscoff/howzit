@@ -183,7 +183,9 @@ module Howzit
 
     # Just strip out color codes when requested
     def uncolor
-      gsub(/\e\[[\d;]+m/, '').gsub(/\e\]1337;SetMark/, '')
+      # force UTF-8 and remove invalid characters, then remove color codes
+      # and iTerm markers
+      gsub(Howzit::Color::COLORED_REGEXP, "").gsub(/\e\]1337;SetMark/, "")
     end
 
     # Wrap text at a specified width.
