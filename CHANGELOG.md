@@ -1,10 +1,46 @@
-### 2.1.19
+### 2.1.20
 
-2025-11-14 00:00
+2025-12-13 05:01
+
+#### NEW
+
+- Prefer exact whole-word topic matches over fuzzy matches
+- Display run summary after executing tasks
 
 #### IMPROVED
 
-- Allow `howzit -r` to accept multiple comma/colon-separated topics while keeping separators that belong to topic titles
+- Topic matching now handles colons/commas in topic titles
+- Smart splitting of multiple topics preserves separators in titles
+- Single match from choose now auto-selects without menu
+- Combined output from multiple topics paginated together
+- Menu prompt shows the search term being matched
+
+#### FIXED
+
+- String uncolor deleting characters
+- Broken pipe error when quitting pager early
+
+### 2.1.19
+
+2025-12-13 05:01
+
+#### NEW
+
+- Prefer exact whole-word topic matches over fuzzy matches
+- Display run summary after executing tasks
+
+#### IMPROVED
+
+- Topic matching now handles colons/commas in topic titles
+- Smart splitting of multiple topics preserves separators in titles
+- Single match from choose now auto-selects without menu
+- Combined output from multiple topics paginated together
+- Menu prompt shows the search term being matched
+
+#### FIXED
+
+- String uncolor deleting characters
+- Broken pipe error when quitting pager early
 
 ### 2.1.18
 
