@@ -13,14 +13,14 @@ describe Howzit::RunReport do
     Howzit.multi_topic_run = false
   end
 
-  it 'renders a bordered summary for single topic runs' do
+  it 'renders a markdown table for single topic runs' do
     Howzit::RunReport.log({ topic: 'Git: Config', task: 'Run Git Origin', success: true, exit_status: 0 })
     plain = Howzit::RunReport.format.uncolor
-    expect(plain).to include('- [✓] Run Git Origin')
+    expect(plain).to include('| 🚥 |')
+    expect(plain).to include('| Task')
+    expect(plain).to include('✅')
+    expect(plain).to include('Run Git Origin')
     expect(plain).not_to include('Git: Config:')
-    top, line, bottom = plain.split("\n")
-    expect(top).to eq('=' * line.length)
-    expect(bottom).to eq('-' * line.length)
   end
 
   it 'prefixes topic titles and shows failures when multiple topics run' do
@@ -28,8 +28,25 @@ describe Howzit::RunReport do
     Howzit::RunReport.log({ topic: 'Git: Config', task: 'Run Git Origin', success: true, exit_status: 0 })
     Howzit::RunReport.log({ topic: 'Git: Clean Repo', task: 'Clean Git Repo', success: false, exit_status: 12 })
     plain = Howzit::RunReport.format.uncolor
-    expect(plain).to include('- [✓] Git: Config: Run Git Origin')
-    expect(plain).to include('- [X] Git: Clean Repo: Clean Git Repo (Failed: exit code 12)')
+    expect(plain).to include('✅')
+    expect(plain).to include('Git: Config: Run Git Origin')
+    expect(plain).to include('❌')
+    expect(plain).to include('Git: Clean Repo: Clean Git Repo')
+    expect(plain).to include('exit code 12')
+  end
+
+  it 'formats as a proper markdown table with aligned columns' do
+    Howzit::RunReport.log({ topic: 'Test', task: 'Short', success: true, exit_status: 0 })
+    Howzit::RunReport.log({ topic: 'Test', task: 'A much longer task name', success: true, exit_status: 0 })
+    plain = Howzit::RunReport.format.uncolor
+    lines = plain.split("\n")
+    # All lines should start and end with pipe
+    lines.each do |line|
+      expect(line).to start_with('|')
+      expect(line).to end_with('|')
+    end
+    # Second line should be separator
+    expect(lines[1]).to match(/^\|[\s:-]+\|[\s:-]+\|$/)
   end
 end
 

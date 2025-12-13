@@ -21,31 +21,58 @@ module Howzit
     def format
       return '' if entries.empty?
 
-      lines = entries.map { |entry| format_line(entry, Howzit.multi_topic_run) }
-      lines.map! { |line| line.rstrip }
-      widths = lines.map { |line| line.uncolor.length }
-      width = widths.max
-      top = '=' * width
-      bottom = '-' * width
-      output_lines = [top] + lines + [bottom]
-      result = output_lines.join("\n")
-      result = result.gsub(/\n[ \t]+\n/, "\n")
-      result.gsub(/\n{2,}/, "\n")
+      rows = entries.map { |entry| format_row(entry, Howzit.multi_topic_run) }
+
+      # Status column: emoji + 1 space on each side = 3 chars wide visually
+      # But emojis are 2-width in terminal, so we need width of 4 for " ✅ "
+      status_width = 4
+      task_width = [4, rows.map { |r| r[:task_plain].length }.max].max
+
+      # Build the table with emoji header
+      header = "| 🚥 | #{'Task'.ljust(task_width)} |"
+      separator = "| #{':' + '-' * 2 + ':'} | #{':' + '-' * (task_width - 2)} |"
+
+      table_lines = [header, separator]
+      rows.each do |row|
+        table_lines << table_row_colored(row[:status], row[:task], row[:task_plain], status_width, task_width)
+      end
+
+      table_lines.join("\n")
     end
 
-    def format_line(entry, prefix_topic)
-      bullet_start = '{mb}- [{x}'
-      bullet_end = '{mb}] {x}'
-      symbol = entry[:success] ? '{bg}✓{x}' : '{br}X{x}'
-      parts = []
-      parts << "#{bullet_start}#{symbol}#{bullet_end}"
-      parts << "{bl}#{entry[:topic]}{x}: " if prefix_topic && entry[:topic] && !entry[:topic].empty?
-      parts << "{by}#{entry[:task]}{x}"
+    def table_row_colored(status, task, task_plain, status_width, task_width)
+      task_padding = task_width - task_plain.length
+
+      "| #{status} | #{task}#{' ' * task_padding} |"
+    end
+
+    def format_row(entry, prefix_topic)
+      symbol = entry[:success] ? '✅' : '❌'
+      symbol_colored = entry[:success] ? '{bg}✅{x}'.c : '{br}❌{x}'.c
+
+      task_parts = []
+      task_parts_plain = []
+
+      if prefix_topic && entry[:topic] && !entry[:topic].empty?
+        task_parts << "{bw}#{entry[:topic]}{x}: "
+        task_parts_plain << "#{entry[:topic]}: "
+      end
+
+      task_parts << "{by}#{entry[:task]}{x}"
+      task_parts_plain << entry[:task]
+
       unless entry[:success]
         reason = entry[:exit_status] ? "exit code #{entry[:exit_status]}" : 'failed'
-        parts << " {br}(Failed: #{reason}){x}"
+        task_parts << " {br}(#{reason}){x}"
+        task_parts_plain << " (#{reason})"
       end
-      parts.join.c
+
+      {
+        status: symbol_colored,
+        status_plain: symbol,
+        task: task_parts.join.c,
+        task_plain: task_parts_plain.join
+      }
     end
   end
 end
