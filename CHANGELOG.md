@@ -1,3 +1,15 @@
+### 2.1.24
+
+2025-12-13 07:11
+
+#### CHANGED
+
+- Run summary now displays as simple list with emoji status indicators
+
+#### IMPROVED
+
+- Use horizontal rule (***) as separator instead of box borders
+
 ### 2.1.23
 
 2025-12-13 06:38
