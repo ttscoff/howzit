@@ -293,16 +293,11 @@ module Howzit
       if default
         input = title
       else
-        # title = prompt.ask("{bw}Project name:{x}".c, default: title)
-        printf "{bw}Project name {xg}[#{title}]{bw}: {x}".c
-        input = $stdin.gets.chomp
-        title = input unless input.empty?
+        title = Prompt.get_line('{bw}Project name{x}'.c, default: title)
       end
       summary = ''
       unless default
-        printf '{bw}Project summary: {x}'.c
-        input = $stdin.gets.chomp
-        summary = input unless input.empty?
+        summary = Prompt.get_line('{bw}Project summary{x}'.c)
       end
 
       # Template selection
@@ -314,9 +309,7 @@ module Howzit
 
       fname = 'buildnotes.md'
       unless default
-        printf "{bw}Build notes filename (must begin with 'howzit' or 'build')\n{xg}[#{fname}]{bw}: {x}".c
-        input = $stdin.gets.chomp
-        fname = input unless input.empty?
+        fname = Prompt.get_line("{bw}Build notes filename{x}\n(must begin with 'howzit' or 'build')".c, default: fname)
       end
 
       # Build metadata section

@@ -100,6 +100,10 @@ module Howzit
           return fzf_result(res)
         end
 
+        if Util.command_exist?('gum')
+          return gum_choose(matches, query: query, multi: true)
+        end
+
         tty_menu(matches, query: query)
       end
 
@@ -225,6 +229,10 @@ module Howzit
           return res.empty? ? [] : res.split(/\n/)
         end
 
+        if Util.command_exist?('gum')
+          return gum_choose(matches, prompt: prompt_text, multi: true, required: false)
+        end
+
         text_template_input(matches)
       end
 
@@ -308,15 +316,76 @@ module Howzit
       ## Prompt for a single line of input
       ##
       ## @param      prompt_text  [String] The prompt to display
+      ## @param      default      [String] Default value if empty
       ##
       ## @return     [String] the entered value
       ##
-      def get_line(prompt_text)
-        return '' unless $stdout.isatty
+      def get_line(prompt_text, default: nil)
+        return (default || '') unless $stdout.isatty
 
-        printf "%s: ", prompt_text
-        $stdout.flush
-        $stdin.gets.to_s.strip
+        if Util.command_exist?('gum')
+          result = gum_input(prompt_text, placeholder: default || '')
+          return result.empty? && default ? default : result
+        end
+
+        prompt_with_default = default ? "#{prompt_text} [#{default}]: " : "#{prompt_text}: "
+        result = Readline.readline(prompt_with_default, true).to_s.strip
+        result.empty? && default ? default : result
+      end
+
+      ##
+      ## Use gum for single or multi-select menu
+      ##
+      ## @param      matches   [Array] The options list
+      ## @param      prompt    [String] The prompt text
+      ## @param      multi     [Boolean] Allow multiple selections
+      ## @param      required  [Boolean] Require at least one selection
+      ## @param      query     [String] The search term for display
+      ##
+      ## @return     [Array] Selected items
+      ##
+      def gum_choose(matches, prompt: nil, multi: false, required: true, query: nil)
+        prompt_text = prompt || (query ? "Select for '#{query}'" : 'Select')
+        args = ['gum', 'choose']
+        args << '--no-limit' if multi
+        args << "--header=#{Shellwords.escape(prompt_text)}"
+        args << '--cursor.foreground=6'
+        args << '--selected.foreground=2'
+
+        tty_state = `stty -g`.chomp
+        res = `echo #{Shellwords.escape(matches.join("\n"))} | #{args.join(' ')}`.strip
+        system("stty #{tty_state}")
+
+        if res.empty?
+          if required
+            Howzit.console.info 'Cancelled'
+            Process.exit 0
+          end
+          return []
+        end
+
+        res.split(/\n/)
+      end
+
+      ##
+      ## Use gum for text input
+      ##
+      ## @param      prompt_text   [String] The prompt to display
+      ## @param      placeholder   [String] Placeholder text
+      ##
+      ## @return     [String] The entered value
+      ##
+      def gum_input(prompt_text, placeholder: '')
+        args = ['gum', 'input']
+        args << "--header=#{Shellwords.escape(prompt_text)}"
+        args << "--placeholder=#{Shellwords.escape(placeholder)}" unless placeholder.empty?
+        args << '--cursor.foreground=6'
+
+        tty_state = `stty -g`.chomp
+        res = `#{args.join(' ')}`.strip
+        system("stty #{tty_state}")
+
+        res
       end
     end
   end
