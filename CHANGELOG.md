@@ -1,3 +1,18 @@
+### 2.1.22
+
+2025-12-13 06:14
+
+#### NEW
+
+- Template selection menu when creating new build notes
+- Prompt for required template variables during note creation
+- Gum support as fallback for menus and text input
+
+#### IMPROVED
+
+- Fuzzy matching for template names when fzf unavailable
+- Text input uses Readline for proper line editing (backspace, ctrl-a/e)
+
 ### 2.1.21
 
 2025-12-13 05:03
