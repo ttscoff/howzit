@@ -1,3 +1,25 @@
+### 2.1.21
+
+2025-12-13 05:03
+
+#### NEW
+
+- Prefer exact whole-word topic matches over fuzzy matches
+- Display run summary after executing tasks
+
+#### IMPROVED
+
+- Topic matching now handles colons/commas in topic titles
+- Smart splitting of multiple topics preserves separators in titles
+- Single match from choose now auto-selects without menu
+- Combined output from multiple topics paginated together
+- Menu prompt shows the search term being matched
+
+#### FIXED
+
+- String uncolor deleting characters
+- Broken pipe error when quitting pager early
+
 ### 2.1.20
 
 2025-12-13 05:01
