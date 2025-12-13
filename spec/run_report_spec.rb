@@ -13,11 +13,10 @@ describe Howzit::RunReport do
     Howzit.multi_topic_run = false
   end
 
-  it 'renders a markdown table for single topic runs' do
+  it 'renders a simple list for single topic runs' do
     Howzit::RunReport.log({ topic: 'Git: Config', task: 'Run Git Origin', success: true, exit_status: 0 })
     plain = Howzit::RunReport.format.uncolor
-    expect(plain).to include('| 🚥 |')
-    expect(plain).to include('| Task')
+    expect(plain).to include('***')
     expect(plain).to include('✅')
     expect(plain).to include('Run Git Origin')
     expect(plain).not_to include('Git: Config:')
@@ -35,10 +34,10 @@ describe Howzit::RunReport do
     expect(plain).to include('exit code 12')
   end
 
-  it 'formats as a proper markdown table with aligned columns' do
+  it 'formats as a proper markdown table with aligned columns using format_as_table' do
     Howzit::RunReport.log({ topic: 'Test', task: 'Short', success: true, exit_status: 0 })
     Howzit::RunReport.log({ topic: 'Test', task: 'A much longer task name', success: true, exit_status: 0 })
-    plain = Howzit::RunReport.format.uncolor
+    plain = Howzit::RunReport.format_as_table.uncolor
     lines = plain.split("\n")
     # All lines should start and end with pipe
     lines.each do |line|
