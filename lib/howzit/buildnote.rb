@@ -305,6 +305,13 @@ module Howzit
         summary = input unless input.empty?
       end
 
+      # Template selection
+      selected_templates = []
+      template_metadata = {}
+      unless default
+        selected_templates, template_metadata = select_templates_for_note(title)
+      end
+
       fname = 'buildnotes.md'
       unless default
         printf "{bw}Build notes filename (must begin with 'howzit' or 'build')\n{xg}[#{fname}]{bw}: {x}".c
@@ -312,8 +319,18 @@ module Howzit
         fname = input unless input.empty?
       end
 
+      # Build metadata section
+      metadata_lines = []
+      unless selected_templates.empty?
+        metadata_lines << "template: #{selected_templates.join(',')}"
+      end
+      template_metadata.each do |key, value|
+        metadata_lines << "#{key}: #{value}"
+      end
+      metadata_section = metadata_lines.empty? ? '' : "#{metadata_lines.join("\n")}\n\n"
+
       note = <<~EOBUILDNOTES
-        # #{title}
+        #{metadata_section}# #{title}
 
         #{summary}
 
@@ -368,6 +385,68 @@ module Howzit
     end
 
     private
+
+    ##
+    ## Select templates for a new build note
+    ##
+    ## @param      project_title  [String] The project title for prompts
+    ##
+    ## @return     [Array<Array, Hash>] Array of [selected_template_names, required_vars_hash]
+    ##
+    def select_templates_for_note(project_title)
+      template_dir = Howzit.config.template_folder
+      template_glob = File.join(template_dir, '*.md')
+      template_files = Dir.glob(template_glob)
+
+      return [[], {}] if template_files.empty?
+
+      # Get basenames without extension for menu
+      template_names = template_files.map { |f| File.basename(f, '.md') }.sort
+
+      # Show multi-select menu
+      selected = Prompt.choose_templates(template_names, prompt_text: 'Select templates to include')
+      return [[], {}] if selected.empty?
+
+      # Prompt for required variables from each template
+      required_vars = {}
+      selected.each do |template_name|
+        template_path = File.join(template_dir, "#{template_name}.md")
+        next unless File.exist?(template_path)
+
+        vars = parse_template_required_vars(template_path)
+        vars.each do |var|
+          next if required_vars.key?(var)
+
+          value = Prompt.get_line("{bw}[#{template_name}] requires {by}#{var}{x}".c)
+          required_vars[var] = value unless value.empty?
+        end
+      end
+
+      [selected, required_vars]
+    end
+
+    ##
+    ## Parse a template file for required variables
+    ##
+    ## @param      template_path  [String] Path to the template file
+    ##
+    ## @return     [Array] Array of required variable names
+    ##
+    def parse_template_required_vars(template_path)
+      content = File.read(template_path)
+
+      # Look for required: in the metadata at the top of the file
+      # Metadata is before the first # heading
+      meta_section = content.split(/^#/)[0]
+      return [] if meta_section.nil? || meta_section.strip.empty?
+
+      # Find the required: line
+      match = meta_section.match(/^required:\s*(.+)$/i)
+      return [] unless match
+
+      # Split by comma and strip whitespace
+      match[1].split(',').map(&:strip).reject(&:empty?)
+    end
 
     def topic_search_terms_from_cli
       args = Howzit.cli_args || []

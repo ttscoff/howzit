@@ -199,6 +199,125 @@ module Howzit
         end
         line == '' ? 1 : line.to_i
       end
+
+      ##
+      ## Multi-select menu for templates
+      ##
+      ## @param      matches  [Array] The options list
+      ## @param      prompt_text  [String] The prompt to display
+      ##
+      ## @return     [Array] the selected results (can be empty)
+      ##
+      def choose_templates(matches, prompt_text: 'Select templates')
+        return [] if matches.count.zero?
+        return [] unless $stdout.isatty
+
+        if Util.command_exist?('fzf')
+          height = matches.count + 3
+          settings = fzf_template_options(height, prompt_text: prompt_text)
+
+          # Save terminal state before fzf
+          tty_state = `stty -g`.chomp
+          res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf #{settings.join(' ')}`.strip
+          # Restore terminal state after fzf
+          system("stty #{tty_state}")
+
+          return res.empty? ? [] : res.split(/\n/)
+        end
+
+        text_template_input(matches)
+      end
+
+      ##
+      ## FZF options for template selection
+      ##
+      def fzf_template_options(height, prompt_text: 'Select templates')
+        [
+          '-0',
+          '-m',
+          "--height=#{height}",
+          '--header="Tab: add selection, ctrl-a/d: (de)select all, esc: skip, return: confirm"',
+          '--bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all',
+          "--prompt=\"#{prompt_text} > \""
+        ]
+      end
+
+      ##
+      ## Text-based template input with fuzzy matching
+      ##
+      ## @param      available  [Array] Available template names
+      ##
+      ## @return     [Array] Matched template names
+      ##
+      def text_template_input(available)
+        @stty_save = `stty -g`.chomp
+
+        trap('INT') do
+          system('stty', @stty_save)
+          exit
+        end
+
+        puts "\n{bw}Available templates:{x} #{available.join(', ')}".c
+        printf '{bw}Enter templates to include, comma-separated (return to skip):{x} '.c
+        input = Readline.readline('', true).strip
+
+        return [] if input.empty?
+
+        fuzzy_match_templates(input, available)
+      ensure
+        system('stty', @stty_save) if @stty_save
+      end
+
+      ##
+      ## Fuzzy match user input against available templates
+      ##
+      ## @param      input      [String] Comma-separated user input
+      ## @param      available  [Array] Available template names
+      ##
+      ## @return     [Array] Matched template names
+      ##
+      def fuzzy_match_templates(input, available)
+        terms = input.split(',').map(&:strip).reject(&:empty?)
+        matched = []
+
+        terms.each do |term|
+          # Try exact match first (case-insensitive)
+          exact = available.find { |t| t.downcase == term.downcase }
+          if exact
+            matched << exact unless matched.include?(exact)
+            next
+          end
+
+          # Try fuzzy match using the same regex approach as topic matching
+          rx = term.to_rx
+          fuzzy = available.select { |t| t =~ rx }
+
+          # Prefer matches that start with the term
+          if fuzzy.length > 1
+            starts_with = fuzzy.select { |t| t.downcase.start_with?(term.downcase) }
+            fuzzy = starts_with unless starts_with.empty?
+          end
+
+          fuzzy.each { |t| matched << t unless matched.include?(t) }
+        end
+
+        matched
+      end
+
+      ##
+      ## Prompt for a single line of input
+      ##
+      ## @param      prompt_text  [String] The prompt to display
+      ##
+      ## @return     [String] the entered value
+      ##
+      def get_line(prompt_text)
+        return '' unless $stdout.isatty
+
+        printf "%s: ", prompt_text
+        $stdout.flush
+        $stdin.gets.to_s.strip
+      end
     end
   end
 end
