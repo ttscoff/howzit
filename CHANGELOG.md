@@ -1,3 +1,20 @@
+### 2.1.23
+
+2025-12-13 06:38
+
+#### CHANGED
+
+- Output format changed from bordered text to markdown table
+
+#### NEW
+
+- Added emoji header () to run report table
+
+#### IMPROVED
+
+- Status indicators now use emoji (/) instead of text symbols
+- Failure messages now show "(exit code X)" instead of "Failed: exit code X"
+
 ### 2.1.22
 
 2025-12-13 06:14
