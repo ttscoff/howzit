@@ -83,10 +83,11 @@ module Howzit
       ##                      number of options, anything
       ##                      else gets max height for
       ##                      terminal)
+      ## @param      query    [String] The search term to display in prompt
       ##
       ## @return     [Array] the selected results
       ##
-      def choose(matches, height: :auto)
+      def choose(matches, height: :auto, query: nil)
         return [] if matches.count.zero?
         return matches if matches.count == 1
         return [] unless $stdout.isatty
@@ -94,12 +95,12 @@ module Howzit
         if Util.command_exist?('fzf')
           height = height == :auto ? matches.count + 3 : TTY::Screen.rows
 
-          settings = fzf_options(height)
+          settings = fzf_options(height, query: query)
           res = `echo #{Shellwords.escape(matches.join("\n"))} | fzf #{settings.join(' ')}`.strip
           return fzf_result(res)
         end
 
-        tty_menu(matches)
+        tty_menu(matches, query: query)
       end
 
       def fzf_result(res)
@@ -110,7 +111,12 @@ module Howzit
         res.split(/\n/)
       end
 
-      def fzf_options(height)
+      def fzf_options(height, query: nil)
+        prompt = if query
+                   "Select a topic for \\`#{query}\\` > "
+                 else
+                   'Select a topic > '
+                 end
         [
           '-0',
           '-1',
@@ -118,7 +124,7 @@ module Howzit
           "--height=#{height}",
           '--header="Tab: add selection, ctrl-a/d: (de)select all, return: display/run"',
           '--bind ctrl-a:select-all,ctrl-d:deselect-all,ctrl-t:toggle-all',
-          '--prompt="Select a topic > "',
+          "--prompt=\"#{prompt}\"",
           %(--preview="howzit --no-pager --header-format block --no-color --default --multiple first {}")
         ]
       end
@@ -127,8 +133,9 @@ module Howzit
       ## Display a numeric menu on the TTY
       ##
       ## @param      matches  The matches from which to select
+      ## @param      query    [String] The search term to display
       ##
-      def tty_menu(matches)
+      def tty_menu(matches, query: nil)
         return matches if matches.count == 1
 
         @stty_save = `stty -g`.chomp
@@ -138,6 +145,9 @@ module Howzit
           exit
         end
 
+        if query
+          puts "\nSelect a topic for `#{query}`:"
+        end
         options_list(matches)
         read_selection(matches)
       end

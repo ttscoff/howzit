@@ -82,8 +82,11 @@ describe Howzit::Topic do
   end
 
   describe '.print_out' do
-    Howzit.options[:header_format] = :block
-    Howzit.options[:color] = false
+    before do
+      Howzit.options[:header_format] = :block
+      Howzit.options[:color] = false
+      Howzit.options[:show_all_code] = false
+    end
 
     it 'prints the topic title' do
       expect(topic.print_out({ single: true, header: true }).join("\n").uncolor).to match(/▌Topic Balogna/)

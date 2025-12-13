@@ -32,12 +32,12 @@ OptionParser.new do |opts|
   opts.on("-f", "--force", "Continue executing after an error") { Howzit.options[:force] = true }
 
   opts.on("-m", "--matching TYPE", MATCHING_OPTIONS,
-          "Topics matching type", "(#{MATCHING_OPTIONS.join(", ")})") do |c|
+          "Topics matching type", "(#{MATCHING_OPTIONS.join(", ").sub(/#{Howzit.options[:matching]}/, "*#{Howzit.options[:matching]}")})") do |c|
     Howzit.options[:matching] = c
   end
 
   opts.on("--multiple TYPE", MULTIPLE_OPTIONS,
-          "Multiple result handling", "(#{MULTIPLE_OPTIONS.join(", ")}, default choose)") do |c|
+          "Multiple result handling", "(#{MULTIPLE_OPTIONS.join(", ").sub(/#{Howzit.options[:multiple_matches]}/, "*#{Howzit.options[:multiple_matches]}")}, default choose)") do |c|
     Howzit.options[:multiple_matches] = c.to_sym
   end
 

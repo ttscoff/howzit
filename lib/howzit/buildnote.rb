@@ -866,81 +866,134 @@ module Howzit
         Process.exit(0)
       end
 
-      topic_matches = []
-
+      # Handle grep and choose modes (batch all results)
       if Howzit.options[:grep]
+        topic_matches = []
         matches = grep(Howzit.options[:grep])
         case Howzit.options[:multiple_matches]
         when :all
           topic_matches.concat(matches.sort_by(&:title))
         else
-          topic_matches.concat(Prompt.choose(matches.map(&:title), height: :max))
+          topic_matches.concat(Prompt.choose(matches.map(&:title), height: :max, query: Howzit.options[:grep]))
         end
+        process_topic_matches(topic_matches, output)
       elsif Howzit.options[:choose]
+        topic_matches = []
         titles = Prompt.choose(list_topics, height: :max)
         titles.each { |title| topic_matches.push(find_topic(title)[0]) }
-        # If there are arguments use those to search for a matching topic
+        process_topic_matches(topic_matches, output)
       elsif !Howzit.cli_args.empty?
+        # Collect all topic matches first (showing menus as needed)
         search = topic_search_terms_from_cli
-
-        search.each do |s|
-          # First check for exact whole-word matches
-          exact_matches = find_topic_exact(s)
-
-          if !exact_matches.empty?
-            # If there's an exact match, use it directly
-            topic_matches.concat(exact_matches)
-          else
-            # Fall back to fuzzy matching
-            matches = find_topic(s)
-
-            if matches.empty?
-              output.push(%({bR}ERROR:{xr} No topic match found for {bw}#{s}{x}\n).c)
-            else
-              case Howzit.options[:multiple_matches]
-              when :first
-                topic_matches.push(matches[0])
-              when :best
-                topic_matches.push(matches.sort_by { |a| [a.title.comp_distance(s), a.title.length] })
-              when :all
-                topic_matches.concat(matches)
-              else
-                titles = matches.map(&:title)
-                res = Prompt.choose(titles)
-                old_matching = Howzit.options[:matching]
-                Howzit.options[:matching] = 'exact'
-                res.each { |title| topic_matches.concat(find_topic(title)) }
-                Howzit.options[:matching] = old_matching
-              end
-            end
-          end
+        topic_matches = collect_topic_matches(search, output)
+        process_topic_matches(topic_matches, output)
+      else
+        # No arguments - show all topics
+        if Howzit.options[:run]
+          Howzit.run_log = []
+          Howzit.multi_topic_run = topics.length > 1
         end
+        topics.each { |k| output.push(process_topic(k, false, single: false)) }
+        finalize_output(output)
+      end
+    end
 
-        if topic_matches.empty? && !Howzit.options[:show_all_on_error]
-          Util.show(output.join("\n"), { color: true, highlight: false, paginate: false, wrap: 0 })
-          Process.exit 1
+    ##
+    ## Collect all topic matches from search terms, showing menus as needed
+    ## but not displaying/running until all selections are made
+    ##
+    ## @param      search_terms  [Array] Array of search term strings
+    ## @param      output        [Array] Output array for error messages
+    ##
+    ## @return     [Array] Array of all matched topics
+    ##
+    def collect_topic_matches(search_terms, output)
+      all_matches = []
+
+      search_terms.each do |s|
+        # First check for exact whole-word matches
+        exact_matches = find_topic_exact(s)
+
+        topic_matches = if !exact_matches.empty?
+                          exact_matches
+                        else
+                          resolve_fuzzy_matches(s, output)
+                        end
+
+        if topic_matches.empty?
+          output.push(%({bR}ERROR:{xr} No topic match found for {bw}#{s}{x}\n).c)
+        else
+          all_matches.concat(topic_matches)
         end
+      end
+
+      all_matches
+    end
+
+    ##
+    ## Resolve fuzzy matches for a search term
+    ##
+    ## @param      search_term  [String] The search term
+    ## @param      output       [Array] Output array for errors
+    ##
+    ## @return     [Array] Array of matched topics
+    ##
+    def resolve_fuzzy_matches(search_term, output)
+      matches = find_topic(search_term)
+
+      return [] if matches.empty?
+
+      case Howzit.options[:multiple_matches]
+      when :first
+        [matches[0]]
+      when :best
+        [matches.sort_by { |a| [a.title.comp_distance(search_term), a.title.length] }.first]
+      when :all
+        matches
+      else
+        titles = matches.map(&:title)
+        res = Prompt.choose(titles, query: search_term)
+        old_matching = Howzit.options[:matching]
+        Howzit.options[:matching] = 'exact'
+        selected = res.flat_map { |title| find_topic(title) }
+        Howzit.options[:matching] = old_matching
+        selected
+      end
+    end
+
+    ##
+    ## Process collected topic matches and display output
+    ##
+    ## @param      topic_matches  [Array] Array of matched topics
+    ## @param      output         [Array] Output array
+    ##
+    def process_topic_matches(topic_matches, output)
+      if topic_matches.empty? && !Howzit.options[:show_all_on_error]
+        Util.show(output.join("\n"), { color: true, highlight: false, paginate: false, wrap: 0 })
+        Process.exit 1
       end
 
       if Howzit.options[:run]
-        topic_count = if !topic_matches.empty?
-                        topic_matches.length
-                      elsif Howzit.cli_args.empty?
-                        topics.length
-                      else
-                        0
-                      end
-        Howzit.multi_topic_run = topic_count > 1
+        Howzit.run_log = []
+        Howzit.multi_topic_run = topic_matches.length > 1
       end
 
       if !topic_matches.empty?
-        # If we found a match
         topic_matches.map! { |topic| topic.is_a?(String) ? find_topic(topic)[0] : topic }
         topic_matches.each { |topic_match| output.push(process_topic(topic_match, Howzit.options[:run], single: true)) }
       else
-        # If there's no argument or no match found, output all
         topics.each { |k| output.push(process_topic(k, false, single: false)) }
       end
+
+      finalize_output(output)
+    end
+
+    ##
+    ## Finalize and display output with run summary if applicable
+    ##
+    ## @param      output  [Array] Output array
+    ##
+    def finalize_output(output)
       if Howzit.options[:run]
         Howzit.options[:paginate] = false
         summary = Howzit::RunReport.format

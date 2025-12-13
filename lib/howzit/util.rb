@@ -145,7 +145,11 @@ module Howzit
         end
 
         read_io.close
-        write_io.write(text)
+        begin
+          write_io.write(text)
+        rescue Errno::EPIPE
+          # User quit pager before we finished writing, ignore
+        end
         write_io.close
 
         _, status = Process.waitpid2(pid)
