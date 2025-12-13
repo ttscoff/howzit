@@ -16,7 +16,9 @@ Gem::Specification.new do |spec|
   spec.homepage      = 'https://github.com/ttscoff/howzit'
   spec.license       = 'MIT'
 
-  spec.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
+  spec.files         = `git ls-files -z`.split("\x0").reject do |path|
+    path.split('/').any? { |segment| segment.start_with?('.') } || path.end_with?('.bak')
+  end
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.test_files    = spec.files.grep(%r{^(features|spec|test)/})
   spec.require_paths = ['lib']

@@ -104,6 +104,8 @@ module Howzit
 
             break unless Howzit.options[:force]
           end
+
+          log_task_result(task, success)
         end
 
         total = "{bw}#{@results[:total]}{by} #{@results[:total] == 1 ? 'task' : 'tasks'}".c
@@ -119,7 +121,7 @@ module Howzit
         Howzit.console.warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c
       end
 
-      output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested
+      output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested && !Howzit.options[:run]
 
       puts TTY::Box.frame("{bw}#{@postreqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols) unless @postreqs.empty?
 
@@ -324,6 +326,27 @@ module Howzit
     ##
     ## @return     [Array] array of Task objects
     ##
+    def log_task_result(task, success)
+      return unless Howzit.options[:run]
+      return if task.type == :include
+
+      Howzit.run_log ||= []
+
+      title = (task.title || '').strip
+      if title.empty?
+        action = (task.action || '').strip
+        title = action.split(/\n/).first.to_s.strip
+      end
+      title = task.type.to_s.capitalize if title.nil? || title.empty?
+
+      Howzit.run_log << {
+        topic: @title,
+        task: title,
+        success: success ? true : false,
+        exit_status: task.last_status
+      }
+    end
+
     def gather_tasks
       runnable = []
       @prereqs = @content.scan(/(?<=@before\n).*?(?=\n@end)/im).map(&:strip)

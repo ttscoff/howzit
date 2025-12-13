@@ -57,7 +57,7 @@ module Howzit
     ## @param      template  [String] The template title
     ##
     def edit_template(template)
-      file = template.sub(/(\.md)?$/i, ".md")
+      file = template.sub(/(\.md)?$/i, '.md')
       file = File.join(Howzit.config.template_folder, file)
       edit_template_file(file)
     end
@@ -70,9 +70,39 @@ module Howzit
     def find_topic(term = nil)
       return @topics if term.nil?
 
+      rx = term.to_rx
+
       @topics.filter do |topic|
-        rx = term.to_rx
-        topic.title.downcase.sub(/ *\(.*?\) *$/, "") =~ rx
+        title = topic.title.downcase.sub(/ *\(.*?\) *$/, '')
+        match = title =~ rx
+
+        if !match && term =~ /[,:]/
+          normalized = title.gsub(/\s*([,:])\s*/, '\1')
+          match = normalized =~ rx
+        end
+
+        match
+      end
+    end
+
+    ##
+    ## Find a topic with an exact whole-word match
+    ##
+    ## @param      term  [String] The search term
+    ##
+    ## @return     [Array] Array of topics that exactly match the term
+    ##
+    def find_topic_exact(term = nil)
+      return [] if term.nil?
+
+      @topics.filter do |topic|
+        title = topic.title.downcase.sub(/ *\(.*?\) *$/, '').strip
+        # Split both the title and search term into words
+        title_words = title.split
+        search_words = term.split
+
+        # Check if all search words match the title words exactly (case-insensitive)
+        search_words.map(&:downcase) == title_words.map(&:downcase)
       end
     end
 
@@ -84,7 +114,7 @@ module Howzit
       title = "#{title} project notes"
       url = "[#{title}](file://#{note_file})"
       Util.os_copy(url)
-      Howzit.console.info("Link copied to clipboard.")
+      Howzit.console.info('Link copied to clipboard.')
     end
 
     ##
@@ -117,9 +147,7 @@ module Howzit
     def list_topics
       @topics.map do |topic|
         title = topic.title
-        unless topic.named_args.empty?
-          title += "(#{topic.named_args.keys.join(", ")})"
-        end
+        title += "(#{topic.named_args.keys.join(', ')})" unless topic.named_args.empty?
         title
       end
     end
@@ -143,13 +171,11 @@ module Howzit
     def list_runnable_completions
       output = []
       @topics.each do |topic|
-        if topic.tasks.count.positive?
-          title = topic.title
-          unless topic.named_args.empty?
-            title += "(#{topic.named_args.keys.join(", ")})"
-          end
-          output.push(title)
-        end
+        next unless topic.tasks.count.positive?
+
+        title = topic.title
+        title += "(#{topic.named_args.keys.join(', ')})" unless topic.named_args.empty?
+        output.push(title)
       end
       output.join("\n")
     end
@@ -172,9 +198,7 @@ module Howzit
         next if s_out.empty?
 
         title = topic.title
-        unless topic.named_args.empty?
-          title += " {dy}({xy}#{topic.named_args.keys.join(", ")}{dy}){x}"
-        end
+        title += " {dy}({xy}#{topic.named_args.keys.join(', ')}{dy}){x}" unless topic.named_args.empty?
 
         output.push("- {g}#{title}{x}".c)
         output.push(s_out.join("\n"))
@@ -199,7 +223,7 @@ module Howzit
     ## @param      prompt  [Boolean] confirm file creation?
     ##
     def create_template_file(file, prompt: false)
-      trap("SIGINT") do
+      trap('SIGINT') do
         Howzit.console.info "\nCancelled"
         exit!
       end
@@ -211,7 +235,7 @@ module Howzit
         Process.exit 0 unless res
       end
 
-      title = File.basename(file, ".md")
+      title = File.basename(file, '.md')
 
       note = <<~EOBUILDNOTES
         # #{title}
@@ -223,12 +247,12 @@ module Howzit
       if File.exist?(file) && !default
         file = "{by}#{file}".c
         unless Prompt.yn("Are you sure you want to overwrite #{file}", default: false)
-          Howzit.console.info("Cancelled")
+          Howzit.console.info('Cancelled')
           Process.exit 0
         end
       end
 
-      File.open(file, "w") do |f|
+      File.open(file, 'w') do |f|
         f.puts note
         Howzit.console.info("{by}Template {bw}#{title}{by} written to {bw}#{file}{x}".c)
       end
@@ -243,7 +267,7 @@ module Howzit
 
     # Create a buildnotes skeleton
     def create_note(prompt: false)
-      trap("SIGINT") do
+      trap('SIGINT') do
         Howzit.console.info "\nCancelled"
         exit!
       end
@@ -251,7 +275,7 @@ module Howzit
       default = !$stdout.isatty || Howzit.options[:default]
 
       if prompt && !default
-        res = Prompt.yn("No build notes file found, create one?", default: true)
+        res = Prompt.yn('No build notes file found, create one?', default: true)
         Process.exit 0 unless res
       end
 
@@ -274,14 +298,14 @@ module Howzit
         input = $stdin.gets.chomp
         title = input unless input.empty?
       end
-      summary = ""
+      summary = ''
       unless default
-        printf "{bw}Project summary: {x}".c
+        printf '{bw}Project summary: {x}'.c
         input = $stdin.gets.chomp
         summary = input unless input.empty?
       end
 
-      fname = "buildnotes.md"
+      fname = 'buildnotes.md'
       unless default
         printf "{bw}Build notes filename (must begin with 'howzit' or 'build')\n{xg}[#{fname}]{bw}: {x}".c
         input = $stdin.gets.chomp
@@ -316,12 +340,12 @@ module Howzit
       if File.exist?(fname) && !default
         file = "{by}#{fname}".c
         unless Prompt.yn("Are you absolutely sure you want to overwrite #{file}", default: false)
-          Howzit.console.info("Canceled")
+          Howzit.console.info('Canceled')
           Process.exit 0
         end
       end
 
-      File.open(fname, "w") do |f|
+      File.open(fname, 'w') do |f|
         f.puts note
         Howzit.console.info("{by}Build notes for {bw}#{title}{by} written to {bw}#{fname}{x}".c)
       end
@@ -345,6 +369,70 @@ module Howzit
 
     private
 
+    def topic_search_terms_from_cli
+      args = Howzit.cli_args || []
+      raw = args.join(' ').strip
+      return [] if raw.empty?
+
+      smart_split_topics(raw).map { |term| term.strip.downcase }.reject(&:empty?)
+    end
+
+    def smart_split_topics(raw)
+      segments, separators = segments_and_separators_for(raw)
+      return segments if separators.empty?
+
+      combined = []
+      current = segments.shift || ''
+
+      separators.each_with_index do |separator, idx|
+        next_segment = segments[idx] || ''
+        if keep_separator_with_current?(current, separator, next_segment)
+          current = "#{current}#{separator}#{next_segment}"
+        else
+          combined << current
+          current = next_segment
+        end
+      end
+
+      combined << current
+      combined
+    end
+
+    def segments_and_separators_for(raw)
+      segments = []
+      separators = []
+      current = String.new
+
+      raw.each_char do |char|
+        if char =~ /[,:]/
+          segments << current
+          separators << char
+          current = String.new
+        else
+          current << char
+        end
+      end
+
+      segments << current
+      [segments, separators]
+    end
+
+    def keep_separator_with_current?(current, separator, next_segment)
+      candidate = "#{current}#{separator}#{next_segment}"
+      normalized_candidate = normalize_separator_string(candidate)
+      return false if normalized_candidate.empty?
+
+      @topics.any? do |topic|
+        normalize_separator_string(topic.title).start_with?(normalized_candidate)
+      end
+    end
+
+    def normalize_separator_string(string)
+      return '' if string.nil?
+
+      string.downcase.gsub(/\s+/, ' ').strip.gsub(/\s*([,:])\s*/, '\1')
+    end
+
     ##
     ## Import the contents of a filename as new topics
     ##
@@ -357,15 +445,15 @@ module Howzit
       return mtch[0] unless File.exist?(file)
 
       content = Util.read_file(file)
-      home = ENV["HOME"]
-      short_path = File.dirname(file.sub(/^#{home}/, "~"))
+      home = ENV['HOME']
+      short_path = File.dirname(file.sub(/^#{home}/, '~'))
       prefix = "#{short_path}/#{File.basename(file)}:"
       parts = content.split(/^##+/)
       parts.shift
       if parts.empty?
         content
       else
-        "## #{parts.join("## ")}".gsub(/^(##+ *)(?=\S)/, "\\1#{prefix}")
+        "## #{parts.join('## ')}".gsub(/^(##+ *)(?=\S)/, "\\1#{prefix}")
       end
     end
 
@@ -382,15 +470,15 @@ module Howzit
 
       t_meta = t_leader.metadata
 
-      return unless t_meta.key?("required")
+      return unless t_meta.key?('required')
 
-      required = t_meta["required"].strip.split(/\s*,\s*/)
+      required = t_meta['required'].strip.split(/\s*,\s*/)
       required.each do |req|
         next if @metadata.keys.include?(req.downcase)
 
         Howzit.console.error %({bRw}ERROR:{xbr} Missing required metadata key from template '{bw}#{File.basename(
-                               template, ".md"
-                             )}{xr}'{x}).c
+          template, '.md'
+        )}{xr}'{x}).c
         Howzit.console.error %({br}Please define {by}#{req.downcase}{xr} in build notes{x}).c
         Process.exit 1
       end
@@ -408,8 +496,8 @@ module Howzit
       subtopics = nil
 
       if template =~ /\[(.*?)\]$/
-        subtopics = Regexp.last_match[1].split(/\s*\|\s*/).map { |t| t.gsub(/\*/, ".*?") }
-        template.sub!(/\[.*?\]$/, "").strip
+        subtopics = Regexp.last_match[1].split(/\s*\|\s*/).map { |t| t.gsub(/\*/, '.*?') }
+        template.sub!(/\[.*?\]$/, '').strip
       end
 
       [template, subtopics]
@@ -429,7 +517,7 @@ module Howzit
       templates.each do |template|
         template, subtopics = detect_subtopics(template)
 
-        file = template.sub(/(\.md)?$/i, ".md")
+        file = template.sub(/(\.md)?$/i, '.md')
         file = File.join(Howzit.config.template_folder, file)
 
         next unless File.exist?(file)
@@ -493,7 +581,7 @@ module Howzit
       buildnotes = []
       filename = nil
 
-      while dir != "/" && (dir =~ %r{[A-Z]:/}).nil?
+      while dir != '/' && (dir =~ %r{[A-Z]:/}).nil?
         Dir.chdir(dir)
         filename = glob_note
         unless filename.nil?
@@ -516,7 +604,7 @@ module Howzit
     ## @return     [String] file path
     ##
     def glob_note
-      Dir.glob("*.{txt,md,markdown}").select(&:build_note?).sort[0]
+      Dir.glob('*.{txt,md,markdown}').select(&:build_note?).sort[0]
     end
 
     ##
@@ -529,9 +617,9 @@ module Howzit
     def find_note_file
       filename = glob_note
 
-      if filename.nil? && "git".available?
+      if filename.nil? && 'git'.available?
         proj_dir = `git rev-parse --show-toplevel 2>/dev/null`.strip
-        unless proj_dir == ""
+        unless proj_dir == ''
           Dir.chdir(proj_dir)
           filename = glob_note
         end
@@ -575,8 +663,8 @@ module Howzit
 
       data = leader.metadata
 
-      if data.key?("template")
-        templates = data["template"].strip.split(/\s*,\s*/)
+      if data.key?('template')
+        templates = data['template'].strip.split(/\s*,\s*/)
 
         template_topics.concat(gather_templates(templates))
       end
@@ -618,13 +706,13 @@ module Howzit
 
         lines = sect.split(/\n/)
         title = lines.slice!(0).strip
-        prefix = ""
+        prefix = ''
         if path && path != note_file
           if path =~ /#{Howzit.config.template_folder}/
-            short_path = File.basename(path, ".md")
+            short_path = File.basename(path, '.md')
           else
-            home = ENV["HOME"]
-            short_path = File.dirname(path.sub(/^#{home}/, "~"))
+            home = ENV['HOME']
+            short_path = File.dirname(path.sub(/^#{home}/, '~'))
             prefix = "_from #{short_path}_\n\n"
           end
           title = "#{short_path}:#{title}"
@@ -636,7 +724,7 @@ module Howzit
       end
 
       template_topics.each do |topic|
-        topics.push(topic) unless find_topic(topic.title.sub(/^.+:/, "")).count.positive?
+        topics.push(topic) unless find_topic(topic.title.sub(/^.+:/, '')).count.positive?
       end
 
       topics
@@ -655,7 +743,7 @@ module Howzit
         upstream_topics = read_upstream
 
         upstream_topics.each do |topic|
-          @topics.push(topic) unless find_topic(topic.title.sub(/^.+:/, "")).count.positive?
+          @topics.push(topic) unless find_topic(topic.title.sub(/^.+:/, '')).count.positive?
         end
         Howzit.has_read_upstream = true
       end
@@ -670,11 +758,11 @@ module Howzit
     ## Open build note in editor
     ##
     def edit_note
-      editor = Howzit.options.fetch(:editor, ENV["EDITOR"])
+      editor = Howzit.options.fetch(:editor, ENV['EDITOR'])
 
       editor = Howzit.config.update_editor if editor.nil?
 
-      raise "No editor defined" if editor.nil?
+      raise 'No editor defined' if editor.nil?
 
       raise "Invalid editor (#{editor})" unless Util.valid_command?(editor)
 
@@ -688,7 +776,7 @@ module Howzit
     ## @param      template  [String] The template name
     ##
     def create_template(template)
-      file = template.sub(/(\.md)?$/i, ".md")
+      file = template.sub(/(\.md)?$/i, '.md')
       file = File.join(Howzit.config.template_folder, file)
       create_template_file(file, prompt: false)
     end
@@ -697,11 +785,11 @@ module Howzit
     ## Open template in editor
     ##
     def edit_template_file(file)
-      editor = Howzit.options.fetch(:editor, ENV["EDITOR"])
+      editor = Howzit.options.fetch(:editor, ENV['EDITOR'])
 
       editor = Howzit.config.update_editor if editor.nil?
 
-      raise "No editor defined" if editor.nil?
+      raise 'No editor defined' if editor.nil?
 
       raise "Invalid editor (#{editor})" unless Util.valid_command?(editor)
 
@@ -722,12 +810,12 @@ module Howzit
       new_topic = topic.is_a?(String) ? find_topic(topic)[0] : topic.dup
 
       output = if run
-          new_topic.run
-        else
-          new_topic.print_out({ single: single })
-        end
+                 new_topic.run
+               else
+                 new_topic.print_out({ single: single })
+               end
 
-      output.nil? ? "" : output.join("\n\n")
+      output.nil? ? '' : output.join("\n\n")
     end
 
     ##
@@ -735,6 +823,10 @@ module Howzit
     ##
     def process
       output = []
+      if Howzit.options[:run]
+        Howzit.run_log = []
+        Howzit.multi_topic_run = false
+      end
 
       unless note_file
         Process.exit 0 if Howzit.options[:list_runnable_titles] || Howzit.options[:list_topic_titles]
@@ -748,7 +840,7 @@ module Howzit
         Process.exit(0)
       elsif Howzit.options[:output_title] && !Howzit.options[:run]
         if @title && !@title.empty?
-          header = @title.format_header({ hr: "\u{2550}", color: "{bwK}" })
+          header = @title.format_header({ hr: "\u{2550}", color: '{bwK}' })
           output.push("#{header}\n")
         end
       end
@@ -789,28 +881,37 @@ module Howzit
         titles.each { |title| topic_matches.push(find_topic(title)[0]) }
         # If there are arguments use those to search for a matching topic
       elsif !Howzit.cli_args.empty?
-        search = Howzit.cli_args.join(" ").strip.downcase.split(/ *, */).map(&:strip)
+        search = topic_search_terms_from_cli
 
         search.each do |s|
-          matches = find_topic(s)
+          # First check for exact whole-word matches
+          exact_matches = find_topic_exact(s)
 
-          if matches.empty?
-            output.push(%({bR}ERROR:{xr} No topic match found for {bw}#{s}{x}\n).c)
+          if !exact_matches.empty?
+            # If there's an exact match, use it directly
+            topic_matches.concat(exact_matches)
           else
-            case Howzit.options[:multiple_matches]
-            when :first
-              topic_matches.push(matches[0])
-            when :best
-              topic_matches.push(matches.sort_by { |a| [a.title.comp_distance(s), a.title.length] })
-            when :all
-              topic_matches.concat(matches)
+            # Fall back to fuzzy matching
+            matches = find_topic(s)
+
+            if matches.empty?
+              output.push(%({bR}ERROR:{xr} No topic match found for {bw}#{s}{x}\n).c)
             else
-              titles = matches.map(&:title)
-              res = Prompt.choose(titles)
-              old_matching = Howzit.options[:matching]
-              Howzit.options[:matching] = "exact"
-              res.each { |title| topic_matches.concat(find_topic(title)) }
-              Howzit.options[:matching] = old_matching
+              case Howzit.options[:multiple_matches]
+              when :first
+                topic_matches.push(matches[0])
+              when :best
+                topic_matches.push(matches.sort_by { |a| [a.title.comp_distance(s), a.title.length] })
+              when :all
+                topic_matches.concat(matches)
+              else
+                titles = matches.map(&:title)
+                res = Prompt.choose(titles)
+                old_matching = Howzit.options[:matching]
+                Howzit.options[:matching] = 'exact'
+                res.each { |title| topic_matches.concat(find_topic(title)) }
+                Howzit.options[:matching] = old_matching
+              end
             end
           end
         end
@@ -821,6 +922,17 @@ module Howzit
         end
       end
 
+      if Howzit.options[:run]
+        topic_count = if !topic_matches.empty?
+                        topic_matches.length
+                      elsif Howzit.cli_args.empty?
+                        topics.length
+                      else
+                        0
+                      end
+        Howzit.multi_topic_run = topic_count > 1
+      end
+
       if !topic_matches.empty?
         # If we found a match
         topic_matches.map! { |topic| topic.is_a?(String) ? find_topic(topic)[0] : topic }
@@ -829,7 +941,11 @@ module Howzit
         # If there's no argument or no match found, output all
         topics.each { |k| output.push(process_topic(k, false, single: false)) }
       end
-      Howzit.options[:paginate] = false if Howzit.options[:run]
+      if Howzit.options[:run]
+        Howzit.options[:paginate] = false
+        summary = Howzit::RunReport.format
+        output.push(summary) unless summary.empty?
+      end
       Util.show(output.join("\n").strip, Howzit.options)
     end
   end

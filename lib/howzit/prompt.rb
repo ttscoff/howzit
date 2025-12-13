@@ -87,7 +87,9 @@ module Howzit
       ## @return     [Array] the selected results
       ##
       def choose(matches, height: :auto)
-        return [] if !$stdout.isatty || matches.count.zero?
+        return [] if matches.count.zero?
+        return matches if matches.count == 1
+        return [] unless $stdout.isatty
 
         if Util.command_exist?('fzf')
           height = height == :auto ? matches.count + 3 : TTY::Screen.rows

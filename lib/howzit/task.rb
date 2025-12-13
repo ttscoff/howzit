@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
+require 'English'
+
 module Howzit
   # Task object
   class Task
-    attr_reader :type, :title, :action, :arguments, :parent, :optional, :default
+    attr_reader :type, :title, :action, :arguments, :parent, :optional, :default, :last_status
 
     ##
     ## Initialize a Task object
@@ -31,6 +33,7 @@ module Howzit
 
       @optional = optional
       @default = default
+      @last_status = nil
     end
 
     ##
@@ -68,6 +71,7 @@ module Howzit
         script.unlink
       end
 
+      update_last_status(res ? 0 : 1)
       res
     end
 
@@ -86,6 +90,7 @@ module Howzit
       Howzit.console.info("#{@prefix}{by}Running tasks from {bw}#{matches[0].title}{x}".c)
       output.concat(matches[0].run(nested: true))
       Howzit.console.info("{by}End include: #{matches[0].tasks.count} tasks{x}".c)
+      @last_status = nil
       [output, matches[0].tasks.count]
     end
 
@@ -96,7 +101,9 @@ module Howzit
       title = Howzit.options[:show_all_code] ? @action : @title
       Howzit.console.info("#{@prefix}{bg}Running {bw}#{title}{x}".c)
       ENV['HOWZIT_SCRIPTS'] = File.expand_path('~/.config/howzit/scripts')
-      system(@action)
+      res = system(@action)
+      update_last_status(res ? 0 : 1)
+      res
     end
 
     ##
@@ -106,6 +113,7 @@ module Howzit
       title = Howzit.options[:show_all_code] ? @action : @title
       Howzit.console.info("#{@prefix}{bg}Copied {bw}#{title}{bg} to clipboard{x}".c)
       Util.os_copy(@action)
+      @last_status = 0
       true
     end
 
@@ -127,10 +135,21 @@ module Howzit
                 run_copy
               when :open
                 Util.os_open(@action)
+                @last_status = 0
+                true
               end
             end
 
       [output, tasks, res]
+    end
+
+    def update_last_status(default = nil)
+      status = if defined?($CHILD_STATUS) && $CHILD_STATUS
+                 $CHILD_STATUS.exitstatus
+               else
+                 default
+               end
+      @last_status = status
     end
 
     ##

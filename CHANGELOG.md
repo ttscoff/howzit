@@ -1,3 +1,11 @@
+### 2.1.19
+
+2025-11-14 00:00
+
+#### IMPROVED
+
+- Allow `howzit -r` to accept multiple comma/colon-separated topics while keeping separators that belong to topic titles
+
 ### 2.1.18
 
 2025-01-01 09:53

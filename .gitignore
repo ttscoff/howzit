@@ -43,3 +43,6 @@ Gemfile.lock
 .rvmrc
 results.log
 html
+.vscode
+*.bak
+commit_message.txt

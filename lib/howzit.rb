@@ -41,6 +41,7 @@ require_relative 'howzit/config'
 require_relative 'howzit/task'
 require_relative 'howzit/topic'
 require_relative 'howzit/buildnote'
+require_relative 'howzit/run_report'
 
 require 'tty/screen'
 require 'tty/box'
@@ -49,7 +50,7 @@ require 'tty/box'
 # Main module for howzit
 module Howzit
   class << self
-    attr_accessor :arguments, :named_arguments, :cli_args
+    attr_accessor :arguments, :named_arguments, :cli_args, :run_log, :multi_topic_run
 
     ##
     ## Holds a Configuration object with methods and a @settings hash
@@ -88,10 +89,18 @@ module Howzit
       @console ||= Howzit::ConsoleLogger.new(options[:log_level])
     end
 
+    def run_log
+      @run_log ||= []
+    end
+
+    def multi_topic_run
+      @multi_topic_run ||= false
+    end
+
     def has_read_upstream
       @has_read_upstream ||= false
     end
 
-    attr_writer :has_read_upstream
+    attr_writer :has_read_upstream, :run_log
   end
 end

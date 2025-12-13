@@ -18,6 +18,8 @@ RSpec.configure do |c|
     save_buildnote
     Howzit.options[:include_upstream] = false
     Howzit.options[:default] = true
+    Howzit.options[:matching] = 'partial'
+    Howzit.options[:multiple_matches] = 'choose'
     @hz = Howzit.buildnote
   end
 
@@ -67,6 +69,18 @@ def save_buildnote
     ## Happy Bgagngagnga
 
     This one is just to throw things off
+
+    ## Git: Clean Repo
+
+    Keep Git projects tidy.
+
+    ## Blog: Update Post
+
+    Publish the latest article updates.
+
+    ## Release, Deploy
+
+    Prep and deploy the latest release.
   EONOTE
   File.open('builda.md', 'w') { |f| f.puts note }
   # puts "Saved to builda.md: #{File.exist?('builda.md')}"
