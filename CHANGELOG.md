@@ -1,3 +1,17 @@
+### 2.1.25
+
+2025-12-19 07:41
+
+#### NEW
+
+- Added default metadata support to automatically run topics when executing `howzit --run` with no arguments. Supports multiple comma-separated topics with optional bracketed arguments (e.g., `default: Build Project, Run Tests[verbose]`).
+
+#### FIXED
+
+- Task titles are now correctly displayed in run reports and "Running" messages instead of showing the command. When a title is provided after @run or @include directives (e.g., `@run(ls) List directory`), the title is used throughout.
+- Fixed color code interpretation issues when task or topic names contain dollar signs or braces. These characters are now properly escaped to prevent them from being interpreted as color template codes.
+- Fixed issue where task titles containing braces would show literal `{x}` in output due to color template parsing.
+
 ### 2.1.24
 
 2025-12-13 07:11
