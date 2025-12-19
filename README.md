@@ -21,7 +21,6 @@ Howzit is a tool that allows you to keep Markdown-formatted notes about a projec
 - Templates for easily including repeat tasks
 - Grep topics for pattern and choose from matches
 - Use positional and named variables when executing tasks
-- Use `default:` metadata to automatically run specific topics when executing `howzit --run` with no arguments (supports multiple comma-separated topics with optional bracketed arguments, e.g., `default: Build Project, Run Tests[verbose]`)
 
 ## Getting Started
 
