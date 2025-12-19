@@ -272,7 +272,7 @@ module Howzit
       def template(input)
         input = input.join(' ') if input.is_a? Array
         fmt = input.gsub(/%/, '%%')
-        fmt = fmt.gsub(/(?<!\\u|\$)\{(\w+)\}/i) do
+        fmt = fmt.gsub(/(?<!\\u|\$|\\\\)\{(\w+)\}/i) do
           m = Regexp.last_match(1)
           if m =~ /^[wkglycmrWKGLYCMRdbuix]+$/
             m.split('').map { |c| "%<#{c}>s" }.join('')
@@ -287,7 +287,9 @@ module Howzit
                    Y: bgyellow, C: bgcyan, M: bgmagenta, R: bgred,
                    d: dark, b: bold, u: underline, i: italic, x: reset }
 
-        fmt.empty? ? input : format(fmt, colors)
+        result = fmt.empty? ? input : format(fmt, colors)
+        # Unescape braces that were escaped to prevent color code interpretation
+        result.gsub(/\\\{/, '{').gsub(/\\\}/, '}')
       end
     end
 

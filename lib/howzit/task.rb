@@ -26,7 +26,7 @@ module Howzit
       @arguments = attributes[:arguments] || []
 
       @type = attributes[:type] || :run
-      @title = attributes[:title] || nil
+      @title = attributes[:title].nil? ? nil : attributes[:title].to_s
       @parent = attributes[:parent] || nil
 
       @action = attributes[:action].render_arguments || nil
@@ -98,8 +98,19 @@ module Howzit
     ## Execute a run task
     ##
     def run_run
-      title = Howzit.options[:show_all_code] ? @action : @title
-      Howzit.console.info("#{@prefix}{bg}Running {bw}#{title}{x}".c)
+      # If a title was explicitly provided (different from action), always use it
+      # Otherwise, use action (or respect show_all_code if no title)
+      display_title = if @title && !@title.empty? && @title != @action
+                        # Title was explicitly provided, use it
+                        @title
+                      elsif Howzit.options[:show_all_code]
+                        # No explicit title, show code if requested
+                        @action
+                      else
+                        # No explicit title, use title if available (might be same as action), otherwise action
+                        @title && !@title.empty? ? @title : @action
+                      end
+      Howzit.console.info("#{@prefix}{bg}Running {bw}#{display_title}{x}".c)
       ENV['HOWZIT_SCRIPTS'] = File.expand_path('~/.config/howzit/scripts')
       res = system(@action)
       update_last_status(res ? 0 : 1)
@@ -110,8 +121,19 @@ module Howzit
     ## Execute a copy task
     ##
     def run_copy
-      title = Howzit.options[:show_all_code] ? @action : @title
-      Howzit.console.info("#{@prefix}{bg}Copied {bw}#{title}{bg} to clipboard{x}".c)
+      # If a title was explicitly provided (different from action), always use it
+      # Otherwise, use action (or respect show_all_code if no title)
+      display_title = if @title && !@title.empty? && @title != @action
+                        # Title was explicitly provided, use it
+                        @title
+                      elsif Howzit.options[:show_all_code]
+                        # No explicit title, show code if requested
+                        @action
+                      else
+                        # No explicit title, use title if available (might be same as action), otherwise action
+                        @title && !@title.empty? ? @title : @action
+                      end
+      Howzit.console.info("#{@prefix}{bg}Copied {bw}#{display_title}{bg} to clipboard{x}".c)
       Util.os_copy(@action)
       @last_status = 0
       true

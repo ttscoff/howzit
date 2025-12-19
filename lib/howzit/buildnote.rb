@@ -955,18 +955,32 @@ module Howzit
         titles.each { |title| topic_matches.push(find_topic(title)[0]) }
         process_topic_matches(topic_matches, output)
       elsif !Howzit.cli_args.empty?
-        # Collect all topic matches first (showing menus as needed)
-        search = topic_search_terms_from_cli
-        topic_matches = collect_topic_matches(search, output)
-        process_topic_matches(topic_matches, output)
-      else
-        # No arguments - show all topics
-        if Howzit.options[:run]
-          Howzit.run_log = []
-          Howzit.multi_topic_run = topics.length > 1
+        # Check if first arg is "default"
+        if Howzit.options[:run] && Howzit.cli_args[0].downcase == 'default'
+          process_default_metadata(output)
+        else
+          # Collect all topic matches first (showing menus as needed)
+          search = topic_search_terms_from_cli
+          topic_matches = collect_topic_matches(search, output)
+          process_topic_matches(topic_matches, output)
         end
-        topics.each { |k| output.push(process_topic(k, false, single: false)) }
-        finalize_output(output)
+      else
+        # No arguments
+        if Howzit.options[:run]
+          # Check for default metadata when running with no args
+          if @metadata.key?('default')
+            process_default_metadata(output)
+          else
+            Howzit.run_log = []
+            Howzit.multi_topic_run = topics.length > 1
+            topics.each { |k| output.push(process_topic(k, false, single: false)) }
+            finalize_output(output)
+          end
+        else
+          # Show all topics
+          topics.each { |k| output.push(process_topic(k, false, single: false)) }
+          finalize_output(output)
+        end
       end
     end
 
@@ -1058,6 +1072,77 @@ module Howzit
       end
 
       finalize_output(output)
+    end
+
+    ##
+    ## Process default metadata and run the specified topics
+    ##
+    ## @param      output  [Array] Output array
+    ##
+    def process_default_metadata(output)
+      default_value = @metadata['default']
+      return if default_value.nil? || default_value.strip.empty?
+
+      Howzit.run_log = []
+      default_topics = parse_default_metadata(default_value)
+      Howzit.multi_topic_run = default_topics.length > 1
+
+      topic_specs = []
+      default_topics.each do |topic_spec|
+        topic_name, args = parse_topic_with_args(topic_spec)
+        matches = find_topic(topic_name)
+        if matches.empty?
+          output.push(%({bR}ERROR:{xr} No topic match found for {bw}#{topic_name}{x}\n).c)
+        else
+          # Store topic and its arguments together (take first match, like @include does)
+          topic_specs << [matches[0], args]
+        end
+      end
+
+      if topic_specs.empty?
+        Util.show(output.join("\n"), { color: true, highlight: false, paginate: false, wrap: 0 })
+        Process.exit 1
+      end
+
+      # Run each topic with its specific arguments
+      topic_specs.each do |topic_match, args|
+        # Set arguments if provided, otherwise clear them
+        if args && !args.empty?
+          Howzit.arguments = args.split(/ *, */).map(&:render_arguments)
+        else
+          Howzit.arguments = []
+        end
+        output.push(process_topic(topic_match, Howzit.options[:run], single: true))
+      end
+      finalize_output(output)
+    end
+
+    ##
+    ## Parse default metadata value into individual topic specifications
+    ##
+    ## @param      default_value  [String] The default metadata value
+    ##
+    ## @return     [Array] Array of topic specification strings
+    ##
+    def parse_default_metadata(default_value)
+      default_value.strip.split(/\s*,\s*/).map(&:strip).reject(&:empty?)
+    end
+
+    ##
+    ## Parse a topic specification that may include bracketed arguments
+    ##
+    ## @param      topic_spec  [String] Topic specification like "Run Snippet[document.md]"
+    ##
+    ## @return     [Array] [topic_name, args_string]
+    ##
+    def parse_topic_with_args(topic_spec)
+      if topic_spec =~ /\[(.*?)\]$/
+        args = Regexp.last_match(1)
+        topic_name = topic_spec.sub(/\[.*?\]$/, '').strip
+        [topic_name, args]
+      else
+        [topic_spec.strip, nil]
+      end
     end
 
     ##

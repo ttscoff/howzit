@@ -288,11 +288,18 @@ module Howzit
     def define_task_args(keys)
       cmd = keys[:cmd]
       obj = keys[:action]
-      title = keys[:title].nil? ? obj : keys[:title].strip
-      title = Howzit.options[:show_all_code] ? obj : title
+      # Extract and clean the title
+      raw_title = keys[:title]
+      # Determine the title: use provided title if available, otherwise use action
+      title = if raw_title.nil? || raw_title.to_s.strip.empty?
+                obj
+              else
+                raw_title.to_s.strip
+              end
+      # Store the actual title (not overridden by show_all_code - that's only for display)
       task_args = { type: :include,
                     arguments: nil,
-                    title: title,
+                    title: title.dup,  # Make a copy to avoid reference issues
                     action: obj,
                     parent: self }
       case cmd
@@ -303,6 +310,7 @@ module Howzit
           Howzit.arguments = args
           arguments
           title.sub!(/ *\[.*?\] *$/, '')
+          task_args[:title] = title
         end
 
         task_args[:type] = :include

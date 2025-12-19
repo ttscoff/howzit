@@ -29,8 +29,14 @@ module Howzit
     def format_line(entry, prefix_topic)
       symbol = entry[:success] ? '✅' : '❌'
       parts = ["#{symbol} "]
-      parts << "{bw}#{entry[:topic]}{x}: " if prefix_topic && entry[:topic] && !entry[:topic].empty?
-      parts << "{by}#{entry[:task]}{x}"
+      if prefix_topic && entry[:topic] && !entry[:topic].empty?
+        # Escape braces in topic name to prevent color code interpretation
+        topic_escaped = entry[:topic].gsub(/\{/, '\\{').gsub(/\}/, '\\}')
+        parts << "{bw}#{topic_escaped}{x}: "
+      end
+      # Escape braces in task name to prevent color code interpretation
+      task_escaped = entry[:task].gsub(/\{/, '\\{').gsub(/\}/, '\\}')
+      parts << "{by}#{task_escaped}{x}"
       unless entry[:success]
         reason = entry[:exit_status] ? "exit code #{entry[:exit_status]}" : 'failed'
         parts << " {br}(#{reason}){x}"
@@ -61,7 +67,7 @@ module Howzit
       table_lines.join("\n")
     end
 
-    def table_row_colored(status, task, task_plain, status_width, task_width)
+    def table_row_colored(status, task, task_plain, _status_width, task_width)
       task_padding = task_width - task_plain.length
 
       "|  #{status}  | #{task}#{' ' * task_padding} |"
@@ -76,11 +82,15 @@ module Howzit
       task_parts_plain = []
 
       if prefix_topic && entry[:topic] && !entry[:topic].empty?
-        task_parts << "{bw}#{entry[:topic]}{x}: "
+        # Escape braces in topic name to prevent color code interpretation
+        topic_escaped = entry[:topic].gsub(/\{/, '\\{').gsub(/\}/, '\\}')
+        task_parts << "{bw}#{topic_escaped}{x}: "
         task_parts_plain << "#{entry[:topic]}: "
       end
 
-      task_parts << "{by}#{entry[:task]}{x}"
+      # Escape braces in task name to prevent color code interpretation
+      task_escaped = entry[:task].gsub(/\{/, '\\{').gsub(/\}/, '\\}')
+      task_parts << "{by}#{task_escaped}{x}"
       task_parts_plain << entry[:task]
 
       unless entry[:success]
