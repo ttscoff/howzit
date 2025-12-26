@@ -302,26 +302,31 @@ module Howzit
                     title: title.dup,  # Make a copy to avoid reference issues
                     action: obj,
                     parent: self }
+      # Set named_arguments before processing titles for variable substitution
+      Howzit.named_arguments = @named_args
       case cmd
       when /include/i
         if title =~ /\[(.*?)\] *$/
-          Howzit.named_arguments = @named_args
           args = Regexp.last_match(1).split(/ *, */).map(&:render_arguments)
           Howzit.arguments = args
           arguments
           title.sub!(/ *\[.*?\] *$/, '')
-          task_args[:title] = title
         end
+        # Apply variable substitution to title after bracket processing
+        task_args[:title] = title.render_arguments
 
         task_args[:type] = :include
         task_args[:arguments] = Howzit.named_arguments
       when /run/i
         task_args[:type] = :run
+        task_args[:title] = title.render_arguments
       when /copy/i
         task_args[:type] = :copy
         task_args[:action] = Shellwords.escape(obj)
+        task_args[:title] = title.render_arguments
       when /open|url/i
         task_args[:type] = :open
+        task_args[:title] = title.render_arguments
       end
 
       task_args
@@ -373,6 +378,8 @@ module Howzit
         if c[:cmd].nil?
           optional, default = define_optional(c[:optional2])
           title = c[:title2].nil? ? '' : c[:title2].strip
+          # Apply variable substitution to block title
+          title = title.render_arguments if title && !title.empty?
           block = c[:block]&.strip
           runnable << Howzit::Task.new({ type: :block,
                                          title: title,
