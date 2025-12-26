@@ -1,3 +1,15 @@
+### 2.1.27
+
+2025-12-26 08:59
+
+#### IMPROVED
+
+- Task titles now support variable substitution using ${VAR} syntax, so titles like "@run(echo test) Title with ${var}" will replace ${var} with its value from topic metadata. This applies to all task types (run, copy, open, include) and code block titles.
+
+#### FIXED
+
+- Task and topic names containing dollar signs (like $text$ or ${VAR}) now display correctly in run report output without causing color code interpretation issues. Dollar signs are properly escaped during formatting and unescaped in the final output.
+
 ### 2.1.26
 
 2025-12-26 04:53
