@@ -1,3 +1,11 @@
+### 2.1.26
+
+2025-12-26 04:53
+
+#### FIXED
+
+- Bash script variables in run blocks now preserve ${VAR} syntax when the variable is not defined by howzit, allowing bash to handle them normally instead of being replaced with empty strings.
+
 ### 2.1.25
 
 2025-12-19 07:41
