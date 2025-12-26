@@ -288,8 +288,8 @@ module Howzit
                    d: dark, b: bold, u: underline, i: italic, x: reset }
 
         result = fmt.empty? ? input : format(fmt, colors)
-        # Unescape braces that were escaped to prevent color code interpretation
-        result.gsub(/\\\{/, '{').gsub(/\\\}/, '}')
+        # Unescape braces and dollar signs that were escaped to prevent color code interpretation
+        result.gsub(/\\\{/, '{').gsub(/\\\}/, '}').gsub(/\\\$/, '$')
       end
     end
 

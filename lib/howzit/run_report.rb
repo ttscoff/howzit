@@ -30,13 +30,13 @@ module Howzit
       symbol = entry[:success] ? '✅' : '❌'
       parts = ["#{symbol} "]
       if prefix_topic && entry[:topic] && !entry[:topic].empty?
-        # Escape braces in topic name to prevent color code interpretation
-        topic_escaped = entry[:topic].gsub(/\{/, '\\{').gsub(/\}/, '\\}')
+        # Escape braces and dollar signs in topic name to prevent color code interpretation
+        topic_escaped = entry[:topic].gsub(/\{/, '\\{').gsub(/\}/, '\\}').gsub(/\$/, '\\$')
         parts << "{bw}#{topic_escaped}{x}: "
       end
-      # Escape braces in task name to prevent color code interpretation
-      task_escaped = entry[:task].gsub(/\{/, '\\{').gsub(/\}/, '\\}')
-      parts << "{by}#{task_escaped}{x}"
+      # Escape braces and dollar signs in task name to prevent color code interpretation
+      task_escaped = entry[:task].gsub(/\{/, '\\{').gsub(/\}/, '\\}').gsub(/\$/, '\\$')
+      parts << "{by}#{task_escaped} {x}"
       unless entry[:success]
         reason = entry[:exit_status] ? "exit code #{entry[:exit_status]}" : 'failed'
         parts << " {br}(#{reason}){x}"
@@ -82,15 +82,15 @@ module Howzit
       task_parts_plain = []
 
       if prefix_topic && entry[:topic] && !entry[:topic].empty?
-        # Escape braces in topic name to prevent color code interpretation
-        topic_escaped = entry[:topic].gsub(/\{/, '\\{').gsub(/\}/, '\\}')
+        # Escape braces and dollar signs in topic name to prevent color code interpretation
+        topic_escaped = entry[:topic].gsub(/\{/, '\\{').gsub(/\}/, '\\}').gsub(/\$/, '\\$')
         task_parts << "{bw}#{topic_escaped}{x}: "
         task_parts_plain << "#{entry[:topic]}: "
       end
 
-      # Escape braces in task name to prevent color code interpretation
-      task_escaped = entry[:task].gsub(/\{/, '\\{').gsub(/\}/, '\\}')
-      task_parts << "{by}#{task_escaped}{x}"
+      # Escape braces and dollar signs in task name to prevent color code interpretation
+      task_escaped = entry[:task].gsub(/\{/, '\\{').gsub(/\}/, '\\}').gsub(/\$/, '\\$')
+      task_parts << "{by}#{task_escaped} {x}"
       task_parts_plain << entry[:task]
 
       unless entry[:success]

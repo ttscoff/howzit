@@ -47,5 +47,25 @@ describe Howzit::RunReport do
     # Second line should be separator
     expect(lines[1]).to match(/^\|[\s:-]+\|[\s:-]+\|$/)
   end
+
+  it 'preserves dollar signs in task names without interfering with color codes' do
+    Howzit::RunReport.log({ topic: 'Test Topic', task: '$text$', success: true, exit_status: 0 })
+    Howzit::RunReport.log({ topic: 'Test', task: 'echo ${VAR}', success: true, exit_status: 0 })
+    plain = Howzit::RunReport.format.uncolor
+    expect(plain).to include('$text$')
+    expect(plain).to include('${VAR}')
+    # Verify dollar signs are preserved and not causing color code issues
+    expect(plain).not_to include('{x}')
+    expect(plain.scan(/\$\{x\}/).length).to eq(0)
+  end
+
+  it 'preserves dollar signs in topic names without interfering with color codes' do
+    Howzit.multi_topic_run = true
+    Howzit::RunReport.log({ topic: '$dollar$ Topic', task: 'Some Task', success: true, exit_status: 0 })
+    plain = Howzit::RunReport.format.uncolor
+    expect(plain).to include('$dollar$ Topic')
+    expect(plain).not_to include('{x}')
+    expect(plain.scan(/\$\{x\}/).length).to eq(0)
+  end
 end
 
