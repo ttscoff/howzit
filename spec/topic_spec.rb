@@ -101,4 +101,33 @@ describe Howzit::Topic do
       expect(topic.print_out({ single: true, header: true }).join("\n").uncolor).to match(/▶ ls -1/)
     end
   end
+
+
+  describe '.arguments' do
+    before do
+      Howzit.arguments = []
+    end
+
+    it 'extracts named arguments from topic title with defaults' do
+      topic = Howzit::Topic.new('Test Topic (var1:default1, var2:default2)', 'Content')
+      expect(topic.named_args['var1']).to eq('default1')
+      expect(topic.named_args['var2']).to eq('default2')
+    end
+
+    it 'does nothing when title has no arguments' do
+      topic = Howzit::Topic.new('Test Topic', 'Content')
+      expect(topic.named_args).to eq({})
+    end
+
+    it 'cleans title after extracting arguments' do
+      topic = Howzit::Topic.new('Test Topic (var:val)', 'Content')
+      expect(topic.title).to eq('Test Topic')
+    end
+
+    it 'uses provided arguments over defaults' do
+      Howzit.arguments = ['provided_value']
+      topic = Howzit::Topic.new('Test Topic (var:default_value)', 'Content')
+      expect(topic.named_args['var']).to eq('provided_value')
+    end
+  end
 end
