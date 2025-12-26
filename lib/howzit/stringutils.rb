@@ -337,7 +337,14 @@ module Howzit
       gsub!(/\$\{(?<name>[A-Z0-9_]+(?::.*?)?)\}/i) do
         m = Regexp.last_match
         arg, default = m['name'].split(/:/).map(&:strip)
-        Howzit.named_arguments.key?(arg) && !Howzit.named_arguments[arg].nil? ? Howzit.named_arguments[arg] : default
+        if Howzit.named_arguments && Howzit.named_arguments.key?(arg) && !Howzit.named_arguments[arg].nil?
+          Howzit.named_arguments[arg]
+        elsif default
+          default
+        else
+          # Preserve the original ${VAR} syntax if variable is not defined and no default provided
+          m[0]
+        end
       end
     end
 
