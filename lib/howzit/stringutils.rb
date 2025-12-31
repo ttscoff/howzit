@@ -175,9 +175,43 @@ module Howzit
       when 'beginswith'
         /^#{self}/i
       when 'fuzzy'
-        /#{split(//).join('.{0,3}?')}/i
+        # For fuzzy matching, use token-based matching where each word gets fuzzy character matching
+        # This allows "lst tst" to match "List Available Tests" by applying fuzzy matching to each token
+        words = split(/\s+/).reject(&:empty?)
+        if words.length > 1
+          # Multiple words: apply character-by-character fuzzy matching to each word token
+          # Then allow flexible matching between words
+          pattern = words.map do |w|
+            # Apply fuzzy matching to each word (character-by-character with up to 3 chars between)
+            w.split(//).map { |c| Regexp.escape(c) }.join('.{0,3}?')
+          end.join('.*')
+          /#{pattern}/i
+        else
+          # Single word: character-by-character fuzzy matching for flexibility
+          /#{split(//).join('.{0,3}?')}/i
+        end
+      when 'token'
+        # Token-based matching: match words in order with any text between them
+        # "list tests" matches "list available tests", "list of tests", etc.
+        words = split(/\s+/).reject(&:empty?)
+        if words.length > 1
+          pattern = words.map { |w| Regexp.escape(w) }.join('.*')
+          /#{pattern}/i
+        else
+          /#{Regexp.escape(self)}/i
+        end
       else
-        /#{self}/i
+        # Default 'partial' mode: token-based matching for multi-word searches
+        # This allows "list tests" to match "list available tests"
+        words = split(/\s+/).reject(&:empty?)
+        if words.length > 1
+          # Token-based: match words in order with any text between
+          pattern = words.map { |w| Regexp.escape(w) }.join('.*')
+          /#{pattern}/i
+        else
+          # Single word: simple substring match
+          /#{Regexp.escape(self)}/i
+        end
       end
     end
 

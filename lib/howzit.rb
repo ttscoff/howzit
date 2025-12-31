@@ -13,7 +13,7 @@ COLOR_FILE = 'theme.yaml'
 IGNORE_FILE = 'ignore.yaml'
 
 # Available options for matching method
-MATCHING_OPTIONS = %w[partial exact fuzzy beginswith].freeze
+MATCHING_OPTIONS = %w[partial exact fuzzy beginswith token].freeze
 
 # Available options for multiple_matches method
 MULTIPLE_OPTIONS = %w[first best all choose].freeze

@@ -37,7 +37,7 @@ module Howzit
       args.each_with_index do |arg, idx|
         arg_name, default = arg.split(/:/).map(&:strip)
 
-        @named_args[arg_name] = if Howzit.arguments.count >= idx + 1
+        @named_args[arg_name] = if Howzit.arguments && Howzit.arguments.count >= idx + 1
                                   Howzit.arguments[idx]
                                 else
                                   default
@@ -175,6 +175,7 @@ module Howzit
       return [] if matches.empty?
 
       topic = matches[0]
+      return [] if topic.nil?
 
       rule = '{kKd}'
       color = '{Kyd}'

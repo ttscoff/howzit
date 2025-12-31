@@ -291,21 +291,17 @@ module Howzit
       title = File.basename(Dir.pwd)
       # prompt = TTY::Prompt.new
       if default
-        input = title
+        title
       else
         title = Prompt.get_line('{bw}Project name{x}'.c, default: title)
       end
       summary = ''
-      unless default
-        summary = Prompt.get_line('{bw}Project summary{x}'.c)
-      end
+      summary = Prompt.get_line('{bw}Project summary{x}'.c) unless default
 
       # Template selection
       selected_templates = []
       template_metadata = {}
-      unless default
-        selected_templates, template_metadata = select_templates_for_note(title)
-      end
+      selected_templates, template_metadata = select_templates_for_note(title) unless default
 
       fname = 'buildnotes.md'
       unless default
@@ -314,9 +310,7 @@ module Howzit
 
       # Build metadata section
       metadata_lines = []
-      unless selected_templates.empty?
-        metadata_lines << "template: #{selected_templates.join(',')}"
-      end
+      metadata_lines << "template: #{selected_templates.join(',')}" unless selected_templates.empty?
       template_metadata.each do |key, value|
         metadata_lines << "#{key}: #{value}"
       end
@@ -386,7 +380,7 @@ module Howzit
     ##
     ## @return     [Array<Array, Hash>] Array of [selected_template_names, required_vars_hash]
     ##
-    def select_templates_for_note(project_title)
+    def select_templates_for_note(_project_title)
       template_dir = Howzit.config.template_folder
       template_glob = File.join(template_dir, '*.md')
       template_files = Dir.glob(template_glob)
@@ -879,7 +873,21 @@ module Howzit
     ##                     single topic
     ##
     def process_topic(topic, run, single: false)
-      new_topic = topic.is_a?(String) ? find_topic(topic)[0] : topic.dup
+      if topic.is_a?(String)
+        matches = find_topic(topic)
+        new_topic = matches.empty? ? nil : matches[0]
+      else
+        new_topic = begin
+          topic.dup
+        rescue StandardError
+          topic
+        end
+      end
+
+      if new_topic.nil?
+        Howzit.console.warn "{br}ERROR:{xr} Topic not found or invalid: {bw}#{topic.is_a?(String) ? topic : topic.inspect}{x}".c
+        return ''
+      end
 
       output = if run
                  new_topic.run
@@ -946,13 +954,67 @@ module Howzit
         when :all
           topic_matches.concat(matches.sort_by(&:title))
         else
-          topic_matches.concat(Prompt.choose(matches.map(&:title), height: :max, query: Howzit.options[:grep]))
+          selected_titles = Prompt.choose(matches.map(&:title), height: :max, query: Howzit.options[:grep])
+          # Convert selected titles back to topic objects
+          selected_titles.each do |title|
+            matched_topic = matches.find { |t| t.title == title }
+            topic_matches.push(matched_topic) if matched_topic
+          end
         end
+        topic_matches.compact! # Remove any nil values
         process_topic_matches(topic_matches, output)
       elsif Howzit.options[:choose]
         topic_matches = []
         titles = Prompt.choose(list_topics, height: :max)
-        titles.each { |title| topic_matches.push(find_topic(title)[0]) }
+        titles.each do |selected_title|
+          selected_title = selected_title.strip
+          matched_topic = nil
+
+          # First, try to match by reconstructing the formatted title exactly as list_topics does
+          @topics.each do |topic|
+            formatted_title = topic.title.dup
+            formatted_title += "(#{topic.named_args.keys.join(', ')})" unless topic.named_args.empty?
+            formatted_title = formatted_title.strip
+
+            # Normalize both titles for comparison (remove extra whitespace, normalize case)
+            normalized_formatted = formatted_title.downcase.gsub(/\s+/, ' ')
+            normalized_selected = selected_title.downcase.gsub(/\s+/, ' ')
+
+            if formatted_title == selected_title || normalized_formatted == normalized_selected
+              matched_topic = topic
+              break
+            end
+          end
+
+          # If still not found, try matching by base title (without args)
+          unless matched_topic
+            clean_selected = selected_title.sub(/ *\([^)]*\) *$/, '').strip
+            matched_topic = @topics.find do |topic|
+              base_title = topic.title.strip
+              base_title.downcase == clean_selected.downcase || base_title == clean_selected
+            end
+          end
+
+          # Last resort: use find_topic with the cleaned title
+          unless matched_topic
+            clean_selected = selected_title.sub(/ *\([^)]*\) *$/, '').strip
+            matches = find_topic(clean_selected)
+            matched_topic = matches[0] unless matches.empty?
+          end
+
+          if matched_topic
+            topic_matches.push(matched_topic)
+          else
+            Howzit.console.warn "{br}WARNING:{xr} Could not find topic matching: {bw}#{selected_title}{x}".c
+          end
+        end
+
+        topic_matches.compact! # Remove any nil values
+        if topic_matches.empty?
+          output.push(%({bR}ERROR:{xr} No valid topics found from selection{x}\n).c)
+          Util.show(output.join("\n"), { color: true, highlight: false, paginate: false, wrap: 0 })
+          Process.exit 1
+        end
         process_topic_matches(topic_matches, output)
       elsif !Howzit.cli_args.empty?
         # Check if first arg is "default"
@@ -964,23 +1026,21 @@ module Howzit
           topic_matches = collect_topic_matches(search, output)
           process_topic_matches(topic_matches, output)
         end
-      else
+      elsif Howzit.options[:run]
         # No arguments
-        if Howzit.options[:run]
-          # Check for default metadata when running with no args
-          if @metadata.key?('default')
-            process_default_metadata(output)
-          else
-            Howzit.run_log = []
-            Howzit.multi_topic_run = topics.length > 1
-            topics.each { |k| output.push(process_topic(k, false, single: false)) }
-            finalize_output(output)
-          end
+        # Check for default metadata when running with no args
+        if @metadata.key?('default')
+          process_default_metadata(output)
         else
-          # Show all topics
+          Howzit.run_log = []
+          Howzit.multi_topic_run = topics.length > 1
           topics.each { |k| output.push(process_topic(k, false, single: false)) }
           finalize_output(output)
         end
+      else
+        # Show all topics
+        topics.each { |k| output.push(process_topic(k, false, single: false)) }
+        finalize_output(output)
       end
     end
 
@@ -996,7 +1056,12 @@ module Howzit
     def collect_topic_matches(search_terms, output)
       all_matches = []
 
+      # If no search terms, return empty (don't match all topics)
+      return [] if search_terms.nil? || search_terms.empty?
+
       search_terms.each do |s|
+        next if s.nil? || s.strip.empty?
+
         # First check for exact whole-word matches
         exact_matches = find_topic_exact(s)
 
@@ -1024,7 +1089,7 @@ module Howzit
     ##
     ## @return     [Array] Array of matched topics
     ##
-    def resolve_fuzzy_matches(search_term, output)
+    def resolve_fuzzy_matches(search_term, _output)
       matches = find_topic(search_term)
 
       return [] if matches.empty?
@@ -1039,11 +1104,12 @@ module Howzit
       else
         titles = matches.map(&:title)
         res = Prompt.choose(titles, query: search_term)
-        old_matching = Howzit.options[:matching]
-        Howzit.options[:matching] = 'exact'
-        selected = res.flat_map { |title| find_topic(title) }
-        Howzit.options[:matching] = old_matching
-        selected
+        # Convert selected titles back to topic objects from the original matches
+        res.flat_map do |title|
+          matched_topic = matches.find { |t| t.title == title }
+          matched_topic || find_topic(title)[0]
+        end.compact
+
       end
     end
 
@@ -1065,7 +1131,15 @@ module Howzit
       end
 
       if !topic_matches.empty?
-        topic_matches.map! { |topic| topic.is_a?(String) ? find_topic(topic)[0] : topic }
+        topic_matches.map! do |topic|
+          if topic.is_a?(String)
+            matches = find_topic(topic)
+            matches.empty? ? nil : matches[0]
+          elsif topic.is_a?(Howzit::Topic)
+            topic
+          end
+        end
+        topic_matches.compact! # Remove any nil values from failed matches
         topic_matches.each { |topic_match| output.push(process_topic(topic_match, Howzit.options[:run], single: true)) }
       else
         topics.each { |k| output.push(process_topic(k, false, single: false)) }
@@ -1107,11 +1181,11 @@ module Howzit
       # Run each topic with its specific arguments
       topic_specs.each do |topic_match, args|
         # Set arguments if provided, otherwise clear them
-        if args && !args.empty?
-          Howzit.arguments = args.split(/ *, */).map(&:render_arguments)
-        else
-          Howzit.arguments = []
-        end
+        Howzit.arguments = if args && !args.empty?
+                             args.split(/ *, */).map(&:render_arguments)
+                           else
+                             []
+                           end
         output.push(process_topic(topic_match, Howzit.options[:run], single: true))
       end
       finalize_output(output)
