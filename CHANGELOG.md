@@ -1,3 +1,27 @@
+### 2.1.28
+
+2025-12-31 10:21
+
+#### CHANGED
+
+- Refactored code to use more concise unless statement syntax
+
+#### NEW
+
+- Added "token" matching mode for multi-word searches that matches words in order
+
+#### IMPROVED
+
+- Enhanced fuzzy matching to use token-based approach for multi-word searches
+- Default partial matching now uses token-based matching for better multi-word search results
+
+#### FIXED
+
+- Improved error handling when topics are not found or invalid
+- Fixed topic selection when using interactive choose mode with topics that have named arguments
+- Added nil checks to prevent errors when arguments array is nil
+- Improved handling of empty search terms to prevent matching all topics
+
 ### 2.1.27
 
 2025-12-26 08:59
