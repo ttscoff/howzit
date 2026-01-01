@@ -107,6 +107,13 @@ describe Howzit::ConditionEvaluator do
         expect(described_class.evaluate('other == "thing"', {})).to be true
         expect(described_class.evaluate('test == "other"', {})).to be false
       end
+
+      it 'evaluates named arguments with ${} syntax' do
+        Howzit.named_arguments = { var: 'val', env: 'production' }
+        expect(described_class.evaluate('${var} == "val"', {})).to be true
+        expect(described_class.evaluate('${env} == "production"', {})).to be true
+        expect(described_class.evaluate('${var} == "other"', {})).to be false
+      end
     end
 
     context 'with metadata' do
@@ -156,6 +163,15 @@ describe Howzit::ConditionEvaluator do
       it 'evaluates working directory' do
         result = described_class.evaluate('working directory', {})
         expect(result).to be true
+      end
+
+      it 'evaluates cwd with string comparisons' do
+        cwd = Dir.pwd
+        expect(described_class.evaluate("cwd == \"#{cwd}\"", {})).to be true
+        expect(described_class.evaluate("cwd =~ /#{Regexp.escape(File.basename(cwd))}/", {})).to be true
+        expect(described_class.evaluate("cwd *= \"#{File.basename(cwd)}\"", {})).to be true
+        expect(described_class.evaluate("cwd ^= \"#{cwd[0..10]}\"", {})).to be true
+        expect(described_class.evaluate("cwd $= \"#{cwd[-10..-1]}\"", {})).to be true
       end
     end
 

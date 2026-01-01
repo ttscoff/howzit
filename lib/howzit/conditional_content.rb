@@ -36,7 +36,7 @@ module Howzit
           end
 
           # Check for @end - only skip if it's closing an @if/@unless block
-          if (line =~ /^@end\s*$/) && condition_stack.any?
+          if (line =~ /^@end\s*$/) && !condition_stack.empty?
             # This @end closes an @if/@unless block, so skip it
             condition_stack.pop
             next

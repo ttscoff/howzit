@@ -37,9 +37,10 @@ module Howzit
       def evaluate_condition(condition, context)
         # Handle special conditions FIRST to avoid false matches with comparison patterns
         # Check file/dir/topic exists before other patterns since they have arguments
+        # Note: cwd is handled via get_value, not as a special condition, so it can be used in comparisons
         if condition =~ /^(file\s+exists|dir\s+exists|topic\s+exists)\s+(.+)$/i
           return evaluate_special(condition, context)
-        elsif condition =~ /^(git\s+dirty|git\s+clean|working\s+directory|cwd)$/i
+        elsif condition =~ /^(git\s+dirty|git\s+clean)$/i
           return evaluate_special(condition, context)
         end
 
@@ -109,6 +110,8 @@ module Howzit
 
           left_val = get_value(left, context)
           right_val = get_value(right, context)
+          # If right side is nil (variable not found), treat it as a literal string
+          right_val = right if right_val.nil?
 
           return false if left_val.nil? || right_val.nil?
 
@@ -138,6 +141,9 @@ module Howzit
         # Remove quotes if present
         return Regexp.last_match(1) if expr =~ /^["'](.+)["']$/
 
+        # Remove ${} wrapper if present (for consistency with variable substitution syntax)
+        expr = Regexp.last_match(1) if expr =~ /^\$\{(.+)\}$/
+
         # Check positional arguments
         if expr =~ /^\$(\d+)$/
           idx = Regexp.last_match(1).to_i - 1
@@ -156,6 +162,9 @@ module Howzit
         # Check environment variables
         return ENV[expr] if ENV.key?(expr)
         return ENV[expr.upcase] if ENV.key?(expr.upcase)
+
+        # Check for special values: cwd, working directory
+        return Dir.pwd if expr =~ /^(cwd|working\s+directory)$/i
 
         # Return nil if nothing matched (variable is undefined)
         nil
@@ -204,8 +213,6 @@ module Howzit
           topic_name = match[1].strip
           topic_name = get_value(topic_name, context).to_s
           find_topic(topic_name)
-        elsif condition =~ /^(working\s+directory|cwd)$/i
-          true # cwd always exists
         else
           false
         end

@@ -368,6 +368,8 @@ module Howzit
     def gather_tasks
       runnable = []
       # Process conditional blocks first
+      # Set named_arguments before processing so conditions can access them
+      Howzit.named_arguments = @named_args
       metadata = @metadata || Howzit.buildnote&.metadata
       processed_content = ConditionalContent.process(@content, { metadata: metadata })
 
