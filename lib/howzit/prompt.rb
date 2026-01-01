@@ -147,7 +147,13 @@ module Howzit
           exit
         end
 
-        puts "\nSelect a topic for `#{query}`:" if query
+        if query
+          begin
+            puts "\nSelect a topic for `#{query}`:"
+          rescue Errno::EPIPE
+            # Pipe closed, ignore
+          end
+        end
         options_list(matches)
         read_selection(matches)
       end
@@ -164,7 +170,11 @@ module Howzit
 
           return [matches[line - 1]] if line.positive? && line <= matches.length
 
-          puts 'Out of range'
+          begin
+            puts 'Out of range'
+          rescue Errno::EPIPE
+            # Pipe closed, ignore
+          end
           read_selection(matches)
         end
       ensure
@@ -259,7 +269,11 @@ module Howzit
           exit
         end
 
-        puts "\n{bw}Available templates:{x} #{available.join(', ')}".c
+        begin
+          puts "\n{bw}Available templates:{x} #{available.join(', ')}".c
+        rescue Errno::EPIPE
+          # Pipe closed, ignore
+        end
         printf '{bw}Enter templates to include, comma-separated (return to skip):{x} '.c
         input = Readline.readline('', true).strip
 

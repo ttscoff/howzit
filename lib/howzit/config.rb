@@ -129,14 +129,26 @@ module Howzit
 
     ## Update editor config
     def update_editor
-      puts 'No $EDITOR defined, no value in config'
+      begin
+        puts 'No $EDITOR defined, no value in config'
+      rescue Errno::EPIPE
+        # Pipe closed, ignore
+      end
       editor = Prompt.read_editor
       if editor.nil?
-        puts 'Cancelled, no editor stored.'
+        begin
+          puts 'Cancelled, no editor stored.'
+        rescue Errno::EPIPE
+          # Pipe closed, ignore
+        end
         Process.exit 1
       end
       update_config_option({ config_editor: editor, editor: editor })
-      puts "Default editor set to #{editor}, modify in config file"
+      begin
+        puts "Default editor set to #{editor}, modify in config file"
+      rescue Errno::EPIPE
+        # Pipe closed, ignore
+      end
       editor
     end
 

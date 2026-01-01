@@ -81,9 +81,13 @@ module Howzit
 
       cols = check_cols
 
-      if @tasks.count.positive?
-        unless @prereqs.empty?
-          puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+        if @tasks.count.positive?
+          unless @prereqs.empty?
+            begin
+              puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+            rescue Errno::EPIPE
+              # Pipe closed, ignore
+            end
           res = Prompt.yn('Have the above prerequisites been met?', default: true)
           Process.exit 1 unless res
 
@@ -125,7 +129,13 @@ module Howzit
 
       output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested && !Howzit.options[:run]
 
-      puts TTY::Box.frame("{bw}#{@postreqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols) unless @postreqs.empty?
+      unless @postreqs.empty?
+        begin
+          puts TTY::Box.frame("{bw}#{@postreqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+        rescue Errno::EPIPE
+          # Pipe closed, ignore
+        end
+      end
 
       output
     end

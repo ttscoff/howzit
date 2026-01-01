@@ -118,7 +118,11 @@ module Howzit
       # Paginate the output
       def page(text)
         unless $stdout.isatty
-          puts text
+          begin
+            puts text
+          rescue Errno::EPIPE
+            # Pipe closed, ignore
+          end
           return
         end
 
@@ -181,7 +185,11 @@ module Howzit
         if options[:paginate] && Howzit.options[:paginate]
           page(output)
         else
-          puts output
+          begin
+            puts output
+          rescue Errno::EPIPE
+            # Pipe closed, ignore
+          end
         end
       end
 

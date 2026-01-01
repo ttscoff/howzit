@@ -72,7 +72,13 @@ module Howzit
     ## @param      msg   The message
     ##
     def warn(msg)
-      $stderr.puts msg if LOG_LEVELS[:warn] >= @log_level
+      return unless LOG_LEVELS[:warn] >= @log_level
+
+      begin
+        $stderr.puts msg
+      rescue Errno::EPIPE
+        # Pipe closed, ignore
+      end
     end
 
     ##
