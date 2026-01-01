@@ -36,9 +36,11 @@ module Howzit
       ##
       def evaluate_condition(condition, context)
         # Handle special conditions FIRST to avoid false matches with comparison patterns
+        # Check file contents before other patterns since it has arguments and operators
+        if condition =~ /^file\s+contents\s+(.+?)\s+(\*\*=|\*=|\^=|\$=|==|!=|=~)\s*(.+)$/i
+          return evaluate_file_contents(condition, context)
         # Check file/dir/topic exists before other patterns since they have arguments
-        # Note: cwd is handled via get_value, not as a special condition, so it can be used in comparisons
-        if condition =~ /^(file\s+exists|dir\s+exists|topic\s+exists)\s+(.+)$/i
+        elsif condition =~ /^(file\s+exists|dir\s+exists|topic\s+exists)\s+(.+)$/i
           return evaluate_special(condition, context)
         elsif condition =~ /^(git\s+dirty|git\s+clean)$/i
           return evaluate_special(condition, context)
@@ -102,8 +104,9 @@ module Howzit
               false
             end
           end
-        # Handle string-only comparisons: *= (contains), ^= (starts with), $= (ends with)
-        elsif (match = condition.match(/^(.+?)\s*(\*=|\^=|\$=)\s*(.+)$/))
+        # Handle string-only comparisons: **= (fuzzy match), *= (contains), ^= (starts with), $= (ends with)
+        # Note: **= must come before *= in the regex to avoid matching *= first
+        elsif (match = condition.match(/^(.+?)\s*(\*\*=|\*=|\^=|\$=)\s*(.+)$/))
           left = match[1].strip
           operator = match[2]
           right = match[3].strip
@@ -122,6 +125,10 @@ module Howzit
             left_val.to_s.start_with?(right_val.to_s)
           when '$='
             left_val.to_s.end_with?(right_val.to_s)
+          when '**='
+            # Fuzzy match: split search string into chars and join with .*? for regex
+            pattern = "^.*?#{right_val.to_s.split('').map { |c| Regexp.escape(c) }.join('.*?')}.*?$"
+            !!(left_val.to_s =~ /#{pattern}/)
           else
             false
           end
@@ -238,6 +245,62 @@ module Howzit
 
         matches = Howzit.buildnote.find_topic(topic_name)
         !matches.empty?
+      end
+
+      ##
+      ## Evaluate file contents condition
+      ## Reads file and performs string comparison
+      ##
+      def evaluate_file_contents(condition, context)
+        match = condition.match(/^file\s+contents\s+(.+?)\s+(\*\*=|\*=|\^=|\$=|==|!=|=~)\s*(.+)$/i)
+        return false unless match
+
+        file_path = match[1].strip
+        operator = match[2]
+        search_value = match[3].strip
+
+        # Resolve file path (could be a variable)
+        file_path_val = get_value(file_path, context)
+        file_path = file_path_val.nil? ? file_path : file_path_val.to_s
+
+        # Resolve search value (could be a variable)
+        search_val = get_value(search_value, context)
+        search_val = search_val.nil? ? search_value : search_val.to_s
+
+        # Read file contents
+        return false unless File.exist?(file_path) && !File.directory?(file_path)
+
+        begin
+          file_contents = File.read(file_path).strip
+        rescue StandardError
+          return false
+        end
+
+        # Perform comparison based on operator
+        case operator
+        when '=='
+          file_contents == search_val.to_s
+        when '!='
+          file_contents != search_val.to_s
+        when '*='
+          file_contents.include?(search_val.to_s)
+        when '^='
+          file_contents.start_with?(search_val.to_s)
+        when '$='
+          file_contents.end_with?(search_val.to_s)
+        when '**='
+          # Fuzzy match: split search string into chars and join with .*? for regex
+          pattern = "^.*?#{search_val.to_s.split('').map { |c| Regexp.escape(c) }.join('.*?')}.*?$"
+          !!(file_contents =~ /#{pattern}/)
+        when '=~'
+          # Regex match - search_value should be a regex pattern
+          pattern = search_val.to_s
+          # Remove leading/trailing slashes if present
+          pattern = pattern[1..-2] if pattern.start_with?('/') && pattern.end_with?('/')
+          !!(file_contents =~ /#{pattern}/)
+        else
+          false
+        end
       end
     end
   end

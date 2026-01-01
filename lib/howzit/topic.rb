@@ -81,13 +81,13 @@ module Howzit
 
       cols = check_cols
 
-        if @tasks.count.positive?
-          unless @prereqs.empty?
-            begin
-              puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
-            rescue Errno::EPIPE
-              # Pipe closed, ignore
-            end
+      if @tasks.count.positive?
+        unless @prereqs.empty?
+          begin
+            puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+          rescue Errno::EPIPE
+            # Pipe closed, ignore
+          end
           res = Prompt.yn('Have the above prerequisites been met?', default: true)
           Process.exit 1 unless res
 

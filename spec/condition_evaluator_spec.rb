@@ -29,6 +29,14 @@ describe Howzit::ConditionEvaluator do
         expect(described_class.evaluate('"testing" $= "ing"', {})).to be true
         expect(described_class.evaluate('"testing" $= "test"', {})).to be false
       end
+
+      it 'evaluates **= (fuzzy match) correctly' do
+        expect(described_class.evaluate('"fluffy" **= "ffy"', {})).to be true
+        expect(described_class.evaluate('"fluffy" **= "fly"', {})).to be true
+        expect(described_class.evaluate('"fluffy" **= "fuf"', {})).to be true
+        expect(described_class.evaluate('"fluffy" **= "xyz"', {})).to be false
+        expect(described_class.evaluate('"fluffy" **= "fxy"', {})).to be false
+      end
     end
 
     context 'with numeric comparisons' do
@@ -172,6 +180,62 @@ describe Howzit::ConditionEvaluator do
         expect(described_class.evaluate("cwd *= \"#{File.basename(cwd)}\"", {})).to be true
         expect(described_class.evaluate("cwd ^= \"#{cwd[0..10]}\"", {})).to be true
         expect(described_class.evaluate("cwd $= \"#{cwd[-10..-1]}\"", {})).to be true
+      end
+    end
+
+    context 'with file contents conditions' do
+      let(:test_file) { 'test_version.txt' }
+
+      before do
+        File.write(test_file, '0.1.2')
+      end
+
+      after do
+        File.delete(test_file) if File.exist?(test_file)
+      end
+
+      it 'evaluates file contents ^= (starts with) correctly' do
+        expect(described_class.evaluate("file contents #{test_file} ^= 0.", {})).to be true
+        expect(described_class.evaluate("file contents #{test_file} ^= 1.", {})).to be false
+      end
+
+      it 'evaluates file contents *= (contains) correctly' do
+        expect(described_class.evaluate("file contents #{test_file} *= 1.2", {})).to be true
+        expect(described_class.evaluate("file contents #{test_file} *= 2.3", {})).to be false
+      end
+
+      it 'evaluates file contents $= (ends with) correctly' do
+        expect(described_class.evaluate("file contents #{test_file} $= .2", {})).to be true
+        expect(described_class.evaluate("file contents #{test_file} $= .3", {})).to be false
+      end
+
+      it 'evaluates file contents == correctly' do
+        expect(described_class.evaluate("file contents #{test_file} == 0.1.2", {})).to be true
+        expect(described_class.evaluate("file contents #{test_file} == 1.0.0", {})).to be false
+      end
+
+      it 'evaluates file contents != correctly' do
+        expect(described_class.evaluate("file contents #{test_file} != 1.0.0", {})).to be true
+        expect(described_class.evaluate("file contents #{test_file} != 0.1.2", {})).to be false
+      end
+
+      it 'evaluates file contents **= (fuzzy match) correctly' do
+        expect(described_class.evaluate("file contents #{test_file} **= 012", {})).to be true
+        expect(described_class.evaluate("file contents #{test_file} **= 021", {})).to be false
+      end
+
+      it 'evaluates file contents =~ (regex) correctly' do
+        expect(described_class.evaluate("file contents #{test_file} =~ /0\\.\\d+\\.\\d+/", {})).to be true
+        expect(described_class.evaluate("file contents #{test_file} =~ /1\\.\\d+\\.\\d+/", {})).to be false
+      end
+
+      it 'returns false for non-existent file' do
+        expect(described_class.evaluate('file contents nonexistent.txt ^= 0.', {})).to be false
+      end
+
+      it 'handles file path as variable' do
+        context = { metadata: { 'version_file' => test_file } }
+        expect(described_class.evaluate('file contents version_file ^= 0.', context)).to be true
       end
     end
 
