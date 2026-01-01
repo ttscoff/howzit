@@ -1,3 +1,50 @@
+### 2.1.29
+
+2026-01-01 06:55
+
+#### CHANGED
+
+- Updated rubocop from version 0.93.1 to 1.82.1 for Ruby 3.4.4 compatibility
+- Updated .rubocop.yml to use plugins syntax instead of require for rubocop extensions
+- Updated .rubocop.yml to inherit from .rubocop_todo.yml and removed Max settings that were overriding todo file limits
+- Added Security/YAMLLoad exception to .rubocop.yml to allow YAML.load usage (intentionally not using safe_load)
+- Added Layout/LineLength exceptions for files with intentionally long lines (bin/howzit, task.rb, util.rb, stringutils.rb, buildnote.rb)
+
+#### NEW
+
+- Scripts can now communicate back to Howzit by writing to a communication file specified in HOWZIT_COMM_FILE environment variable, allowing scripts to send log messages (LOG:level:message) and set variables (VAR:KEY=value) that are available for subsequent tasks and conditional logic
+- Added ScriptComm module to handle bidirectional communication between scripts and Howzit
+- Added @if and @unless conditional blocks that allow content and tasks to be conditionally included or excluded based on evaluated conditions, with support for nested blocks
+- Conditional blocks support string comparisons (==, =~ /regex/, *= contains, ^= starts with, $= ends with) and numeric comparisons (==, !=, >, >=, <, <=)
+- Conditions can test against metadata keys, environment variables, positional arguments ($1, $2, etc.), named arguments, and script-set variables
+- Added special condition checks: git dirty/clean, file exists <path>, dir exists <path>, topic exists <name>, and cwd/working directory
+- Conditions support negation with 'not' or '!' prefix
+- Added @elsif directive for alternative conditions in @if/@unless blocks, allowing multiple conditional branches
+- Added @else directive for fallback branches in conditional blocks when all previous conditions are false
+- Conditional blocks now support chaining multiple @elsif statements between @if/@unless and @else
+- @elsif and @else work correctly with nested conditional blocks
+- Added **= fuzzy match operator for string comparisons that matches if search string characters appear in order within the target string (e.g., "fluffy" **= "ffy" matches)
+- Added file contents condition that reads file contents and performs string comparisons using any comparison operator (e.g., file contents VERSION.txt ^= 0.)
+- File contents condition supports file paths as variables from metadata, named arguments, or environment variables
+
+#### IMPROVED
+
+- Auto-corrected rubocop style offenses including string literals, redundant self, parentheses, and other correctable issues
+- Fixed Lint/Void issue in buildnote.rb by simplifying conditional logic
+- Cwd and working directory can now be used with string comparison operators (==, =~, *=, ^=, $=) to check the current directory path
+- Conditions now support ${var} syntax in addition to var for consistency with variable substitution syntax
+- String comparison operators (*=, ^=, $=) now treat unquoted strings that aren't found as variables as literal strings, allowing simpler syntax like template *= gem instead of template *= "gem"
+
+#### FIXED
+
+- Resolved NameError for 'white' color method by generating escape codes directly from configured_colors hash instead of calling dynamically generated methods
+- Fixed infinite recursion in ConsoleLogger by using $stderr.puts directly instead of calling warn method recursively
+- Color template method now properly respects coloring? setting and returns empty strings when coloring is disabled
+- Resolved test failures caused by Howzit.buildnote caching stale instances by resetting @buildnote in spec_helper before each test
+- Fixed bug where @end statements failed to close conditional blocks when conditions evaluated to false, preventing subsequent conditional blocks from working correctly
+- Fixed issue where named arguments from topic titles were not available when evaluating conditions in conditional blocks
+- Suppressed EPIPE errors that occur when writing to stdout/stderr after pipes are closed, preventing error messages from appearing in terminal output
+
 ### 2.1.28
 
 2025-12-31 10:21
