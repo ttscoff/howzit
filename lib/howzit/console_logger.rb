@@ -39,7 +39,13 @@ module Howzit
     ## @param      level  [Symbol] The level
     ##
     def write(msg, level = :info)
-      $stderr.puts msg if LOG_LEVELS[level] >= @log_level
+      return unless LOG_LEVELS[level] >= @log_level
+
+      begin
+        $stderr.puts msg
+      rescue Errno::EPIPE
+        # Pipe closed, ignore
+      end
     end
 
     ##

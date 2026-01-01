@@ -17,6 +17,9 @@ module Howzit
         lines = content.split(/\n/)
         output = []
         condition_stack = []
+        # Track if any condition in the current chain has been true
+        # This is used for @elsif and @else to know if a previous branch matched
+        chain_matched_stack = []
 
         lines.each do |line|
           # Check for @if or @unless
@@ -30,15 +33,54 @@ module Howzit
             result = !result if directive == 'unless'
 
             condition_stack << result
+            chain_matched_stack << result
 
             # Don't include the @if/@unless line itself
             next
           end
 
-          # Check for @end - only skip if it's closing an @if/@unless block
+          # Check for @elsif
+          if line =~ /^@elsif\s+(.+)$/i
+            condition = Regexp.last_match(1).strip
+
+            # If previous condition in chain was true, this branch is false
+            # Otherwise, evaluate the condition
+            if !condition_stack.empty? && chain_matched_stack.last
+              # Previous branch matched, so this one is false
+              condition_stack[-1] = false
+            else
+              # Previous branch didn't match, evaluate this condition
+              result = ConditionEvaluator.evaluate(condition, context)
+              condition_stack[-1] = result
+              chain_matched_stack[-1] = result if result
+            end
+
+            # Don't include the @elsif line itself
+            next
+          end
+
+          # Check for @else
+          if line =~ /^@else\s*$/i
+            # If any previous condition in chain was true, this branch is false
+            # Otherwise, this branch is true
+            if !condition_stack.empty? && chain_matched_stack.last
+              # Previous branch matched, so else is false
+              condition_stack[-1] = false
+            else
+              # No previous branch matched, so else is true
+              condition_stack[-1] = true
+              chain_matched_stack[-1] = true
+            end
+
+            # Don't include the @else line itself
+            next
+          end
+
+          # Check for @end - only skip if it's closing an @if/@unless/@elsif/@else block
           if (line =~ /^@end\s*$/) && !condition_stack.empty?
-            # This @end closes an @if/@unless block, so skip it
+            # This @end closes a conditional block, so skip it
             condition_stack.pop
+            chain_matched_stack.pop
             next
           end
           # Otherwise, this @end is for @before/@after, so include it

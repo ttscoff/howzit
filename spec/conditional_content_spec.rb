@@ -191,6 +191,106 @@ describe Howzit::ConditionalContent do
         expect(result).to include('Second block')
       end
     end
+
+    context 'with @elsif blocks' do
+      it 'includes first branch when @if condition is true' do
+        content = <<~CONTENT
+          @if 1 == 1
+          First branch
+          @elsif 2 == 2
+          Second branch
+          @else
+          Third branch
+          @end
+        CONTENT
+
+        result = described_class.process(content, {})
+        expect(result).to include('First branch')
+        expect(result).not_to include('Second branch')
+        expect(result).not_to include('Third branch')
+      end
+
+      it 'includes second branch when @if is false and @elsif is true' do
+        content = <<~CONTENT
+          @if 1 == 2
+          First branch
+          @elsif 2 == 2
+          Second branch
+          @else
+          Third branch
+          @end
+        CONTENT
+
+        result = described_class.process(content, {})
+        expect(result).not_to include('First branch')
+        expect(result).to include('Second branch')
+        expect(result).not_to include('Third branch')
+      end
+
+      it 'includes else branch when @if and @elsif are both false' do
+        content = <<~CONTENT
+          @if 1 == 2
+          First branch
+          @elsif 2 == 3
+          Second branch
+          @else
+          Third branch
+          @end
+        CONTENT
+
+        result = described_class.process(content, {})
+        expect(result).not_to include('First branch')
+        expect(result).not_to include('Second branch')
+        expect(result).to include('Third branch')
+      end
+
+      it 'handles multiple @elsif branches' do
+        content = <<~CONTENT
+          @if 1 == 2
+          First
+          @elsif 2 == 3
+          Second
+          @elsif 3 == 3
+          Third
+          @else
+          Fourth
+          @end
+        CONTENT
+
+        result = described_class.process(content, {})
+        expect(result).not_to include('First')
+        expect(result).not_to include('Second')
+        expect(result).to include('Third')
+        expect(result).not_to include('Fourth')
+      end
+
+      it 'handles nested @elsif blocks' do
+        content = <<~CONTENT
+          @if 1 == 1
+          Outer true
+          @if 2 == 2
+          Inner true
+          @elsif 3 == 3
+          Inner elsif
+          @else
+          Inner else
+          @end
+          @elsif 4 == 4
+          Outer elsif
+          @else
+          Outer else
+          @end
+        CONTENT
+
+        result = described_class.process(content, {})
+        expect(result).to include('Outer true')
+        expect(result).to include('Inner true')
+        expect(result).not_to include('Inner elsif')
+        expect(result).not_to include('Inner else')
+        expect(result).not_to include('Outer elsif')
+        expect(result).not_to include('Outer else')
+      end
+    end
   end
 end
 
