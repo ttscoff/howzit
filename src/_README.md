@@ -3,11 +3,11 @@
 
 [![Gem](https://img.shields.io/gem/v/howzit.svg)](https://rubygems.org/gems/howzit)
 [![GitHub license](https://img.shields.io/github/license/ttscoff/howzit.svg)](./LICENSE.txt)
+<!--END GITHUB-->
 
 A command-line reference tool for tracking project build systems
 
 Howzit is a tool that allows you to keep Markdown-formatted notes about a project's tools and procedures. It functions as an easy lookup for notes about a particular task, as well as a task runner to automatically execute appropriate commands.
-<!--END GITHUB-->
 
 ## Features
 
@@ -16,6 +16,10 @@ Howzit is a tool that allows you to keep Markdown-formatted notes about a projec
 - Use `@run()`, `@copy()`, and `@open()` to perform actions within a build notes file
 - Use `@include()` to import another topic's tasks
 - Use fenced code blocks to include/run embedded scripts
+- Scripts can communicate back to Howzit, sending log messages and setting variables
+- Conditional blocks (`@if`/`@unless`/`@elsif`/`@else`) for conditionally including content and tasks
+- String comparison operators including fuzzy match (`**=`) for flexible pattern matching
+- File contents conditions to check file contents in conditional blocks
 - Sets iTerm 2 marks on topic titles for navigation when paging is disabled
 - Inside of git repositories, howzit will work from subdirectories, assuming build notes are in top level of repo
 - Templates for easily including repeat tasks
