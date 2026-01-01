@@ -38,6 +38,11 @@ Metrics/BlockLength:
 
 # Metrics limits are defined in .rubocop_todo.yml with higher values for complex methods
 
+# Style/CaseLikeIf: if-elsif with regex captures needed for Regexp.last_match
+Style/CaseLikeIf:
+  Exclude:
+    - 'lib/howzit/condition_evaluator.rb'
+
 Style/RegexpLiteral:
   Exclude:
     - Guardfile

@@ -14,13 +14,15 @@ module Howzit
     ##
     ## @param      title    [String] The topic title
     ## @param      content  [String] The raw topic content
+    ## @param      metadata [Hash] Optional metadata hash
     ##
-    def initialize(title, content)
+    def initialize(title, content, metadata = nil)
       @title = title
       @content = content
       @parent = nil
       @nest_level = 0
       @named_args = {}
+      @metadata = metadata
       arguments
 
       @tasks = gather_tasks
@@ -254,14 +256,16 @@ module Howzit
         output.push(@title.format_header)
         output.push('')
       end
-      topic = @content.dup
+      # Process conditional blocks first
+      metadata = @metadata || Howzit.buildnote&.metadata
+      topic = ConditionalContent.process(@content.dup, { metadata: metadata })
       unless Howzit.options[:show_all_code]
         topic.gsub!(/(?mix)^(`{3,})run([?!]*)\s*
                     ([^\n]*)[\s\S]*?\n\1\s*$/, '@@@run\2 \3')
       end
       topic.split(/\n/).each do |l|
         case l
-        when /@(before|after|prereq|end)/
+        when /@(before|after|prereq|end|if|unless)/
           next
         when /@include(?<optional>[!?]{1,2})?\((?<action>[^)]+)\)/
           output.concat(process_include(Regexp.last_match.named_captures.symbolize_keys, opt))
@@ -363,15 +367,19 @@ module Howzit
 
     def gather_tasks
       runnable = []
-      @prereqs = @content.scan(/(?<=@before\n).*?(?=\n@end)/im).map(&:strip)
-      @postreqs = @content.scan(/(?<=@after\n).*?(?=\n@end)/im).map(&:strip)
+      # Process conditional blocks first
+      metadata = @metadata || Howzit.buildnote&.metadata
+      processed_content = ConditionalContent.process(@content, { metadata: metadata })
+
+      @prereqs = processed_content.scan(/(?<=@before\n).*?(?=\n@end)/im).map(&:strip)
+      @postreqs = processed_content.scan(/(?<=@after\n).*?(?=\n@end)/im).map(&:strip)
 
       rx = /(?mix)(?:
             @(?<cmd>include|run|copy|open|url)(?<optional>[!?]{1,2})?\((?<action>[^)]*?)\)(?<title>[^\n]+)?
             |(?<fence>`{3,})run(?<optional2>[!?]{1,2})?(?<title2>[^\n]+)?(?<block>.*?)\k<fence>
             )/
       matches = []
-      @content.scan(rx) { matches << Regexp.last_match }
+      processed_content.scan(rx) { matches << Regexp.last_match }
       matches.each do |m|
         c = m.named_captures.symbolize_keys
         Howzit.named_arguments = @named_args

@@ -780,7 +780,7 @@ module Howzit
           title = "#{short_path}:#{title}"
         end
 
-        topic = Topic.new(title, prefix + lines.join("\n").strip.render_template(@metadata))
+        topic = Topic.new(title, prefix + lines.join("\n").strip.render_template(@metadata), @metadata)
 
         topics.push(topic)
       end

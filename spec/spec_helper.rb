@@ -16,6 +16,8 @@ RSpec.configure do |c|
   c.before(:each) do
     allow(FileUtils).to receive(:remove_entry_secure).with(anything)
     save_buildnote
+    # Reset buildnote cache to ensure fresh instance with updated file
+    Howzit.instance_variable_set(:@buildnote, nil)
     Howzit.options[:include_upstream] = false
     Howzit.options[:default] = true
     Howzit.options[:matching] = 'partial'
@@ -87,5 +89,5 @@ def save_buildnote
 end
 
 def delete_buildnote
-  FileUtils.rm('builda.md')
+  FileUtils.rm_f('builda.md')
 end
