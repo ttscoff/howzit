@@ -57,7 +57,7 @@ module Howzit
 
       # Build the table with emoji header - center emoji in 6-char column
       header = "|  🚥  | #{'Task'.ljust(task_width)} |"
-      separator = "| :--: | #{':' + '-' * (task_width - 1)} |"
+      separator = "| :--: | #{":#{'-' * (task_width - 1)}"} |"
 
       table_lines = [header, separator]
       rows.each do |row|

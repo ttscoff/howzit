@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # require 'bump/tasks'
+require 'English'
 require 'bundler/gem_tasks'
 require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
@@ -13,7 +14,7 @@ module TempFixForRakeLastComment
     last_description
   end
 end
-Rake::Application.send :include, TempFixForRakeLastComment
+Rake::Application.include TempFixForRakeLastComment
 
 Rake::RDocTask.new do |rd|
   rd.main = 'README.rdoc'
@@ -77,7 +78,7 @@ task :dockertest, :version, :login do |_, args|
     file = 'docker/Dockerfile'
   end
 
-  d_spinner = TTY::Spinner.new("[:spinner] Setting up Docker", hide_cursor: true, format: :dots)
+  d_spinner = TTY::Spinner.new('[:spinner] Setting up Docker', hide_cursor: true, format: :dots)
   d_spinner.auto_spin
   `docker build . --file #{file} -t #{img} &> /dev/null`
   d_spinner.success
@@ -90,7 +91,7 @@ task :dockertest, :version, :login do |_, args|
   spinner.auto_spin
   res = `docker run --rm -v #{File.dirname(__FILE__)}:/howzit -it #{img}`
   commit = `bash -c "docker commit $(docker ps -a|grep #{img}|awk '{print $1}'|head -n 1) #{img}"`.strip
-  if $?.exitstatus == 0
+  if $CHILD_STATUS.exitstatus.zero?
     spinner.success
   else
     spinner.error

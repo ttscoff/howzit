@@ -219,7 +219,7 @@ module Howzit
       ##
       def os_paste
         os = RbConfig::CONFIG['target_os']
-        out = "{bg}Pasting from clipboard".c
+        out = '{bg}Pasting from clipboard'.c
         case os
         when /darwin.*/i
           Howzit.console.debug("#{out} (macOS){x}".c)

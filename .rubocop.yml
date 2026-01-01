@@ -1,4 +1,6 @@
-require:
+inherit_from: .rubocop_todo.yml
+
+plugins:
   - rubocop-rspec
   - rubocop-rake
 
@@ -20,9 +22,12 @@ Style/StringLiteralsInInterpolation:
 
 Layout/LineLength:
   Max: 120
-
-Metrics/MethodLength:
-  Max: 45
+  Exclude:
+    - 'bin/howzit'
+    - 'lib/howzit/task.rb'  # inspect method with long format string
+    - 'lib/howzit/util.rb'  # error messages with long template strings
+    - 'lib/howzit/stringutils.rb'  # Color template strings
+    - 'lib/howzit/buildnote.rb'  # Some long lines in complex methods
 
 Metrics/BlockLength:
   Max: 45
@@ -31,18 +36,13 @@ Metrics/BlockLength:
     - bin/howzit
     - lib/*.rb
 
-Metrics/ClassLength:
-  Max: 300
-
-Metrics/PerceivedComplexity:
-  Max: 30
-
-Metrics/AbcSize:
-  Max: 45
-
-Metrics/CyclomaticComplexity:
-  Max: 20
+# Metrics limits are defined in .rubocop_todo.yml with higher values for complex methods
 
 Style/RegexpLiteral:
   Exclude:
     - Guardfile
+
+# Security/YAMLLoad: YAML.load is used intentionally to support Symbol keys
+Security/YAMLLoad:
+  Exclude:
+    - '**/*'

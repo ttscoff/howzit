@@ -66,7 +66,7 @@ module Howzit
     ## @param      msg   The message
     ##
     def warn(msg)
-      write msg, :warn
+      $stderr.puts msg if LOG_LEVELS[:warn] >= @log_level
     end
 
     ##

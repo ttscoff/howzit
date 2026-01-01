@@ -281,11 +281,40 @@ module Howzit
           end
         end
 
-        colors = { w: white, k: black, g: green, l: blue,
-                   y: yellow, c: cyan, m: magenta, r: red,
-                   W: bgwhite, K: bgblack, G: bggreen, L: bgblue,
-                   Y: bgyellow, C: bgcyan, M: bgmagenta, R: bgred,
-                   d: dark, b: bold, u: underline, i: italic, x: reset }
+        # Build colors hash from configured_colors, generating escape codes directly
+        color_map = configured_colors.to_h
+        colors = if coloring?
+                   {
+                     w: "\e[#{color_map[:white]}m",
+                     k: "\e[#{color_map[:black]}m",
+                     g: "\e[#{color_map[:green]}m",
+                     l: "\e[#{color_map[:blue]}m",
+                     y: "\e[#{color_map[:yellow]}m",
+                     c: "\e[#{color_map[:cyan]}m",
+                     m: "\e[#{color_map[:magenta]}m",
+                     r: "\e[#{color_map[:red]}m",
+                     W: "\e[#{color_map[:bgwhite]}m",
+                     K: "\e[#{color_map[:bgblack]}m",
+                     G: "\e[#{color_map[:bggreen]}m",
+                     L: "\e[#{color_map[:bgblue]}m",
+                     Y: "\e[#{color_map[:bgyellow]}m",
+                     C: "\e[#{color_map[:bgcyan]}m",
+                     M: "\e[#{color_map[:bgmagenta]}m",
+                     R: "\e[#{color_map[:bgred]}m",
+                     d: "\e[#{color_map[:dark]}m",
+                     b: "\e[#{color_map[:bold]}m",
+                     u: "\e[#{color_map[:underline]}m",
+                     i: "\e[#{color_map[:italic]}m",
+                     x: "\e[#{color_map[:reset]}m"
+                   }
+                 else
+                   # When coloring is disabled, return empty strings
+                   {
+                     w: '', k: '', g: '', l: '', y: '', c: '', m: '', r: '',
+                     W: '', K: '', G: '', L: '', Y: '', C: '', M: '', R: '',
+                     d: '', b: '', u: '', i: '', x: ''
+                   }
+                 end
 
         result = fmt.empty? ? input : format(fmt, colors)
         # Unescape braces and dollar signs that were escaped to prevent color code interpretation
@@ -295,24 +324,24 @@ module Howzit
 
     # Dynamically generate methods for each color name. Each
     # resulting method can be called with a string or a block.
-    configured_colors.each do |c, v|
+    Color.configured_colors.each do |c, v|
       new_method = <<-EOSCRIPT
-        # Color string as #{c}
-        def #{c}(string = nil)
-          result = ''
-          result << "\e[#{v}m" if Howzit::Color.coloring?
-          if block_given?
-            result << yield
-          elsif string.respond_to?(:to_str)
-            result << string.to_str
-          elsif respond_to?(:to_str)
-            result << to_str
-          else
-            return result #only switch on
+          # Color string as #{c}
+          def #{c}(string = nil)
+            result = ''
+            result << "\e[#{v}m" if Howzit::Color.coloring?
+            if block_given?
+              result << yield
+            elsif string.respond_to?(:to_str)
+              result << string.to_str
+            elsif respond_to?(:to_str)
+              result << to_str
+            else
+              return result #only switch on
+            end
+            result << "\e[0m" if Howzit::Color.coloring?
+            result
           end
-          result << "\e[0m" if Howzit::Color.coloring?
-          result
-        end
       EOSCRIPT
 
       module_eval(new_method)
@@ -383,6 +412,5 @@ module Howzit
     def attributes
       ATTRIBUTE_NAMES
     end
-    extend self
   end
 end

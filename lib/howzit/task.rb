@@ -26,7 +26,7 @@ module Howzit
       @arguments = attributes[:arguments] || []
 
       @type = attributes[:type] || :run
-      @title = attributes[:title].nil? ? nil : attributes[:title].to_s
+      @title = attributes[:title]&.to_s
       @parent = attributes[:parent] || nil
 
       @action = attributes[:action].render_arguments || nil
@@ -61,6 +61,7 @@ module Howzit
       Howzit.console.info "#{@prefix}{bg}Running block {bw}#{@title}{x}".c if Howzit.options[:log_level] < 2
       block = @action
       script = Tempfile.new('howzit_script')
+      comm_file = ScriptComm.setup
       begin
         script.write(block)
         script.close
@@ -69,6 +70,8 @@ module Howzit
       ensure
         script.close
         script.unlink
+        # Process script communication
+        ScriptComm.apply(comm_file) if comm_file
       end
 
       update_last_status(res ? 0 : 1)
@@ -112,7 +115,13 @@ module Howzit
                       end
       Howzit.console.info("#{@prefix}{bg}Running {bw}#{display_title}{x}".c)
       ENV['HOWZIT_SCRIPTS'] = File.expand_path('~/.config/howzit/scripts')
-      res = system(@action)
+      comm_file = ScriptComm.setup
+      begin
+        res = system(@action)
+      ensure
+        # Process script communication
+        ScriptComm.apply(comm_file) if comm_file
+      end
       update_last_status(res ? 0 : 1)
       res
     end

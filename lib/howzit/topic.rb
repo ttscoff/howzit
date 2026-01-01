@@ -300,7 +300,7 @@ module Howzit
       # Store the actual title (not overridden by show_all_code - that's only for display)
       task_args = { type: :include,
                     arguments: nil,
-                    title: title.dup,  # Make a copy to avoid reference issues
+                    title: title.dup, # Make a copy to avoid reference issues
                     action: obj,
                     parent: self }
       # Set named_arguments before processing titles for variable substitution

@@ -38,7 +38,7 @@ module Howzit
       position = 0
       in_order = 0
       chars.each do |char|
-        new_pos = self[position..-1] =~ /#{char}/i
+        new_pos = self[position..] =~ /#{char}/i
         if new_pos
           position += new_pos
           in_order += 1
@@ -72,7 +72,7 @@ module Howzit
     ##
     def distance(chars)
       distance = 0
-      max = self.length - chars.length
+      max = length - chars.length
       return max unless in_order(chars) == chars.length
 
       while distance < max
@@ -219,7 +219,7 @@ module Howzit
     def uncolor
       # force UTF-8 and remove invalid characters, then remove color codes
       # and iTerm markers
-      gsub(Howzit::Color::COLORED_REGEXP, "").gsub(/\e\]1337;SetMark/, "")
+      gsub(Howzit::Color::COLORED_REGEXP, '').gsub(/\e\]1337;SetMark/, '')
     end
 
     # Wrap text at a specified width.
@@ -371,7 +371,7 @@ module Howzit
       gsub!(/\$\{(?<name>[A-Z0-9_]+(?::.*?)?)\}/i) do
         m = Regexp.last_match
         arg, default = m['name'].split(/:/).map(&:strip)
-        if Howzit.named_arguments && Howzit.named_arguments.key?(arg) && !Howzit.named_arguments[arg].nil?
+        if Howzit.named_arguments&.key?(arg) && !Howzit.named_arguments[arg].nil?
           Howzit.named_arguments[arg]
         elsif default
           default

@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-$LOAD_PATH.unshift File.join(__dir__, "..", "lib")
-require "howzit"
+$LOAD_PATH.unshift File.join(__dir__, '..', 'lib')
+require 'howzit'
 
 Howzit::Color.coloring = $stdout.isatty
 
@@ -13,127 +13,127 @@ Howzit.named_arguments = {}
 
 OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [OPTIONS] [TOPIC]"
-  opts.separator ""
+  opts.separator ''
   opts.separator "Show build notes for the current project (buildnotes.md).
   Include a topic name to see just that topic, or no argument to display all."
-  opts.separator ""
-  opts.separator "Options:"
+  opts.separator ''
+  opts.separator 'Options:'
 
   opts.separator "  Behavior:\n\n" #=================================================================== BEHAVIOR
 
-  opts.on("--ask", "Request confirmation for all tasks when running a topic") { Howzit.options[:ask] = true }
+  opts.on('--ask', 'Request confirmation for all tasks when running a topic') { Howzit.options[:ask] = true }
 
-  opts.on("--default", "Answer all prompts with default response") do
-    raise "--default cannot be used with --yes or --no" if Howzit.options[:yes] || Howzit.options[:no]
+  opts.on('--default', 'Answer all prompts with default response') do
+    raise '--default cannot be used with --yes or --no' if Howzit.options[:yes] || Howzit.options[:no]
 
     Howzit.options[:default] = true
   end
 
-  opts.on("-f", "--force", "Continue executing after an error") { Howzit.options[:force] = true }
+  opts.on('-f', '--force', 'Continue executing after an error') { Howzit.options[:force] = true }
 
-  opts.on("-m", "--matching TYPE", MATCHING_OPTIONS,
-          "Topics matching type", "(#{MATCHING_OPTIONS.join(", ").sub(/#{Howzit.options[:matching]}/, "*#{Howzit.options[:matching]}")})") do |c|
+  opts.on('-m', '--matching TYPE', MATCHING_OPTIONS,
+          'Topics matching type', "(#{MATCHING_OPTIONS.join(', ').sub(/#{Howzit.options[:matching]}/, "*#{Howzit.options[:matching]}")})") do |c|
     Howzit.options[:matching] = c
   end
 
-  opts.on("--multiple TYPE", MULTIPLE_OPTIONS,
-          "Multiple result handling", "(#{MULTIPLE_OPTIONS.join(", ").sub(/#{Howzit.options[:multiple_matches]}/, "*#{Howzit.options[:multiple_matches]}")}, default choose)") do |c|
+  opts.on('--multiple TYPE', MULTIPLE_OPTIONS,
+          'Multiple result handling', "(#{MULTIPLE_OPTIONS.join(', ').sub(/#{Howzit.options[:multiple_matches]}/, "*#{Howzit.options[:multiple_matches]}")}, default choose)") do |c|
     Howzit.options[:multiple_matches] = c.to_sym
   end
 
-  opts.on("-u", "--[no-]upstream", "Traverse up parent directories for additional build notes") do |p|
+  opts.on('-u', '--[no-]upstream', 'Traverse up parent directories for additional build notes') do |p|
     Howzit.options[:include_upstream] = p
   end
 
-  opts.on("-y", "--yes", "Answer yes to all prompts") do
-    raise "--default cannot be used with --yes" if Howzit.options[:default]
+  opts.on('-y', '--yes', 'Answer yes to all prompts') do
+    raise '--default cannot be used with --yes' if Howzit.options[:default]
 
     Howzit.options[:yes] = true
   end
 
-  opts.on("-n", "--no", "Answer no to all prompts") do
-    raise "--default cannot be used with --no" if Howzit.options[:default]
+  opts.on('-n', '--no', 'Answer no to all prompts') do
+    raise '--default cannot be used with --no' if Howzit.options[:default]
 
     Howzit.options[:no] = true
   end
 
   opts.separator "\n  Listing:\n\n" #=================================================================== LISTING
 
-  opts.on("-L", "--list-completions", "List topics (completion-compatible)") do
+  opts.on('-L', '--list-completions', 'List topics (completion-compatible)') do
     Howzit.options[:list_topics] = true
     Howzit.options[:list_topic_titles] = true
   end
 
-  opts.on("-l", "--list", "List available topics") do
+  opts.on('-l', '--list', 'List available topics') do
     Howzit.options[:list_topics] = true
   end
 
-  opts.on("-R", "--list-runnable [PATTERN]", "List topics containing @ directives (verbose)") do |pat|
+  opts.on('-R', '--list-runnable [PATTERN]', 'List topics containing @ directives (verbose)') do |pat|
     Howzit.options[:for_topic] = pat
     Howzit.options[:list_runnable] = true
   end
 
-  opts.on("-T", "--task-list", "List topics containing @ directives (completion-compatible)") do
+  opts.on('-T', '--task-list', 'List topics containing @ directives (completion-compatible)') do
     Howzit.options[:list_runnable] = true
     Howzit.options[:list_runnable_titles] = true
   end
 
-  opts.on("--templates", "List available templates") do
+  opts.on('--templates', 'List available templates') do
     out = []
     Dir.chdir(Howzit.config.template_folder)
-    Dir.glob("*.md").each do |file|
-      template = File.basename(file, ".md")
+    Dir.glob('*.md').each do |file|
+      template = File.basename(file, '.md')
       out.push(Howzit::Color.template("{Mk}template:{Yk}#{template}{x}"))
-      out.push(Howzit::Color.template("{bk}[{bl}tasks{bk}]──────────────────────────────────────┐{x}"))
+      out.push(Howzit::Color.template('{bk}[{bl}tasks{bk}]──────────────────────────────────────┐{x}'))
       metadata = file.extract_metadata
       topics = Howzit::BuildNote.new(file: file).topics
       topics.each do |topic|
-        out.push(Howzit::Color.template(" {bk}│{bw}-{x} {bcK}#{template}:#{topic.title.sub(/^.*?:/, "")}{x}"))
+        out.push(Howzit::Color.template(" {bk}│{bw}-{x} {bcK}#{template}:#{topic.title.sub(/^.*?:/, '')}{x}"))
       end
       unless metadata.empty?
         meta = []
-        meta << metadata["required"].split(/\s*,\s*/).map { |m| "*{bw}#{m}{xw}" } if metadata.key?("required")
-        meta << metadata["optional"].split(/\s*,\s*/).map(&:to_s) if metadata.key?("optional")
-        out.push(Howzit::Color.template("{bk}[{bl}meta{bk}]───────────────────────────────────────┤{x}"))
-        out.push(Howzit::Color.template(" {bk}│ {xw}#{meta.join(", ")}{x}"))
+        meta << metadata['required'].split(/\s*,\s*/).map { |m| "*{bw}#{m}{xw}" } if metadata.key?('required')
+        meta << metadata['optional'].split(/\s*,\s*/).map(&:to_s) if metadata.key?('optional')
+        out.push(Howzit::Color.template('{bk}[{bl}meta{bk}]───────────────────────────────────────┤{x}'))
+        out.push(Howzit::Color.template(" {bk}│ {xw}#{meta.join(', ')}{x}"))
       end
-      out.push(Howzit::Color.template(" {bk}└───────────────────────────────────────────┘{x}"))
+      out.push(Howzit::Color.template(' {bk}└───────────────────────────────────────────┘{x}'))
     end
     Howzit::Util.page out.join("\n")
     Process.exit 0
   end
 
-  opts.on("--templates-c", "List available templates in a format for completion") do
+  opts.on('--templates-c', 'List available templates in a format for completion') do
     out = []
     Dir.chdir(Howzit.config.template_folder)
-    Dir.glob("*.md").each do |file|
-      template = File.basename(file, ".md")
+    Dir.glob('*.md').each do |file|
+      template = File.basename(file, '.md')
       out.push(template)
     end
     puts out.join("\n")
     Process.exit 0
   end
 
-  opts.on("--title-only", "Output title only") do
+  opts.on('--title-only', 'Output title only') do
     Howzit.options[:output_title] = true
     Howzit.options[:title_only] = true
   end
 
   opts.separator("\n  Commands:\n\n") #=================================================================== COMMANDS
 
-  opts.on("-c", "--create", "Create a skeleton build note in the current working directory") do
+  opts.on('-c', '--create', 'Create a skeleton build note in the current working directory') do
     Howzit.buildnote.create_note
     Process.exit 0
   end
 
-  opts.on("--config-get [KEY]", "Display the configuration settings or setting for a specific key") do |k|
+  opts.on('--config-get [KEY]', 'Display the configuration settings or setting for a specific key') do |k|
     if k.nil?
       Howzit::Config::DEFAULTS.sort_by { |key, _| key }.each do |key, _|
         print "#{key}: "
         p Howzit.options[key]
       end
     else
-      k.sub!(/^:/, "")
+      k.sub!(/^:/, '')
       if Howzit.options.key?(k.to_sym)
         puts Howzit.options[k.to_sym]
       else
@@ -143,12 +143,12 @@ OptionParser.new do |opts|
     Process.exit 0
   end
 
-  opts.on("--config-set KEY=VALUE", "Set a config value (must be a valid key)") do |key|
-    raise "Argument must be KEY=VALUE" unless key =~ /\S=\S/
+  opts.on('--config-set KEY=VALUE', 'Set a config value (must be a valid key)') do |key|
+    raise 'Argument must be KEY=VALUE' unless key =~ /\S=\S/
 
     parts = key.split(/=/)
-    k = parts.shift.sub(/^:/, "")
-    v = parts.join(" ")
+    k = parts.shift.sub(/^:/, '')
+    v = parts.join(' ')
 
     if Howzit.options.key?(k.to_sym)
       Howzit.options[k.to_sym] = v.to_config_value(Howzit.options[k.to_sym])
@@ -160,103 +160,103 @@ OptionParser.new do |opts|
   end
 
   desc = %(Edit buildnotes file in current working directory using default editor)
-  opts.on("-e", "--edit", desc) do
+  opts.on('-e', '--edit', desc) do
     Howzit.buildnote.edit
     Process.exit 0
   end
 
-  opts.on("--edit-config", "Edit configuration file using default editor") do
+  opts.on('--edit-config', 'Edit configuration file using default editor') do
     Howzit.config.editor
     Process.exit 0
   end
 
-  opts.on("--edit-template NAME", "Create or edit a template") do |template|
+  opts.on('--edit-template NAME', 'Create or edit a template') do |template|
     Howzit.buildnote.edit_template(template)
     Process.exit 0
   end
 
-  opts.on("--grep PATTERN", "Display sections matching a search pattern") do |pat|
+  opts.on('--grep PATTERN', 'Display sections matching a search pattern') do |pat|
     Howzit.options[:grep] = pat
   end
 
-  opts.on("--hook", "Copy a link to the build note file, ready for pasting into Hook.app or other notes") do
+  opts.on('--hook', 'Copy a link to the build note file, ready for pasting into Hook.app or other notes') do
     Howzit.buildnote.hook
     Process.exit 0
   end
 
-  opts.on("-r", "--run", "Execute @run, @open, and/or @copy commands for given topic") do
+  opts.on('-r', '--run', 'Execute @run, @open, and/or @copy commands for given topic') do
     Howzit.options[:run] = true
   end
 
-  opts.on("-s", "--select", "Select topic from menu") do
+  opts.on('-s', '--select', 'Select topic from menu') do
     Howzit.options[:choose] = true
   end
 
   opts.separator("\n  Formatting:\n\n") #=================================================================== FORMATTING
 
-  opts.on("--[no-]color", "Colorize output (default on)") do |c|
+  opts.on('--[no-]color', 'Colorize output (default on)') do |c|
     Howzit.options[:color] = c
     Howzit.options[:highlight] = false unless c
   end
 
-  opts.on("--header-format TYPE", HEADER_FORMAT_OPTIONS,
-          "Formatting style for topic titles (#{HEADER_FORMAT_OPTIONS.join(", ")})") do |t|
+  opts.on('--header-format TYPE', HEADER_FORMAT_OPTIONS,
+          "Formatting style for topic titles (#{HEADER_FORMAT_OPTIONS.join(', ')})") do |t|
     Howzit.options[:header_format] = t
   end
 
-  opts.on("--[no-]md-highlight", "Highlight Markdown syntax (default on), requires mdless or mdcat") do |m|
+  opts.on('--[no-]md-highlight', 'Highlight Markdown syntax (default on), requires mdless or mdcat') do |m|
     Howzit.options[:highlight] = Howzit.options[:color] ? m : false
   end
 
-  opts.on("--[no-]pager", "Paginate output (default on)") do |p|
+  opts.on('--[no-]pager', 'Paginate output (default on)') do |p|
     Howzit.options[:paginate] = p
   end
 
-  opts.on("--show-code", "Display the content of fenced run blocks") do
+  opts.on('--show-code', 'Display the content of fenced run blocks') do
     Howzit.options[:show_all_code] = true
   end
 
-  opts.on("-t", "--title", "Output title with build notes") do
+  opts.on('-t', '--title', 'Output title with build notes') do
     Howzit.options[:output_title] = true
   end
 
-  opts.on("-w", "--wrap COLUMNS", "Wrap to specified width (default 80, 0 to disable)") do |w|
+  opts.on('-w', '--wrap COLUMNS', 'Wrap to specified width (default 80, 0 to disable)') do |w|
     Howzit.options[:wrap] = w.to_i
   end
 
   opts.separator("\n  Logging:\n\n") #=================================================================== LOGGING
 
-  opts.on("-d", "--debug", "Show debug messages (and all messages)") do
+  opts.on('-d', '--debug', 'Show debug messages (and all messages)') do
     Howzit.options[:log_level] = 0
     Howzit.console.reset_level
   end
 
-  opts.on("-q", "--quiet", "Silence info message") do
+  opts.on('-q', '--quiet', 'Silence info message') do
     Howzit.options[:log_level] = 4
     Howzit.console.reset_level
   end
 
-  opts.on("--verbose", "Show all messages") do
+  opts.on('--verbose', 'Show all messages') do
     Howzit.options[:log_level] = 1
     Howzit.console.reset_level
   end
 
   opts.separator("\n  Misc:\n\n") #=================================================================== MISC
 
-  opts.on("-h", "--help", "Display this screen") do
+  opts.on('-h', '--help', 'Display this screen') do
     Howzit::Util.page opts.to_s
     Process.exit 0
   end
 
-  opts.on("-v", "--version", "Display version number") do
+  opts.on('-v', '--version', 'Display version number') do
     puts "#{File.basename(__FILE__)} v#{Howzit::VERSION}"
     Process.exit 0
   end
 end.parse!(args)
 
-trap("INT") do
+trap('INT') do
   puts
-  puts "Cancelled"
+  puts 'Cancelled'
   Process.exit 0
 end
 

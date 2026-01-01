@@ -290,11 +290,7 @@ module Howzit
 
       title = File.basename(Dir.pwd)
       # prompt = TTY::Prompt.new
-      if default
-        title
-      else
-        title = Prompt.get_line('{bw}Project name{x}'.c, default: title)
-      end
+      title = Prompt.get_line('{bw}Project name{x}'.c, default: title) unless default
       summary = ''
       summary = Prompt.get_line('{bw}Project summary{x}'.c) unless default
 
@@ -670,7 +666,7 @@ module Howzit
     ## @return     [String] file path
     ##
     def glob_note
-      Dir.glob('*.{txt,md,markdown}').select(&:build_note?).sort[0]
+      Dir.glob('*.{txt,md,markdown}').select(&:build_note?).min
     end
 
     ##
@@ -1098,7 +1094,7 @@ module Howzit
       when :first
         [matches[0]]
       when :best
-        [matches.sort_by { |a| [a.title.comp_distance(search_term), a.title.length] }.first]
+        [matches.min_by { |a| [a.title.comp_distance(search_term), a.title.length] }]
       when :all
         matches
       else

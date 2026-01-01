@@ -100,9 +100,7 @@ module Howzit
           return fzf_result(res)
         end
 
-        if Util.command_exist?('gum')
-          return gum_choose(matches, query: query, multi: true)
-        end
+        return gum_choose(matches, query: query, multi: true) if Util.command_exist?('gum')
 
         tty_menu(matches, query: query)
       end
@@ -149,9 +147,7 @@ module Howzit
           exit
         end
 
-        if query
-          puts "\nSelect a topic for `#{query}`:"
-        end
+        puts "\nSelect a topic for `#{query}`:" if query
         options_list(matches)
         read_selection(matches)
       end
@@ -229,9 +225,7 @@ module Howzit
           return res.empty? ? [] : res.split(/\n/)
         end
 
-        if Util.command_exist?('gum')
-          return gum_choose(matches, prompt: prompt_text, multi: true, required: false)
-        end
+        return gum_choose(matches, prompt: prompt_text, multi: true, required: false) if Util.command_exist?('gum')
 
         text_template_input(matches)
       end
@@ -321,7 +315,7 @@ module Howzit
       ## @return     [String] the entered value
       ##
       def get_line(prompt_text, default: nil)
-        return (default || '') unless $stdout.isatty
+        return default || '' unless $stdout.isatty
 
         if Util.command_exist?('gum')
           result = gum_input(prompt_text, placeholder: default || '')
@@ -346,7 +340,7 @@ module Howzit
       ##
       def gum_choose(matches, prompt: nil, multi: false, required: true, query: nil)
         prompt_text = prompt || (query ? "Select for '#{query}'" : 'Select')
-        args = ['gum', 'choose']
+        args = %w[gum choose]
         args << '--no-limit' if multi
         args << "--header=#{Shellwords.escape(prompt_text)}"
         args << '--cursor.foreground=6'
@@ -376,7 +370,7 @@ module Howzit
       ## @return     [String] The entered value
       ##
       def gum_input(prompt_text, placeholder: '')
-        args = ['gum', 'input']
+        args = %w[gum input]
         args << "--header=#{Shellwords.escape(prompt_text)}"
         args << "--placeholder=#{Shellwords.escape(placeholder)}" unless placeholder.empty?
         args << '--cursor.foreground=6'

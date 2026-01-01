@@ -38,6 +38,7 @@ require_relative 'howzit/stringutils'
 
 require_relative 'howzit/console_logger'
 require_relative 'howzit/config'
+require_relative 'howzit/script_comm'
 require_relative 'howzit/task'
 require_relative 'howzit/topic'
 require_relative 'howzit/buildnote'
