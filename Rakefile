@@ -46,9 +46,15 @@ task :ver do
   puts "changelog: #{cver}"
 end
 
+desc 'Version.rb check'
+task :vver do
+  res = `grep VERSION lib/howzit/version.rb`
+  print res.match(/VERSION *= *['"](\d+\.\d+\.\d+(\w+)?)/)[1]
+end
+
 desc 'Changelog version check'
 task :cver do
-  puts IO.read(File.join(File.dirname(__FILE__), 'CHANGELOG.md')).match(/^#+ (\d+\.\d+\.\d+(\w+)?)/)[1]
+  print IO.read(File.join(File.dirname(__FILE__), 'CHANGELOG.md')).match(/^#+ (\d+\.\d+\.\d+(\w+)?)/)[1]
 end
 
 desc 'Run tests in Docker'

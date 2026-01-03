@@ -443,6 +443,7 @@ module Howzit
       directives = []
       lines = @content.split(/\n/)
       conditional_stack = [] # Array of directive indices for @if/@unless directives
+      current_branch_index = nil # Track current @if/@elsif/@else branch index
       line_num = 0
       in_code_block = false
       code_block_lines = []
@@ -471,6 +472,8 @@ module Howzit
             block_content = code_block_lines.join("\n")
             optional, default = define_optional(code_block_optional)
             conditional_path = conditional_stack.dup
+            # If we're inside an @elsif/@else branch, include it in the path
+            conditional_path << current_branch_index if current_branch_index
             directives << Howzit::Directive.new(
               type: :task,
               content: {
@@ -499,6 +502,7 @@ module Howzit
           condition = Regexp.last_match(2).strip
           directive_index = directives.length
           conditional_stack << directive_index
+          current_branch_index = directive_index
           directives << Howzit::Directive.new(
             type: directive_type.to_sym,
             condition: condition,
@@ -509,6 +513,8 @@ module Howzit
           next
         elsif line =~ /^@elsif\s+(.+)$/i
           condition = Regexp.last_match(1).strip
+          directive_index = directives.length
+          current_branch_index = directive_index
           directives << Howzit::Directive.new(
             type: :elsif,
             condition: condition,
@@ -518,6 +524,8 @@ module Howzit
           )
           next
         elsif line =~ /^@else\s*$/i
+          directive_index = directives.length
+          current_branch_index = directive_index
           directives << Howzit::Directive.new(
             type: :else,
             directive_type: 'else',
@@ -528,6 +536,7 @@ module Howzit
         elsif line =~ /^@end\s*$/i && !conditional_stack.empty?
           # Closing a conditional block
           conditional_stack.pop
+          current_branch_index = nil
           directives << Howzit::Directive.new(
             type: :end,
             directive_type: 'end',
@@ -551,28 +560,32 @@ module Howzit
         end
 
         # Handle task directives (@run, @include, etc.)
-        if line =~ /^@(?<cmd>include|run|copy|open|url)(?<optional>[!?]{1,2})?\((?<action>[^)]*?)\)(?<title>.*?)$/
-          cmd = Regexp.last_match(:cmd)
-          optional_str = Regexp.last_match(:optional) || ''
-          action = Regexp.last_match(:action)
-          title = Regexp.last_match(:title).strip
-
-          optional, default = define_optional(optional_str)
-          conditional_path = conditional_stack.dup
-          directives << Howzit::Directive.new(
-            type: :task,
-            content: {
-              type: cmd.downcase.to_sym,
-              action: action,
-              title: title,
-              arguments: nil
-            },
-            optional: optional,
-            default: default,
-            line_number: line_num,
-            conditional_path: conditional_path
-          )
+        unless line =~ /^@(?<cmd>include|run|copy|open|url)(?<optional>[!?]{1,2})?\((?<action>[^)]*?)\)(?<title>.*?)$/
+          next
         end
+
+        cmd = Regexp.last_match(:cmd)
+        optional_str = Regexp.last_match(:optional) || ''
+        action = Regexp.last_match(:action)
+        title = Regexp.last_match(:title).strip
+
+        optional, default = define_optional(optional_str)
+        conditional_path = conditional_stack.dup
+        # If we're inside an @elsif/@else branch, include it in the path
+        conditional_path << current_branch_index if current_branch_index
+        directives << Howzit::Directive.new(
+          type: :task,
+          content: {
+            type: cmd.downcase.to_sym,
+            action: action,
+            title: title,
+            arguments: nil
+          },
+          optional: optional,
+          default: default,
+          line_number: line_num,
+          conditional_path: conditional_path
+        )
       end
 
       directives
@@ -684,51 +697,68 @@ module Howzit
         end
 
         # Handle task directives
-        if directive.task?
-          # Check if all parent conditionals are true
-          should_execute = true
-          directive.conditional_path.each do |cond_idx|
-            cond_state = conditional_state[cond_idx]
-            if cond_state.nil? || !cond_state[:evaluated] || !cond_state[:result]
-              should_execute = false
-              break
+        next unless directive.task?
+
+        # Check if all parent conditionals are true
+        should_execute = true
+
+        # If path ends with an @elsif/@else, skip the parent @if index
+        # (the index right before the elsif/else in the path)
+        path_to_check = directive.conditional_path.dup
+        if path_to_check.length >= 2
+          last_idx = path_to_check.last
+          last_state = conditional_state[last_idx]
+          if last_state && %w[elsif else].include?(last_state[:directive_type])
+            # Skip the parent @if index (the one before the elsif/else)
+            parent_if_idx = path_to_check[path_to_check.length - 2]
+            parent_if_state = conditional_state[parent_if_idx]
+            if parent_if_state && %w[if unless].include?(parent_if_state[:directive_type])
+              path_to_check.delete(parent_if_idx)
             end
           end
-
-          next unless should_execute
-
-          # Handle @log_level directive
-          if directive.log_level?
-            current_log_level = directive.log_level_value
-            next
-          end
-
-          # Convert directive to task
-          task = directive.to_task(self, current_log_level: current_log_level)
-          next unless task
-
-          next if (task.optional || Howzit.options[:ask]) && !ask_task(task)
-
-          run_output, total, success = task.run
-
-          output.concat(run_output)
-          @results[:total] += total
-
-          if success
-            @results[:success] += total
-          else
-            Howzit.console.warn %({bw}\u{2297} {br}Error running task {bw}"#{task.title}"{x}).c
-
-            @results[:errors] += total
-
-            break unless Howzit.options[:force]
-          end
-
-          log_task_result(task, success)
-
-          # Re-evaluate all open conditionals after task execution
-          re_evaluate_conditionals(conditional_state, directive_index - 1, context)
         end
+
+        path_to_check.each do |cond_idx|
+          cond_state = conditional_state[cond_idx]
+          if cond_state.nil? || !cond_state[:evaluated] || !cond_state[:result]
+            should_execute = false
+            break
+          end
+        end
+
+        next unless should_execute
+
+        # Handle @log_level directive
+        if directive.log_level?
+          current_log_level = directive.log_level_value
+          next
+        end
+
+        # Convert directive to task
+        task = directive.to_task(self, current_log_level: current_log_level)
+        next unless task
+
+        next if (task.optional || Howzit.options[:ask]) && !ask_task(task)
+
+        run_output, total, success = task.run
+
+        output.concat(run_output)
+        @results[:total] += total
+
+        if success
+          @results[:success] += total
+        else
+          Howzit.console.warn %({bw}\u{2297} {br}Error running task {bw}"#{task.title}"{x}).c
+
+          @results[:errors] += total
+
+          break unless Howzit.options[:force]
+        end
+
+        log_task_result(task, success)
+
+        # Re-evaluate all open conditionals after task execution
+        re_evaluate_conditionals(conditional_state, directive_index - 1, context)
       end
 
       total = "{bw}#{@results[:total]}{by} #{@results[:total] == 1 ? 'task' : 'tasks'}".c
@@ -767,11 +797,10 @@ module Howzit
         when :end
           stack_depth += 1
         when :if, :unless
-          if stack_depth.zero?
-            return i
-          else
-            stack_depth -= 1
-          end
+          return i if stack_depth.zero?
+
+          stack_depth -= 1
+
         when :elsif, :else
           stack_depth -= 1 if stack_depth.positive?
         end

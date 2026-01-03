@@ -11,9 +11,11 @@ describe Howzit::Topic do
     it 'makes a new topic instance' do
       expect(topic).to be_a described_class
     end
+
     it 'has the correct title' do
       expect(topic.title).to eq title
     end
+
     it 'has the correct content' do
       expect(topic.content).to eq content
     end
@@ -21,10 +23,10 @@ describe Howzit::Topic do
 end
 
 describe Howzit::Topic do
-  subject(:topic) {
+  subject(:topic) do
     bn = Howzit.buildnote
     bn.find_topic('Topic Balogna')[0]
-  }
+  end
 
   describe '.title' do
     it 'has the correct title' do
@@ -60,7 +62,7 @@ describe Howzit::Topic do
     end
 
     it 'fails on bad pattern' do
-      expect(topic.grep('xxx+')).to_not be_truthy
+      expect(topic.grep('xxx+')).not_to be_truthy
     end
   end
 
@@ -73,11 +75,12 @@ describe Howzit::Topic do
     end
 
     it 'Copies to clipboard' do
-      expect {
+      expect do
         ENV['RUBYOPT'] = '-W1'
         Howzit.options[:log_level] = 0
+        Howzit.instance_variable_set(:@console, nil) # Reset console to pick up new log level
         topic.run
-      }.to output(/Copied/).to_stderr
+      end.to output(/Copied/).to_stderr
     end
   end
 
@@ -101,7 +104,6 @@ describe Howzit::Topic do
       expect(topic.print_out({ single: true, header: true }).join("\n").uncolor).to match(/▶ ls -1/)
     end
   end
-
 
   describe '.arguments' do
     before do

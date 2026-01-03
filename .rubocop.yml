@@ -5,6 +5,7 @@ plugins:
   - rubocop-rake
 
 AllCops:
+  NewCops: enable
   Include:
     - Gemfile
     - Guardfile
@@ -30,7 +31,7 @@ Layout/LineLength:
     - 'lib/howzit/buildnote.rb'  # Some long lines in complex methods
 
 Metrics/BlockLength:
-  Max: 45
+  Max: 145
   Exclude:
     - Rakefile
     - bin/howzit

@@ -89,9 +89,9 @@ module Howzit
       color = color_for_level(level)
       formatted_msg = if emoji && color
                         "#{emoji} #{color}#{msg}{x}".c
-                       else
-                         msg
-                       end
+                      else
+                        msg
+                      end
 
       begin
         $stderr.puts formatted_msg
@@ -129,10 +129,10 @@ module Howzit
       emoji = emoji_for_level(:warn)
       color = color_for_level(:warn)
       formatted_msg = if emoji && color
-                         "#{emoji} #{color}#{msg}{x}".c
-                       else
-                         msg
-                       end
+                        "#{emoji} #{color}#{msg}{x}".c
+                      else
+                        msg
+                      end
 
       begin
         $stderr.puts formatted_msg

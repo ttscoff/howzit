@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'shellwords'
+
 module Howzit
   # Directive class
   # Represents a parsed directive from topic content (tasks, conditionals, etc.)
@@ -71,17 +73,47 @@ module Howzit
       # Apply current log level if set and task doesn't have its own
       task_data[:log_level] = current_log_level if current_log_level && !task_data[:log_level]
 
+      # Set named_arguments before processing titles for variable substitution
+      Howzit.named_arguments = parent.named_args
+
       case task_type
       when :block
         # Block tasks are already properly formatted
         task_data[:parent] = parent
         Howzit::Task.new(task_data, optional: @optional, default: @default)
-      when :run, :copy, :open
-        # Simple tasks - use define_task_args equivalent logic
+      when :run
+        # Run tasks need title rendering (similar to define_task_args)
+        title = task_data[:title]
+        title = title.render_arguments if title && !title.empty?
+        task_data[:title] = title
+        task_data[:parent] = parent
+        Howzit::Task.new(task_data, optional: @optional, default: @default)
+      when :copy
+        # Copy tasks need title rendering and action escaping
+        title = task_data[:title]
+        title = title.render_arguments if title && !title.empty?
+        task_data[:title] = title
+        task_data[:action] = Shellwords.escape(task_data[:action])
+        task_data[:parent] = parent
+        Howzit::Task.new(task_data, optional: @optional, default: @default)
+      when :open
+        # Open tasks need title rendering
+        title = task_data[:title]
+        title = title.render_arguments if title && !title.empty?
+        task_data[:title] = title
         task_data[:parent] = parent
         Howzit::Task.new(task_data, optional: @optional, default: @default)
       when :include
-        # Include tasks need special handling
+        # Include tasks need special handling (title processing, arguments, etc.)
+        title = task_data[:title]
+        if title =~ /\[(.*?)\] *$/
+          args = Regexp.last_match(1).split(/ *, */).map(&:render_arguments)
+          Howzit.arguments = args
+          parent.arguments
+          title.sub!(/ *\[.*?\] *$/, '')
+        end
+        title = title.render_arguments if title && !title.empty?
+        task_data[:title] = title
         task_data[:parent] = parent
         task_data[:arguments] = Howzit.named_arguments
         Howzit::Task.new(task_data, optional: @optional, default: @default)
