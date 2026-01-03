@@ -88,6 +88,37 @@ module Howzit
       end
 
       # Fall back to old behavior for backward compatibility
+      # Process @set_var directives before executing tasks (for non-sequential path)
+      if @directives
+        @directives.each do |dir|
+          next unless dir.set_var?
+
+          Howzit.named_arguments ||= {}
+          value = dir.var_value
+
+          if value
+            # Check for command substitution: backticks or $()
+            if value =~ /^`(.+)`$/ || value =~ /^\$\((.+)\)$/
+              command = Regexp.last_match(1).strip
+              # Apply variable substitution to command before execution
+              command = command.render_arguments
+              # Execute command and capture output
+              begin
+                value = `#{command}`.strip
+              rescue StandardError => e
+                Howzit.console.warn("Error executing command in @set_var: #{e.message}")
+                value = ''
+              end
+            else
+              # Apply variable substitution to the value (in case it references other variables)
+              value = value.render_arguments
+            end
+          end
+
+          Howzit.named_arguments[dir.var_name] = value
+        end
+      end
+
       if @tasks.count.positive?
         unless @prereqs.empty?
           begin
@@ -559,6 +590,30 @@ module Howzit
           next
         end
 
+        # Handle @set_var directive
+        if line =~ /^@set_var\s*\(([^)]+)\)\s*$/i
+          args_str = Regexp.last_match(1).strip
+          # Split by first comma only - everything after first comma is the value
+          if args_str =~ /^([^,]+),\s*(.+)$/
+            var_name = Regexp.last_match(1).strip
+            var_value = Regexp.last_match(2).strip
+            # Validate variable name: alphanumeric, dashes, underscores only
+            if var_name =~ /^[A-Za-z0-9_-]+$/
+              # Remove quotes from value if present (handles both single and double quotes)
+              var_value = Regexp.last_match(1) if var_value =~ /^["'](.+)["']$/
+              conditional_path = conditional_stack.dup
+              directives << Howzit::Directive.new(
+                type: :set_var,
+                var_name: var_name,
+                var_value: var_value,
+                line_number: line_num,
+                conditional_path: conditional_path
+              )
+            end
+          end
+          next
+        end
+
         # Handle task directives (@run, @include, etc.)
         unless line =~ /^@(?<cmd>include|run|copy|open|url)(?<optional>[!?]{1,2})?\((?<action>[^)]*?)\)(?<title>.*?)$/
           next
@@ -600,6 +655,10 @@ module Howzit
       directive_index = 0
       current_log_level = nil # Track current log level set by @log_level directives
 
+      # Initialize named_arguments with topic's named args (don't overwrite on each iteration)
+      Howzit.named_arguments ||= {}
+      Howzit.named_arguments.merge!(@named_args) if @named_args
+
       unless @prereqs.empty?
         begin
           puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
@@ -617,7 +676,6 @@ module Howzit
 
         # Update context for condition evaluation
         metadata = @metadata || Howzit.buildnote&.metadata
-        Howzit.named_arguments = @named_args
         context = { metadata: metadata }
 
         # Handle conditional directives
@@ -696,6 +754,43 @@ module Howzit
           next
         end
 
+        # Handle @log_level directive (before task check)
+        if directive.log_level?
+          current_log_level = directive.log_level_value
+          next
+        end
+
+        # Handle @set_var directive (before task check)
+        if directive.set_var?
+          # Set the variable in named_arguments
+          Howzit.named_arguments ||= {}
+          value = directive.var_value
+
+          if value
+            # Check for command substitution: backticks or $()
+            if value =~ /^`(.+)`$/ || value =~ /^\$\((.+)\)$/
+              command = Regexp.last_match(1).strip
+              # Apply variable substitution to command before execution
+              command = command.render_arguments
+              # Execute command and capture output
+              begin
+                value = `#{command}`.strip
+              rescue StandardError => e
+                Howzit.console.warn("Error executing command in @set_var: #{e.message}")
+                value = ''
+              end
+            else
+              # Apply variable substitution to the value (in case it references other variables)
+              value = value.render_arguments
+            end
+          end
+
+          Howzit.named_arguments[directive.var_name] = value
+          # Re-evaluate conditionals after setting variable
+          re_evaluate_conditionals(conditional_state, directive_index - 1, context)
+          next
+        end
+
         # Handle task directives
         next unless directive.task?
 
@@ -727,12 +822,6 @@ module Howzit
         end
 
         next unless should_execute
-
-        # Handle @log_level directive
-        if directive.log_level?
-          current_log_level = directive.log_level_value
-          next
-        end
 
         # Convert directive to task
         task = directive.to_task(self, current_log_level: current_log_level)

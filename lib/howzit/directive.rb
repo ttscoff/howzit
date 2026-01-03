@@ -7,7 +7,7 @@ module Howzit
   # Represents a parsed directive from topic content (tasks, conditionals, etc.)
   class Directive
     attr_reader :type, :content, :condition, :directive_type, :optional, :default, :line_number, :conditional_path,
-                :log_level_value
+                :log_level_value, :var_name, :var_value
 
     ##
     ## Initialize a Directive
@@ -21,9 +21,11 @@ module Howzit
     ## @param      line_number     [Integer] Line number in original content
     ## @param      conditional_path [Array] Array of conditional indices this directive is nested in
     ## @param      log_level_value [String, nil] Log level value for @log_level directives
+    ## @param      var_name        [String, nil] Variable name for @set_var directives
+    ## @param      var_value       [String, nil] Variable value for @set_var directives
     ##
     def initialize(type:, content: nil, condition: nil, directive_type: nil, optional: false, default: true,
-                   line_number: nil, conditional_path: [], log_level_value: nil)
+                   line_number: nil, conditional_path: [], log_level_value: nil, var_name: nil, var_value: nil)
       @type = type
       @content = content
       @condition = condition
@@ -33,6 +35,8 @@ module Howzit
       @line_number = line_number
       @conditional_path = conditional_path || []
       @log_level_value = log_level_value
+      @var_name = var_name
+      @var_value = var_value
     end
 
     ##
@@ -54,6 +58,13 @@ module Howzit
     ##
     def log_level?
       @type == :log_level
+    end
+
+    ##
+    ## Is this a set_var directive?
+    ##
+    def set_var?
+      @type == :set_var
     end
 
     ##
