@@ -63,10 +63,25 @@ module Howzit
       script = Tempfile.new('howzit_script')
       comm_file = ScriptComm.setup
       begin
-        script.write(block)
+        # Ensure support directory exists and install helpers
+        ScriptSupport.ensure_support_dir
+        ENV['HOWZIT_SUPPORT_DIR'] = ScriptSupport.support_dir
+
+        # Inject helper script loading
+        modified_block, interpreter = ScriptSupport.inject_helper(block)
+
+        script.write(modified_block)
         script.close
-        File.chmod(0o777, script.path)
-        res = system(%(/bin/sh -c "#{script.path}"))
+        File.chmod(0o755, script.path)
+
+        # Use appropriate interpreter command
+        cmd = ScriptSupport.execution_command_for(script.path, interpreter)
+        # If interpreter is nil, execute directly (will respect hashbang)
+        res = if interpreter.nil?
+                system(script.path)
+              else
+                system(cmd)
+              end
       ensure
         script.close
         script.unlink
