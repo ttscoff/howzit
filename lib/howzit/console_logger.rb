@@ -32,6 +32,50 @@ module Howzit
     end
 
     ##
+    ## Get emoji for log level
+    ##
+    ## @param      level  [Symbol] The level
+    ##
+    ## @return     [String] Emoji for the level
+    ##
+    def emoji_for_level(level)
+      case level
+      when :debug
+        '🔍'
+      when :info
+        'ℹ️'
+      when :warn
+        '⚠️'
+      when :error
+        '❌'
+      else
+        ''
+      end
+    end
+
+    ##
+    ## Get color prefix for log level
+    ##
+    ## @param      level  [Symbol] The level
+    ##
+    ## @return     [String] Color template string
+    ##
+    def color_for_level(level)
+      case level
+      when :debug
+        '{d}'
+      when :info
+        '{c}'
+      when :warn
+        '{y}'
+      when :error
+        '{r}'
+      else
+        ''
+      end
+    end
+
+    ##
     ## Write a message to the console based on the urgency
     ## level and user's log level setting
     ##
@@ -41,8 +85,16 @@ module Howzit
     def write(msg, level = :info)
       return unless LOG_LEVELS[level] >= @log_level
 
+      emoji = emoji_for_level(level)
+      color = color_for_level(level)
+      formatted_msg = if emoji && color
+                        "#{emoji} #{color}#{msg}{x}".c
+                       else
+                         msg
+                       end
+
       begin
-        $stderr.puts msg
+        $stderr.puts formatted_msg
       rescue Errno::EPIPE
         # Pipe closed, ignore
       end
@@ -74,8 +126,16 @@ module Howzit
     def warn(msg)
       return unless LOG_LEVELS[:warn] >= @log_level
 
+      emoji = emoji_for_level(:warn)
+      color = color_for_level(:warn)
+      formatted_msg = if emoji && color
+                         "#{emoji} #{color}#{msg}{x}".c
+                       else
+                         msg
+                       end
+
       begin
-        $stderr.puts msg
+        $stderr.puts formatted_msg
       rescue Errno::EPIPE
         # Pipe closed, ignore
       end

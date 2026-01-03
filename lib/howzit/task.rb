@@ -5,7 +5,7 @@ require 'English'
 module Howzit
   # Task object
   class Task
-    attr_reader :type, :title, :action, :arguments, :parent, :optional, :default, :last_status
+    attr_reader :type, :title, :action, :arguments, :parent, :optional, :default, :last_status, :log_level
 
     ##
     ## Initialize a Task object
@@ -20,6 +20,7 @@ module Howzit
     ## @option attributes :title [String] task title
     ## @option attributes :action [String] task action
     ## @option attributes :parent [String] title of nested (included) topic origin
+    ## @option attributes :log_level [String] log level for this task (debug, info, warn, error)
     def initialize(attributes, optional: false, default: true)
       @prefix = "{bw}\u{25B7}\u{25B7} {x}"
       # arrow = "{bw}\u{279F}{x}"
@@ -30,6 +31,7 @@ module Howzit
       @parent = attributes[:parent] || nil
 
       @action = attributes[:action].render_arguments || nil
+      @log_level = attributes[:log_level]
 
       @optional = optional
       @default = default
@@ -62,6 +64,7 @@ module Howzit
       block = @action
       script = Tempfile.new('howzit_script')
       comm_file = ScriptComm.setup
+      old_log_level = apply_log_level
       begin
         # Ensure support directory exists and install helpers
         ScriptSupport.ensure_support_dir
@@ -83,6 +86,7 @@ module Howzit
                 system(cmd)
               end
       ensure
+        restore_log_level(old_log_level) if old_log_level
         script.close
         script.unlink
         # Process script communication
@@ -113,6 +117,38 @@ module Howzit
     end
 
     ##
+    ## Apply log level for this task
+    ##
+    def apply_log_level
+      return unless @log_level
+
+      level_map = {
+        'debug' => 0,
+        'info' => 1,
+        'warn' => 2,
+        'warning' => 2,
+        'error' => 3
+      }
+      level_value = level_map[@log_level.downcase] || @log_level.to_i
+      old_level = Howzit.options[:log_level]
+      Howzit.options[:log_level] = level_value
+      Howzit.console.log_level = level_value
+      ENV['HOWZIT_LOG_LEVEL'] = @log_level.downcase
+      old_level
+    end
+
+    ##
+    ## Restore log level after task execution
+    ##
+    def restore_log_level(old_level)
+      return unless @log_level
+
+      Howzit.options[:log_level] = old_level
+      Howzit.console.log_level = old_level
+      ENV.delete('HOWZIT_LOG_LEVEL')
+    end
+
+    ##
     ## Execute a run task
     ##
     def run_run
@@ -131,9 +167,11 @@ module Howzit
       Howzit.console.info("#{@prefix}{bg}Running {bw}#{display_title}{x}".c)
       ENV['HOWZIT_SCRIPTS'] = File.expand_path('~/.config/howzit/scripts')
       comm_file = ScriptComm.setup
+      old_log_level = apply_log_level
       begin
         res = system(@action)
       ensure
+        restore_log_level(old_log_level) if old_log_level
         # Process script communication
         ScriptComm.apply(comm_file) if comm_file
       end

@@ -194,6 +194,19 @@ module Howzit
       config = load_config
       load_theme
       @options = flags.merge(config)
+
+      # Check for HOWZIT_LOG_LEVEL environment variable
+      return unless ENV['HOWZIT_LOG_LEVEL']
+
+      level_str = ENV['HOWZIT_LOG_LEVEL'].downcase
+      level_map = {
+        'debug' => 0,
+        'info' => 1,
+        'warn' => 2,
+        'warning' => 2,
+        'error' => 3
+      }
+      @options[:log_level] = level_map[level_str] || level_str.to_i
     end
 
     ##

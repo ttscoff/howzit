@@ -7,7 +7,7 @@ module Howzit
 
     attr_accessor :content
 
-    attr_reader :title, :tasks, :prereqs, :postreqs, :results, :named_args
+    attr_reader :title, :tasks, :prereqs, :postreqs, :results, :named_args, :directives
 
     ##
     ## Initialize a topic object
@@ -25,6 +25,7 @@ module Howzit
       @metadata = metadata
       arguments
 
+      @directives = parse_directives_with_conditionals
       @tasks = gather_tasks
       @results = { total: 0, success: 0, errors: 0, message: ''.c }
     end
@@ -81,6 +82,12 @@ module Howzit
 
       cols = check_cols
 
+      # Use sequential processing if we have directives with conditionals
+      if @directives && @directives.any?(&:conditional?)
+        return run_sequential(nested: nested, output: output, cols: cols)
+      end
+
+      # Fall back to old behavior for backward compatibility
       if @tasks.count.positive?
         unless @prereqs.empty?
           begin
@@ -335,6 +342,14 @@ module Howzit
       when /run/i
         task_args[:type] = :run
         task_args[:title] = title.render_arguments
+        # Parse log_level from action if present (format: script, log_level=level)
+        if obj =~ /,\s*log_level\s*=\s*(\w+)/i
+          log_level = Regexp.last_match(1).downcase
+          task_args[:log_level] = log_level
+          # Remove log_level parameter from action
+          obj = obj.sub(/,\s*log_level\s*=\s*\w+/i, '').strip
+        end
+        task_args[:action] = obj
       when /copy/i
         task_args[:type] = :copy
         task_args[:action] = Shellwords.escape(obj)
@@ -417,6 +432,407 @@ module Howzit
       end
 
       runnable
+    end
+
+    ##
+    ## Parse directives with conditional context for sequential evaluation
+    ##
+    ## @return     [Array] Array of Directive objects
+    ##
+    def parse_directives_with_conditionals
+      directives = []
+      lines = @content.split(/\n/)
+      conditional_stack = [] # Array of directive indices for @if/@unless directives
+      line_num = 0
+      in_code_block = false
+      code_block_lines = []
+      code_block_fence = nil
+      code_block_title = nil
+      code_block_optional = nil
+
+      # Extract prereqs and postreqs from raw content
+      @prereqs = @content.scan(/(?<=@before\n).*?(?=\n@end)/im).map(&:strip)
+      @postreqs = @content.scan(/(?<=@after\n).*?(?=\n@end)/im).map(&:strip)
+
+      lines.each do |line|
+        line_num += 1
+
+        # Handle code blocks (fenced code)
+        if line =~ /^(`{3,})run([?!]*)\s*(.*?)$/i && !in_code_block
+          in_code_block = true
+          code_block_fence = Regexp.last_match(1)
+          code_block_optional = Regexp.last_match(2)
+          code_block_title = Regexp.last_match(3).strip
+          code_block_lines = []
+          next
+        elsif in_code_block
+          if line =~ /^#{Regexp.escape(code_block_fence)}\s*$/
+            # End of code block
+            block_content = code_block_lines.join("\n")
+            optional, default = define_optional(code_block_optional)
+            conditional_path = conditional_stack.dup
+            directives << Howzit::Directive.new(
+              type: :task,
+              content: {
+                type: :block,
+                title: code_block_title,
+                action: block_content,
+                arguments: nil
+              },
+              optional: optional,
+              default: default,
+              line_number: line_num,
+              conditional_path: conditional_path
+            )
+            in_code_block = false
+            code_block_lines = []
+            code_block_fence = nil
+          else
+            code_block_lines << line
+          end
+          next
+        end
+
+        # Handle conditional directives
+        if line =~ /^@(if|unless)\s+(.+)$/i
+          directive_type = Regexp.last_match(1).downcase
+          condition = Regexp.last_match(2).strip
+          directive_index = directives.length
+          conditional_stack << directive_index
+          directives << Howzit::Directive.new(
+            type: directive_type.to_sym,
+            condition: condition,
+            directive_type: directive_type,
+            line_number: line_num,
+            conditional_path: conditional_stack[0..-2].dup
+          )
+          next
+        elsif line =~ /^@elsif\s+(.+)$/i
+          condition = Regexp.last_match(1).strip
+          directives << Howzit::Directive.new(
+            type: :elsif,
+            condition: condition,
+            directive_type: 'elsif',
+            line_number: line_num,
+            conditional_path: conditional_stack[0..-2].dup
+          )
+          next
+        elsif line =~ /^@else\s*$/i
+          directives << Howzit::Directive.new(
+            type: :else,
+            directive_type: 'else',
+            line_number: line_num,
+            conditional_path: conditional_stack[0..-2].dup
+          )
+          next
+        elsif line =~ /^@end\s*$/i && !conditional_stack.empty?
+          # Closing a conditional block
+          conditional_stack.pop
+          directives << Howzit::Directive.new(
+            type: :end,
+            directive_type: 'end',
+            line_number: line_num,
+            conditional_path: conditional_stack.dup
+          )
+          next
+        end
+
+        # Handle @log_level directive
+        if line =~ /^@log_level\s*\(([^)]+)\)\s*$/i
+          log_level = Regexp.last_match(1).strip
+          conditional_path = conditional_stack.dup
+          directives << Howzit::Directive.new(
+            type: :log_level,
+            log_level_value: log_level,
+            line_number: line_num,
+            conditional_path: conditional_path
+          )
+          next
+        end
+
+        # Handle task directives (@run, @include, etc.)
+        if line =~ /^@(?<cmd>include|run|copy|open|url)(?<optional>[!?]{1,2})?\((?<action>[^)]*?)\)(?<title>.*?)$/
+          cmd = Regexp.last_match(:cmd)
+          optional_str = Regexp.last_match(:optional) || ''
+          action = Regexp.last_match(:action)
+          title = Regexp.last_match(:title).strip
+
+          optional, default = define_optional(optional_str)
+          conditional_path = conditional_stack.dup
+          directives << Howzit::Directive.new(
+            type: :task,
+            content: {
+              type: cmd.downcase.to_sym,
+              action: action,
+              title: title,
+              arguments: nil
+            },
+            optional: optional,
+            default: default,
+            line_number: line_num,
+            conditional_path: conditional_path
+          )
+        end
+      end
+
+      directives
+    end
+
+    ##
+    ## Run directives sequentially with conditional re-evaluation
+    ##
+    def run_sequential(nested: false, output: [], cols: 80)
+      # Initialize conditional state
+      conditional_state = {} # { index => { evaluated: bool, result: bool, matched_chain: bool } }
+      directive_index = 0
+      current_log_level = nil # Track current log level set by @log_level directives
+
+      unless @prereqs.empty?
+        begin
+          puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+        rescue Errno::EPIPE
+          # Pipe closed, ignore
+        end
+        res = Prompt.yn('Have the above prerequisites been met?', default: true)
+        Process.exit 1 unless res
+      end
+
+      # Process directives sequentially
+      while directive_index < @directives.length
+        directive = @directives[directive_index]
+        directive_index += 1
+
+        # Update context for condition evaluation
+        metadata = @metadata || Howzit.buildnote&.metadata
+        Howzit.named_arguments = @named_args
+        context = { metadata: metadata }
+
+        # Handle conditional directives
+        if directive.conditional?
+          case directive.type
+          when :if, :unless
+            # Evaluate condition
+            result = ConditionEvaluator.evaluate(directive.condition, context)
+            result = !result if directive.directive_type == 'unless'
+
+            conditional_state[directive_index - 1] = {
+              evaluated: true,
+              result: result,
+              matched_chain: result,
+              condition: directive.condition,
+              directive_type: directive.directive_type
+            }
+
+          when :elsif
+            # Find the matching @if/@unless
+            matching_if_index = find_matching_if_index(directive_index - 1)
+            if matching_if_index && conditional_state[matching_if_index]
+              # If previous branch matched, this is false
+              if conditional_state[matching_if_index][:matched_chain]
+                conditional_state[directive_index - 1] = {
+                  evaluated: true,
+                  result: false,
+                  matched_chain: false,
+                  condition: directive.condition,
+                  directive_type: 'elsif',
+                  parent_index: matching_if_index
+                }
+              else
+                # Evaluate condition
+                result = ConditionEvaluator.evaluate(directive.condition, context)
+                conditional_state[directive_index - 1] = {
+                  evaluated: true,
+                  result: result,
+                  matched_chain: result,
+                  condition: directive.condition,
+                  directive_type: 'elsif',
+                  parent_index: matching_if_index
+                }
+                conditional_state[matching_if_index][:matched_chain] = true if result
+              end
+            end
+
+          when :else
+            # Find the matching @if/@unless
+            matching_if_index = find_matching_if_index(directive_index - 1)
+            if matching_if_index && conditional_state[matching_if_index]
+              # If any previous branch matched, else is false
+              if conditional_state[matching_if_index][:matched_chain]
+                conditional_state[directive_index - 1] = {
+                  evaluated: true,
+                  result: false,
+                  matched_chain: false,
+                  directive_type: 'else',
+                  parent_index: matching_if_index
+                }
+              else
+                conditional_state[directive_index - 1] = {
+                  evaluated: true,
+                  result: true,
+                  matched_chain: true,
+                  directive_type: 'else',
+                  parent_index: matching_if_index
+                }
+                conditional_state[matching_if_index][:matched_chain] = true
+              end
+            end
+
+          when :end
+            # End of conditional block - no action needed, state is managed by stack
+          end
+          next
+        end
+
+        # Handle task directives
+        if directive.task?
+          # Check if all parent conditionals are true
+          should_execute = true
+          directive.conditional_path.each do |cond_idx|
+            cond_state = conditional_state[cond_idx]
+            if cond_state.nil? || !cond_state[:evaluated] || !cond_state[:result]
+              should_execute = false
+              break
+            end
+          end
+
+          next unless should_execute
+
+          # Handle @log_level directive
+          if directive.log_level?
+            current_log_level = directive.log_level_value
+            next
+          end
+
+          # Convert directive to task
+          task = directive.to_task(self, current_log_level: current_log_level)
+          next unless task
+
+          next if (task.optional || Howzit.options[:ask]) && !ask_task(task)
+
+          run_output, total, success = task.run
+
+          output.concat(run_output)
+          @results[:total] += total
+
+          if success
+            @results[:success] += total
+          else
+            Howzit.console.warn %({bw}\u{2297} {br}Error running task {bw}"#{task.title}"{x}).c
+
+            @results[:errors] += total
+
+            break unless Howzit.options[:force]
+          end
+
+          log_task_result(task, success)
+
+          # Re-evaluate all open conditionals after task execution
+          re_evaluate_conditionals(conditional_state, directive_index - 1, context)
+        end
+      end
+
+      total = "{bw}#{@results[:total]}{by} #{@results[:total] == 1 ? 'task' : 'tasks'}".c
+      errors = "{bw}#{@results[:errors]}{by} #{@results[:errors] == 1 ? 'error' : 'errors'}".c
+      @results[:message] += if @results[:errors].zero?
+                              "{bg}\u{2713} {by}Ran #{total}{x}".c
+                            elsif Howzit.options[:force]
+                              "{br}\u{2715} {by}Completed #{total} with #{errors}{x}".c
+                            else
+                              "{br}\u{2715} {by}Ran #{total}, terminated due to error{x}".c
+                            end
+
+      output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested && !Howzit.options[:run]
+
+      unless @postreqs.empty?
+        begin
+          puts TTY::Box.frame("{bw}#{@postreqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+        rescue Errno::EPIPE
+          # Pipe closed, ignore
+        end
+      end
+
+      output
+    end
+
+    ##
+    ## Find the index of the matching @if/@unless for an @elsif/@else/@end
+    ##
+    def find_matching_if_index(current_index)
+      stack_depth = 0
+      (current_index - 1).downto(0) do |i|
+        dir = @directives[i]
+        next unless dir.conditional?
+
+        case dir.type
+        when :end
+          stack_depth += 1
+        when :if, :unless
+          if stack_depth.zero?
+            return i
+          else
+            stack_depth -= 1
+          end
+        when :elsif, :else
+          stack_depth -= 1 if stack_depth.positive?
+        end
+      end
+      nil
+    end
+
+    ##
+    ## Re-evaluate conditionals after a task runs (variables may have changed)
+    ##
+    def re_evaluate_conditionals(conditional_state, current_index, context)
+      # Re-evaluate all conditionals that come after the current task
+      # and before the next task
+      (current_index + 1).upto(@directives.length - 1) do |i|
+        dir = @directives[i]
+        break if dir.task? # Stop at next task
+
+        next unless dir.conditional?
+
+        case dir.type
+        when :if, :unless
+          if conditional_state[i]
+            # Re-evaluate
+            result = ConditionEvaluator.evaluate(dir.condition, context)
+            result = !result if dir.directive_type == 'unless'
+            conditional_state[i][:result] = result
+            conditional_state[i][:matched_chain] = result
+          end
+        when :elsif
+          matching_if_index = find_matching_if_index(i)
+          if matching_if_index && conditional_state[matching_if_index]
+            parent_state = conditional_state[matching_if_index]
+            if conditional_state[i]
+              if parent_state[:matched_chain] && !conditional_state[i][:matched_chain]
+                conditional_state[i][:result] = false
+              else
+                result = ConditionEvaluator.evaluate(dir.condition, context)
+                conditional_state[i][:result] = result
+                conditional_state[i][:matched_chain] = result
+                parent_state[:matched_chain] = true if result
+              end
+            end
+          end
+        when :else
+          matching_if_index = find_matching_if_index(i)
+          if matching_if_index && conditional_state[matching_if_index]
+            parent_state = conditional_state[matching_if_index]
+            if conditional_state[i]
+              if parent_state[:matched_chain]
+                conditional_state[i][:result] = false
+              else
+                conditional_state[i][:result] = true
+                conditional_state[i][:matched_chain] = true
+                parent_state[:matched_chain] = true
+              end
+            end
+          end
+        when :end
+          # No re-evaluation needed
+        end
+      end
     end
   end
 end
