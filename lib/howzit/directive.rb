@@ -85,18 +85,30 @@ module Howzit
       task_data[:log_level] = current_log_level if current_log_level && !task_data[:log_level]
 
       # Set named_arguments before processing titles for variable substitution
-      Howzit.named_arguments = parent.named_args
+      # Merge with existing named_arguments to preserve variables set by scripts
+      Howzit.named_arguments ||= {}
+      Howzit.named_arguments.merge!(parent.named_args) if parent.named_args
 
       case task_type
       when :block
-        # Block tasks are already properly formatted
-        task_data[:parent] = parent
-        Howzit::Task.new(task_data, optional: @optional, default: @default)
-      when :run
-        # Run tasks need title rendering (similar to define_task_args)
+        # Block tasks need title rendering
+        # Note: Action substitution happens at execution time in Task#run_block
+        # so variables from previous run blocks are available
         title = task_data[:title]
         title = title.render_arguments if title && !title.empty?
         task_data[:title] = title
+        # Don't substitute variables in action here - do it at execution time
+        task_data[:parent] = parent
+        Howzit::Task.new(task_data, optional: @optional, default: @default)
+      when :run
+        # Run tasks need title and action rendering (similar to define_task_args)
+        title = task_data[:title]
+        title = title.render_arguments if title && !title.empty?
+        task_data[:title] = title
+        # Apply variable substitution to action
+        action = task_data[:action]
+        action = action.render_arguments if action && !action.empty?
+        task_data[:action] = action
         task_data[:parent] = parent
         Howzit::Task.new(task_data, optional: @optional, default: @default)
       when :copy
@@ -104,7 +116,10 @@ module Howzit
         title = task_data[:title]
         title = title.render_arguments if title && !title.empty?
         task_data[:title] = title
-        task_data[:action] = Shellwords.escape(task_data[:action])
+        # Apply variable substitution to action before escaping
+        action = task_data[:action]
+        action = action.render_arguments if action && !action.empty?
+        task_data[:action] = Shellwords.escape(action)
         task_data[:parent] = parent
         Howzit::Task.new(task_data, optional: @optional, default: @default)
       when :open

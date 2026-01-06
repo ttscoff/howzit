@@ -34,7 +34,7 @@ module Howzit
       def ensure_support_dir
         dir = support_dir
         legacy_dir = File.expand_path(LEGACY_SUPPORT_DIR)
-        new_root  = File.expand_path(File.join(SUPPORT_DIR, '..'))
+        File.expand_path(File.join(SUPPORT_DIR, '..'))
 
         # If legacy files exist, always offer to migrate them before proceeding.
         # Use early_init=false here since config is already loaded by the time we reach this point
@@ -71,15 +71,14 @@ module Howzit
       ##
       def migrate_legacy_support(early_init: false)
         legacy_dir = File.expand_path(LEGACY_SUPPORT_DIR)
-        new_root  = File.expand_path(File.join(SUPPORT_DIR, '..'))
+        new_root = File.expand_path(File.join(SUPPORT_DIR, '..'))
 
         unless File.directory?(legacy_dir)
-          if early_init
-            return
-          else
-            Howzit.console.info "No legacy Howzit directory found at #{legacy_dir}; nothing to migrate."
-            return
-          end
+          return if early_init
+
+          Howzit.console.info "No legacy Howzit directory found at #{legacy_dir}; nothing to migrate."
+          return
+
         end
 
         prompt = "Migrate Howzit files from #{legacy_dir} to #{new_root}? This will overwrite files in the new location with legacy versions, " \
@@ -87,7 +86,7 @@ module Howzit
 
         if early_init
           unless simple_yn_prompt(prompt, default: true)
-            $stderr.puts 'Migration cancelled; no changes made.'
+            warn 'Migration cancelled; no changes made.'
             return
           end
         else
@@ -117,7 +116,7 @@ module Howzit
 
         FileUtils.rm_rf(legacy_dir)
         if early_init
-          $stderr.puts "Migrated Howzit files from #{legacy_dir} to #{new_root}."
+          warn "Migrated Howzit files from #{legacy_dir} to #{new_root}."
         else
           Howzit.console.info "Migrated Howzit files from #{legacy_dir} to #{new_root}."
         end

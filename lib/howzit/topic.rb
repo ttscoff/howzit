@@ -141,7 +141,10 @@ module Howzit
 
       unless @postreqs.empty?
         begin
-          puts TTY::Box.frame("{bw}#{@postreqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+          # Apply variable substitution to postreqs content, then wrap each line individually to preserve structure
+          postreqs_content = @postreqs.join("\n\n").render_arguments
+          wrapped_content = postreqs_content.split(/\n/).map { |line| line.wrap(cols - 4) }.join("\n")
+          puts TTY::Box.frame("{bw}#{wrapped_content}{x}".c, width: cols)
         rescue Errno::EPIPE
           # Pipe closed, ignore
         end
@@ -859,21 +862,25 @@ module Howzit
         re_evaluate_conditionals(conditional_state, directive_index - 1, context)
       end
 
-      total = "{bw}#{@results[:total]}{by} #{@results[:total] == 1 ? 'task' : 'tasks'}".c
-      errors = "{bw}#{@results[:errors]}{by} #{@results[:errors] == 1 ? 'error' : 'errors'}".c
-      @results[:message] += if @results[:errors].zero?
-                              "{bg}\u{2713} {by}Ran #{total}{x}".c
-                            elsif Howzit.options[:force]
-                              "{br}\u{2715} {by}Completed #{total} with #{errors}{x}".c
-                            else
-                              "{br}\u{2715} {by}Ran #{total}, terminated due to error{x}".c
-                            end
-
-      output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested && !Howzit.options[:run]
+      if @results[:total].positive?
+        total = "{bw}#{@results[:total]}{by} #{@results[:total] == 1 ? 'task' : 'tasks'}".c
+        errors = "{bw}#{@results[:errors]}{by} #{@results[:errors] == 1 ? 'error' : 'errors'}".c
+        @results[:message] += if @results[:errors].zero?
+                                "{bg}\u{2713} {by}Ran #{total}{x}".c
+                              elsif Howzit.options[:force]
+                                "{br}\u{2715} {by}Completed #{total} with #{errors}{x}".c
+                              else
+                                "{br}\u{2715} {by}Ran #{total}, terminated due to error{x}".c
+                              end
+        output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested && !Howzit.options[:run]
+      end
 
       unless @postreqs.empty?
         begin
-          puts TTY::Box.frame("{bw}#{@postreqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+          # Apply variable substitution to postreqs content, then wrap each line individually to preserve structure
+          postreqs_content = @postreqs.join("\n\n").render_arguments
+          wrapped_content = postreqs_content.split(/\n/).map { |line| line.wrap(cols - 4) }.join("\n")
+          puts TTY::Box.frame("{bw}#{wrapped_content}{x}".c, width: cols)
         rescue Errno::EPIPE
           # Pipe closed, ignore
         end

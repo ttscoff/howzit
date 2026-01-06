@@ -29,6 +29,7 @@ Layout/LineLength:
     - 'lib/howzit/util.rb'  # error messages with long template strings
     - 'lib/howzit/stringutils.rb'  # Color template strings
     - 'lib/howzit/buildnote.rb'  # Some long lines in complex methods
+    - 'lib/howzit/script_support.rb'  # Some long lines in complex methods
 
 Metrics/BlockLength:
   Max: 145

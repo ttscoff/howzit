@@ -62,6 +62,9 @@ module Howzit
     def run_block
       Howzit.console.info "#{@prefix}{bg}Running block {bw}#{@title}{x}".c if Howzit.options[:log_level] < 2
       block = @action
+      # Apply variable substitution to block content at execution time
+      # (variables from previous run blocks are now available)
+      block = block.render_arguments if block && !block.empty?
       script = Tempfile.new('howzit_script')
       comm_file = ScriptComm.setup
       old_log_level = apply_log_level
