@@ -168,9 +168,7 @@ module Howzit
     ##
     def list_topics
       @topics.map do |topic|
-        title = topic.title
-        title += "(#{topic.named_args.keys.join(', ')})" unless topic.named_args.empty?
-        title
+        topic.title
       end
     end
 
@@ -195,9 +193,7 @@ module Howzit
       @topics.each do |topic|
         next unless topic.tasks.count.positive?
 
-        title = topic.title
-        title += "(#{topic.named_args.keys.join(', ')})" unless topic.named_args.empty?
-        output.push(title)
+        output.push(topic.title)
       end
       output.join("\n")
     end
