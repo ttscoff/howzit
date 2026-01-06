@@ -88,36 +88,8 @@ module Howzit
       end
 
       # Fall back to old behavior for backward compatibility
-      # Process @set_var directives before executing tasks (for non-sequential path)
-      if @directives
-        @directives.each do |dir|
-          next unless dir.set_var?
-
-          Howzit.named_arguments ||= {}
-          value = dir.var_value
-
-          if value
-            # Check for command substitution: backticks or $()
-            if value =~ /^`(.+)`$/ || value =~ /^\$\((.+)\)$/
-              command = Regexp.last_match(1).strip
-              # Apply variable substitution to command before execution
-              command = command.render_arguments
-              # Execute command and capture output
-              begin
-                value = `#{command}`.strip
-              rescue StandardError => e
-                Howzit.console.warn("Error executing command in @set_var: #{e.message}")
-                value = ''
-              end
-            else
-              # Apply variable substitution to the value (in case it references other variables)
-              value = value.render_arguments
-            end
-          end
-
-          Howzit.named_arguments[dir.var_name] = value
-        end
-      end
+      # Note: @set_var directives are already processed in gather_tasks for non-sequential path
+      # This section is kept for backward compatibility but shouldn't be needed
 
       if @tasks.count.positive?
         unless @prereqs.empty?
@@ -216,7 +188,8 @@ module Howzit
       output = []
 
       if keys[:action] =~ / *\[(.*?)\] *$/
-        Howzit.named_arguments = @named_args
+        Howzit.named_arguments ||= {}
+        Howzit.named_arguments.merge!(@named_args) if @named_args
         Howzit.arguments = Regexp.last_match(1).split(/ *, */).map!(&:render_arguments)
       end
 
@@ -356,7 +329,9 @@ module Howzit
                     action: obj,
                     parent: self }
       # Set named_arguments before processing titles for variable substitution
-      Howzit.named_arguments = @named_args
+      # Merge with existing named_arguments to preserve @set_var variables
+      Howzit.named_arguments ||= {}
+      Howzit.named_arguments.merge!(@named_args) if @named_args
       case cmd
       when /include/i
         if title =~ /\[(.*?)\] *$/
@@ -425,7 +400,39 @@ module Howzit
       runnable = []
       # Process conditional blocks first
       # Set named_arguments before processing so conditions can access them
-      Howzit.named_arguments = @named_args
+      Howzit.named_arguments ||= {}
+      Howzit.named_arguments.merge!(@named_args) if @named_args
+
+      # Process @set_var directives before gathering tasks (for non-sequential path)
+      # This ensures variables are available when task actions are rendered
+      if @directives && !@directives.any?(&:conditional?)
+        @directives.each do |dir|
+          next unless dir.set_var?
+
+          value = dir.var_value
+          if value
+            # Check for command substitution: backticks or $()
+            if value =~ /^`(.+)`$/ || value =~ /^\$\((.+)\)$/
+              command = Regexp.last_match(1).strip
+              # Apply variable substitution to command before execution
+              command = command.render_arguments
+              # Execute command and capture output
+              begin
+                value = `#{command}`.strip
+              rescue StandardError => e
+                Howzit.console.warn("Error executing command in @set_var: #{e.message}")
+                value = ''
+              end
+            else
+              # Apply variable substitution to the value (in case it references other variables)
+              value = value.render_arguments
+            end
+          end
+
+          Howzit.named_arguments[dir.var_name] = value
+        end
+      end
+
       metadata = @metadata || Howzit.buildnote&.metadata
       processed_content = ConditionalContent.process(@content, { metadata: metadata })
 
@@ -440,7 +447,8 @@ module Howzit
       processed_content.scan(rx) { matches << Regexp.last_match }
       matches.each do |m|
         c = m.named_captures.symbolize_keys
-        Howzit.named_arguments = @named_args
+        Howzit.named_arguments ||= {}
+        Howzit.named_arguments.merge!(@named_args) if @named_args
 
         if c[:cmd].nil?
           optional, default = define_optional(c[:optional2])
@@ -591,10 +599,11 @@ module Howzit
         end
 
         # Handle @set_var directive
-        if line =~ /^@set_var\s*\(([^)]+)\)\s*$/i
-          args_str = Regexp.last_match(1).strip
+        if line =~ /^@set_var\s*\(/i
+          # Extract content between parentheses, handling nested parentheses
+          paren_content = line.sub(/^@set_var\s*\(/i, '').sub(/\)\s*$/, '')
           # Split by first comma only - everything after first comma is the value
-          if args_str =~ /^([^,]+),\s*(.+)$/
+          if paren_content =~ /^([^,]+),\s*(.+)$/
             var_name = Regexp.last_match(1).strip
             var_value = Regexp.last_match(2).strip
             # Validate variable name: alphanumeric, dashes, underscores only
