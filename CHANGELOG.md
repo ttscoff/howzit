@@ -1,3 +1,11 @@
+### 2.1.32
+
+2026-01-06 05:21
+
+#### IMPROVED
+
+- Completion output for howzit -L and howzit -T now shows topic titles without parenthetical variable names, making completion lists cleaner and easier to read while still preserving variable information in verbose output (howzit -R).
+
 ### 2.1.31
 
 2026-01-06 04:57
