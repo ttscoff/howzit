@@ -1,3 +1,77 @@
+### 2.1.30
+
+2026-01-06 03:55
+
+#### CHANGED
+
+- Updated rubocop from version 0.93.1 to 1.82.1 for Ruby 3.4.4 compatibility
+- Updated .rubocop.yml to use plugins syntax instead of require for rubocop extensions
+- Updated .rubocop.yml to inherit from .rubocop_todo.yml and removed Max settings that were overriding todo file limits
+- Added Security/YAMLLoad exception to .rubocop.yml to allow YAML.load usage (intentionally not using safe_load)
+- Added Layout/LineLength exceptions for files with intentionally long lines (bin/howzit, task.rb, util.rb, stringutils.rb, buildnote.rb)
+- Run blocks now execute scripts using appropriate interpreter commands instead of always using /bin/sh
+- Moved @log_level and @set_var directive processing before task check in sequential execution to ensure they are processed correctly.
+
+#### NEW
+
+- Scripts can now communicate back to Howzit by writing to a communication file specified in HOWZIT_COMM_FILE environment variable, allowing scripts to send log messages (LOG:level:message) and set variables (VAR:KEY=value) that are available for subsequent tasks and conditional logic
+- Added ScriptComm module to handle bidirectional communication between scripts and Howzit
+- Added @if and @unless conditional blocks that allow content and tasks to be conditionally included or excluded based on evaluated conditions, with support for nested blocks
+- Conditional blocks support string comparisons (==, =~ /regex/, *= contains, ^= starts with, $= ends with) and numeric comparisons (==, !=, >, >=, <, <=)
+- Conditions can test against metadata keys, environment variables, positional arguments ($1, $2, etc.), named arguments, and script-set variables
+- Added special condition checks: git dirty/clean, file exists <path>, dir exists <path>, topic exists <name>, and cwd/working directory
+- Conditions support negation with 'not' or '!' prefix
+- Added @elsif directive for alternative conditions in @if/@unless blocks, allowing multiple conditional branches
+- Added @else directive for fallback branches in conditional blocks when all previous conditions are false
+- Conditional blocks now support chaining multiple @elsif statements between @if/@unless and @else
+- @elsif and @else work correctly with nested conditional blocks
+- Added **= fuzzy match operator for string comparisons that matches if search string characters appear in order within the target string (e.g., "fluffy" **= "ffy" matches)
+- Added file contents condition that reads file contents and performs string comparisons using any comparison operator (e.g., file contents VERSION.txt ^= 0.)
+- File contents condition supports file paths as variables from metadata, named arguments, or environment variables
+- ScriptSupport module provides helper functions (log_info, log_warn, log_error, log_debug, set_var) for bash, zsh, fish, ruby, python, perl, and node scripts in run blocks
+- Automatic interpreter detection from hashbang lines in scripts
+- Helper script injection into run blocks based on detected interpreter
+- Support directory installation at ~/.local/share/howzit/support with language-specific helper scripts
+- Add sequential conditional evaluation: @if/@unless blocks are now evaluated after each task runs, allowing variables set by scripts to affect subsequent conditional blocks in the same topic
+- Add @log_level(LEVEL) directive to set log level for subsequent tasks in a topic
+- Add log_level parameter to @run directives (e.g., @run(script.sh, log_level=debug))
+- Add HOWZIT_LOG_LEVEL environment variable support for global log level configuration
+- Add emoji and color indicators for log messages (debug, info, warn, error)
+- Add comprehensive test coverage for sequential conditional evaluation including @if/@unless/@elsif/@else blocks with variables from run blocks
+- Add comprehensive test coverage for log level configuration including @log_level directive, log_level parameter in @run directives, and HOWZIT_LOG_LEVEL environment variable
+- Added @set_var directive to set variables in build notes. Takes two comma-separated arguments: variable name (alphanumeric, dashes, underscores only) and value. Variables are available as ${VAR} in subsequent @run directives, run blocks, and @if/@else conditional blocks.
+- Added command substitution support to @set_var directive. Values can use backticks (`command`) or $() syntax ($(command)) to execute commands and use their output as the variable value. Commands can reference other variables using ${VAR} syntax.
+- Added @set_var directive to set variables directly in build notes, making them available as ${VAR} in subsequent @run directives, run blocks, and @if/@else conditional blocks.
+- Added command substitution support to @set_var so values can come from backtick commands (`command`) or $() syntax ($(command)), with command output (whitespace stripped) used as the variable value and ${VAR} substitutions applied inside the command.
+
+#### IMPROVED
+
+- Auto-corrected rubocop style offenses including string literals, redundant self, parentheses, and other correctable issues
+- Fixed Lint/Void issue in buildnote.rb by simplifying conditional logic
+- Cwd and working directory can now be used with string comparison operators (==, =~, *=, ^=, $=) to check the current directory path
+- Conditions now support ${var} syntax in addition to var for consistency with variable substitution syntax
+- String comparison operators (*=, ^=, $=) now treat unquoted strings that aren't found as variables as literal strings, allowing simpler syntax like template *= gem instead of template *= "gem"
+- Log messages from scripts now display with visual indicators: debug messages show with magnifying glass emoji and dark color, info with info emoji and cyan, warnings with warning emoji and yellow, errors with X emoji and red
+- Log level filtering now properly applies to script-to-howzit communication messages, showing only messages at or above the configured level
+- Conditional blocks (@if/@unless/@elsif/@else) now re-evaluate after each task execution, enabling dynamic conditional flow based on variables set by preceding tasks
+- Improve task directive parsing by refactoring to use unless/next pattern for better code organization and fixing @log_level directive handling
+- Improve Directive#to_task to properly handle title rendering with variable substitution, argument parsing for include tasks, and action escaping for copy tasks
+- Processed @set_var directives before task creation in topics without conditionals so variable substitution in @run actions works as expected even in the non-sequential execution path.
+
+#### FIXED
+
+- Resolved NameError for 'white' color method by generating escape codes directly from configured_colors hash instead of calling dynamically generated methods
+- Fixed infinite recursion in ConsoleLogger by using $stderr.puts directly instead of calling warn method recursively
+- Color template method now properly respects coloring? setting and returns empty strings when coloring is disabled
+- Resolved test failures caused by Howzit.buildnote caching stale instances by resetting @buildnote in spec_helper before each test
+- Fixed bug where @end statements failed to close conditional blocks when conditions evaluated to false, preventing subsequent conditional blocks from working correctly
+- Fixed issue where named arguments from topic titles were not available when evaluating conditions in conditional blocks
+- Suppressed EPIPE errors that occur when writing to stdout/stderr after pipes are closed, preventing error messages from appearing in terminal output
+- Fix @elsif and @else conditional blocks not executing tasks when parent @if condition is false by correctly tracking branch indices and skipping parent @if index in conditional path evaluation
+- Fix clipboard copy test failing due to cached console logger instance not updating when log_level option changes
+- Fixed variable persistence issue in sequential execution where Howzit.named_arguments was being reset on each iteration, causing @set_var variables to be lost.
+- Ensured variables set by @set_var and helper scripts persist correctly across sequential conditional evaluation by merging topic named arguments into Howzit.named_arguments instead of overwriting them.
+
 ### 2.1.29
 
 2026-01-01 06:55
