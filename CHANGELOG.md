@@ -1,3 +1,18 @@
+### 2.1.33
+
+2026-01-06 08:08
+
+#### IMPROVED
+
+- Variables set via set_var in run blocks are now properly substituted in all task types: fenced code blocks, @run directive actions, @copy directive actions, and @after block content, enabling dynamic script execution and messaging based on variables set in earlier tasks
+- Directive#to_task now merges parent named_args with existing named_arguments instead of overwriting, preserving variables set by scripts via set_var helper functions across sequential task execution
+
+#### FIXED
+
+- Fix variables set via set_var in run blocks not being substituted in subsequent fenced code block (```run) actions by moving variable substitution to execution time instead of task creation time
+- Fix @after blocks only displaying first two lines by wrapping each line individually to preserve multiline structure including empty lines and numbered lists
+- Fix @after blocks not displaying when no tasks are executed in sequential processing mode by ensuring they display regardless of task execution results
+
 ### 2.1.32
 
 2026-01-06 05:21
