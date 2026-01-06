@@ -1,3 +1,24 @@
+### 2.1.31
+
+2026-01-06 04:57
+
+#### CHANGED
+
+- Updated Howzit to use XDG_CONFIG_HOME/howzit (or ~/.config/howzit if XDG_CONFIG_HOME is not set) for all configuration files, templates, themes, and script support files instead of ~/.local/share/howzit.
+
+#### NEW
+
+- Added automatic migration prompt that detects existing ~/.local/share/howzit directory and offers to migrate all files to the new config location, merging contents and overwriting existing files in the new location while preserving files that only exist in the new location.
+- Added --migrate flag to explicitly trigger migration of legacy ~/.local/share/howzit directory to the new config location.
+
+#### IMPROVED
+
+- Migration prompt now appears during config initialization to catch legacy directories before creating new config files, preventing confusion about file locations.
+
+#### FIXED
+
+- Fixed ArgumentError when topic titles were longer than terminal width by ensuring horizontal rule width calculation never goes negative, clamping to zero when title exceeds available space.
+
 ### 2.1.30
 
 2026-01-06 03:55

@@ -8,7 +8,7 @@ describe Howzit::BuildNote do
   describe ".note_file" do
     it "locates a build note file" do
       expect(how.note_file).not_to be_empty
-      expect(how.note_file).to match /builda.md$/
+      expect(how.note_file).to match(/builda.md$/)
     end
   end
 
@@ -16,6 +16,7 @@ describe Howzit::BuildNote do
     it "finds topic containing 'bermuda'" do
       expect(how.grep('bermuda').map { |topic| topic.title }).to include('Topic Tropic')
     end
+
     it "does not return non-matching topic" do
       expect(how.grep('bermuda').map { |topic| topic.title }).not_to include('Topic Balogna')
     end
@@ -116,8 +117,9 @@ describe Howzit::BuildNote do
     it "contains 7 topics" do
       expect(how.list_topics.count).to eq 7
     end
+
     it "outputs a newline-separated string for completion" do
-      expect(how.list_completions.scan(/\n/).count).to eq 6
+      expect(how.list_completions.scan("\n").count).to eq 6
     end
   end
 
@@ -159,7 +161,7 @@ describe Howzit::BuildNote do
 
     it "falls back to fuzzy match when no exact match" do
       Howzit.options[:matching] = 'fuzzy'
-      search_terms = ['trpc']  # fuzzy for 'tropic'
+      search_terms = ['trpc'] # fuzzy for 'tropic'
       output = []
       matches = how.send(:collect_topic_matches, search_terms, output)
       expect(matches.count).to eq 1
@@ -228,7 +230,7 @@ describe Howzit::BuildNote do
 
     it "parses required variables from template metadata" do
       vars = how.send(:parse_template_required_vars, template_with_required.path)
-      expect(vars).to eq(['repo_url', 'author'])
+      expect(vars).to eq(%w[repo_url author])
     end
 
     it "returns empty array when no required metadata" do

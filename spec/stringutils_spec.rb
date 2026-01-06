@@ -120,4 +120,3 @@ describe 'StringUtils' do
     end
   end
 end
-
