@@ -251,6 +251,14 @@ module Howzit
     ## @param      default     [Hash] default configuration to write
     ##
     def create_config(default)
+      # If a legacy ~/.local/share/howzit directory exists, offer to migrate it
+      # into the new config root before creating any new files to avoid confusion
+      # about where Howzit stores its configuration.
+      # Use early_init=true since we're called during config initialization and can't access Howzit.options yet
+      if defined?(Howzit::ScriptSupport) && File.directory?(File.expand_path(Howzit::ScriptSupport::LEGACY_SUPPORT_DIR))
+        Howzit::ScriptSupport.migrate_legacy_support(early_init: true)
+      end
+
       unless File.directory?(config_dir)
         Howzit::ConsoleLogger.new(1).info "Creating config directory at #{config_dir}"
         FileUtils.mkdir_p(config_dir)

@@ -236,4 +236,31 @@ describe Howzit::BuildNote do
       expect(vars).to eq([])
     end
   end
+
+  describe 'global metadata from config' do
+    it 'merges config metadata under metadata key before file metadata' do
+      # Simulate config metadata in Howzit.options
+      Howzit.options[:metadata] = { 'author' => 'Config Author', 'license' => 'MIT' }
+
+      note = <<~EONOTE
+        author: Note Author
+
+        # Test Note
+
+        ## Section
+      EONOTE
+
+      Tempfile.create(['buildnote_meta', '.md']) do |f|
+        f.write(note)
+        f.flush
+
+        build = Howzit::BuildNote.new(file: f.path)
+
+        expect(build.metadata['author']).to eq('Note Author')
+        expect(build.metadata['license']).to eq('MIT')
+      end
+    ensure
+      Howzit.options[:metadata] = nil
+    end
+  end
 end

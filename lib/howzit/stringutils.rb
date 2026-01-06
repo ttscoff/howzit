@@ -407,15 +407,47 @@ module Howzit
     end
 
     ##
-    ## Examine text for multimarkdown-style metadata and return key/value pairs
+    ## Examine text for metadata and return key/value pairs
+    ##
+    ## Supports:
+    ## - YAML front matter (starting with --- and ending with --- or ...)
+    ## - MultiMarkdown-style key: value lines (up to first blank line)
     ##
     ## @return     [Hash] The metadata as key/value pairs
     ##
     def metadata
       data = {}
-      scan(/(?mi)^(\S[\s\S]+?): ([\s\S]*?)(?=\n\S[\s\S]*?:|\Z)/).each do |m|
-        data[m[0].strip.downcase] = m[1]
+      lines = to_s.lines
+      first_idx = lines.index { |l| l !~ /^\s*$/ }
+      return {} unless first_idx
+
+      first = lines[first_idx]
+
+      if first =~ /^---\s*$/
+        # YAML front matter: between first --- and closing --- or ...
+        closing_rel = lines[(first_idx + 1)..].index { |l| l =~ /^(---|\.\.\.)\s*$/ }
+        closing_idx = closing_rel ? first_idx + 1 + closing_rel : lines.length
+        yaml_body = lines[(first_idx + 1)...closing_idx].join
+        raw = yaml_body.strip.empty? ? {} : YAML.load(yaml_body) || {}
+        if raw.is_a?(Hash)
+          raw.each do |k, v|
+            data[k.to_s.downcase] = v
+          end
+        end
+      else
+        # MultiMarkdown-style: key: value lines up to first blank line
+        header_lines = []
+        lines[first_idx..].each do |l|
+          break if l =~ /^\s*$/
+
+          header_lines << l
+        end
+        header = header_lines.join
+        header.scan(/(?mi)^(\S[\s\S]+?): ([\s\S]*?)(?=\n\S[\s\S]*?:|\Z)/).each do |m|
+          data[m[0].strip.downcase] = m[1]
+        end
       end
+
       out = normalize_metadata(data)
       Howzit.named_arguments ||= {}
       Howzit.named_arguments = out.merge(Howzit.named_arguments)
@@ -491,11 +523,21 @@ module Howzit
         cols = Howzit.options[:wrap] if Howzit.options[:wrap].positive? && cols > Howzit.options[:wrap]
         title = Color.template("#{options[:border]}#{options[:hr] * 2}( #{options[:color]}#{title}#{options[:border]} )")
 
+        # Calculate remaining width for horizontal rule, ensuring it is never negative
+        remaining = cols - title.uncolor.length
+        if should_mark_iterm?
+          # Reserve some space for the iTerm mark escape sequence in the visual layout
+          remaining -= 15
+        end
+        remaining = 0 if remaining.negative?
+
+        hr_tail = options[:hr] * remaining
         tail = if should_mark_iterm?
-                 "#{options[:hr] * (cols - title.uncolor.length - 15)}#{options[:mark] ? iterm_marker : ''}"
+                 "#{hr_tail}#{options[:mark] ? iterm_marker : ''}"
                else
-                 options[:hr] * (cols - title.uncolor.length)
+                 hr_tail
                end
+
         Color.template("\n\n#{title}#{tail}{x}\n\n")
       end
     end

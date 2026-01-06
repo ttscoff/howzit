@@ -8,7 +8,15 @@ module Howzit
   # Handles helper script installation and injection for run blocks
   # rubocop:disable Metrics/ModuleLength
   module ScriptSupport
-    SUPPORT_DIR = '~/.local/share/howzit/support'
+    # Prefer XDG_CONFIG_HOME/howzit/support if set, otherwise ~/.config/howzit/support.
+    # For backwards compatibility, we detect an existing ~/.local/share/howzit directory
+    # and can optionally migrate it to the new location.
+    LEGACY_SUPPORT_DIR = File.join(Dir.home, '.local', 'share', 'howzit')
+    SUPPORT_DIR = if ENV['XDG_CONFIG_HOME'] && !ENV['XDG_CONFIG_HOME'].empty?
+                    File.join(ENV['XDG_CONFIG_HOME'], 'howzit', 'support')
+                  else
+                    File.join(Dir.home, '.config', 'howzit', 'support')
+                  end
 
     class << self
       ##
@@ -25,9 +33,94 @@ module Howzit
       ##
       def ensure_support_dir
         dir = support_dir
+        legacy_dir = File.expand_path(LEGACY_SUPPORT_DIR)
+        new_root  = File.expand_path(File.join(SUPPORT_DIR, '..'))
+
+        # If legacy files exist, always offer to migrate them before proceeding.
+        # Use early_init=false here since config is already loaded by the time we reach this point
+        migrate_legacy_support(early_init: false) if File.directory?(legacy_dir)
+
         FileUtils.mkdir_p(dir) unless File.directory?(dir)
         install_helper_scripts
         dir
+      end
+
+      ##
+      ## Simple Y/N prompt that doesn't depend on Howzit.options (for use during early config initialization)
+      ##
+      def simple_yn_prompt(prompt, default: true)
+        return default unless $stdout.isatty
+
+        tty_state = `stty -g`
+        yn = default ? '[Y/n]' : '[y/N]'
+        $stdout.syswrite "\e[1;37m#{prompt} #{yn}\e[1;37m? \e[0m"
+        system 'stty raw -echo cbreak isig'
+        res = $stdin.sysread 1
+        res.chomp!
+        puts
+        system 'stty cooked'
+        system "stty #{tty_state}"
+        res.empty? ? default : res =~ /y/i
+      end
+
+      ##
+      ## Migrate legacy ~/.local/share/howzit directory into the new config root,
+      ## merging contents and removing the legacy directory when complete.
+      ##
+      ## @param      early_init  [Boolean] If true, use simple prompt that doesn't access Howzit.options
+      ##
+      def migrate_legacy_support(early_init: false)
+        legacy_dir = File.expand_path(LEGACY_SUPPORT_DIR)
+        new_root  = File.expand_path(File.join(SUPPORT_DIR, '..'))
+
+        unless File.directory?(legacy_dir)
+          if early_init
+            return
+          else
+            Howzit.console.info "No legacy Howzit directory found at #{legacy_dir}; nothing to migrate."
+            return
+          end
+        end
+
+        prompt = "Migrate Howzit files from #{legacy_dir} to #{new_root}? This will overwrite files in the new location with legacy versions, " \
+                 'add new files, and leave any extra files in the new location in place.'
+
+        if early_init
+          unless simple_yn_prompt(prompt, default: true)
+            $stderr.puts 'Migration cancelled; no changes made.'
+            return
+          end
+        else
+          unless Prompt.yn(prompt, default: true)
+            Howzit.console.info 'Migration cancelled; no changes made.'
+            return
+          end
+        end
+
+        FileUtils.mkdir_p(new_root) unless File.directory?(new_root)
+
+        # Merge legacy into new_root:
+        # - overwrite files in new_root with versions from legacy
+        # - add files that do not yet exist
+        # - leave files that exist only in new_root untouched
+        Dir.children(legacy_dir).each do |entry|
+          src = File.join(legacy_dir, entry)
+          dest = File.join(new_root, entry)
+
+          if File.directory?(src)
+            FileUtils.mkdir_p(dest)
+            FileUtils.cp_r(File.join(src, '.'), dest)
+          else
+            FileUtils.cp(src, dest)
+          end
+        end
+
+        FileUtils.rm_rf(legacy_dir)
+        if early_init
+          $stderr.puts "Migrated Howzit files from #{legacy_dir} to #{new_root}."
+        else
+          Howzit.console.info "Migrated Howzit files from #{legacy_dir} to #{new_root}."
+        end
       end
 
       ##

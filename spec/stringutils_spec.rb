@@ -78,5 +78,46 @@ describe 'StringUtils' do
       expect(result).to eq('echo ${BASH_VAR}')
     end
   end
+
+  describe '#metadata' do
+    before do
+      Howzit.named_arguments = {}
+    end
+
+    it 'parses MultiMarkdown-style metadata up to first blank line' do
+      text = <<~META
+        author: Note Author
+        license: MIT
+
+        This is the rest of the file.
+        author: Should not override
+      META
+
+      meta = text.metadata
+      expect(meta['author']).to eq('Note Author')
+      expect(meta['license']).to eq('MIT')
+    end
+
+    it 'parses YAML front matter when starting with ---' do
+      text = <<~META
+        ---
+        author: Brett Terpstra
+        license: MIT
+        ---
+
+        # Title
+      META
+
+      meta = text.metadata
+      expect(meta['author']).to eq('Brett Terpstra')
+      expect(meta['license']).to eq('MIT')
+    end
+
+    it 'returns empty hash when there is no metadata' do
+      text = "Just some content\nWithout metadata\n"
+      meta = text.metadata
+      expect(meta).to eq({})
+    end
+  end
 end
 

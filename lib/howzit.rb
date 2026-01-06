@@ -1,7 +1,12 @@
 # frozen_string_literal: true
 
 # Main config dir
-CONFIG_DIR = '~/.config/howzit'
+# Prefer XDG_CONFIG_HOME if set, otherwise fall back to ~/.config/howzit
+CONFIG_DIR = if ENV['XDG_CONFIG_HOME'] && !ENV['XDG_CONFIG_HOME'].empty?
+               File.join(ENV['XDG_CONFIG_HOME'], 'howzit')
+             else
+               File.join(Dir.home, '.config', 'howzit')
+             end
 
 # Config file name
 CONFIG_FILE = 'howzit.yaml'

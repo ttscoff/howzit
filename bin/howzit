@@ -248,6 +248,11 @@ OptionParser.new do |opts|
     Process.exit 0
   end
 
+  opts.on('--migrate', 'Migrate legacy files from ~/.local/share/howzit to the new config location') do
+    Howzit::ScriptSupport.migrate_legacy_support(early_init: false)
+    Process.exit 0
+  end
+
   opts.on('-v', '--version', 'Display version number') do
     puts "#{File.basename(__FILE__)} v#{Howzit::VERSION}"
     Process.exit 0

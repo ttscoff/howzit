@@ -21,9 +21,31 @@ module Howzit
       content = Util.read_file(file)
       raise "{br}No content found in build note (#{file}){x}".c if content.nil? || content.empty?
 
+      # Global metadata from config (e.g. ~/.config/howzit/howzit.yml)
+      # Expecting something like:
+      # metadata:
+      #   author: Brett Terpstra
+      #   license: MIT
+      global_meta = {}
+      raw_global = Howzit.options[:metadata] || Howzit.options['metadata']
+      if raw_global.is_a?(Hash)
+        raw_global.each do |k, v|
+          global_meta[k.to_s.downcase] = v
+        end
+      end
+
+      # Metadata defined in the build note itself (before the first heading)
       this_meta = content.split(/^#/)[0].strip.metadata
 
-      @metadata = meta.nil? ? this_meta : meta.merge(this_meta)
+      # Merge order:
+      # 1. Global config metadata (lowest precedence)
+      # 2. Metadata passed in via meta argument (e.g. templates)
+      # 3. Build note metadata (highest precedence)
+      combined_meta = global_meta.dup
+      combined_meta.merge!(meta) if meta
+      combined_meta.merge!(this_meta) if this_meta
+
+      @metadata = combined_meta
 
       read_help(file)
     end
