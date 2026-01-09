@@ -1,3 +1,11 @@
+### 2.1.34
+
+2026-01-09 10:22
+
+#### FIXED
+
+- Longer report output stays in a single column
+
 ### 2.1.33
 
 2026-01-06 08:08
