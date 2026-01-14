@@ -7,7 +7,7 @@ module Howzit
 
     attr_accessor :content
 
-    attr_reader :title, :tasks, :prereqs, :postreqs, :results, :named_args, :directives
+    attr_reader :title, :tasks, :prereqs, :postreqs, :results, :named_args, :directives, :arg_definitions
 
     ##
     ## Initialize a topic object
@@ -32,6 +32,7 @@ module Howzit
 
     # Get named arguments from title
     def arguments
+      @arg_definitions = []
       return unless @title =~ /\(.*?\) *$/
 
       a = @title.match(/\((?<args>.*?)\) *$/)
@@ -39,6 +40,8 @@ module Howzit
 
       args.each_with_index do |arg, idx|
         arg_name, default = arg.split(/:/).map(&:strip)
+        # Store original definition for display purposes
+        @arg_definitions << (default ? "#{arg_name}:#{default}" : arg_name)
 
         @named_args[arg_name] = if Howzit.arguments && Howzit.arguments.count >= idx + 1
                                   Howzit.arguments[idx]
@@ -277,7 +280,13 @@ module Howzit
 
       output = []
       if opt[:header]
-        output.push(@title.format_header)
+        # Include argument definitions in header if present
+        header_title = @title.dup
+        unless @arg_definitions.nil? || @arg_definitions.empty?
+          formatted_args = @arg_definitions.map { |arg| format_arg_definition(arg) }.join('{l}, '.c)
+          header_title += " {l}({x}#{formatted_args}{l}){x}".c
+        end
+        output.push(header_title.format_header)
         output.push('')
       end
       # Process conditional blocks first
@@ -302,11 +311,50 @@ module Howzit
           output.push("{bmK}\u{25B6} {bwK}#{title_code_block(Regexp.last_match.named_captures.symbolize_keys)}{x}".c)
         else
           l.wrap!(Howzit.options[:wrap]) if Howzit.options[:wrap].positive?
-          output.push(l)
+          # Highlight variable placeholders in content
+          output.push(highlight_variables(l))
         end
       end
       Howzit.named_arguments = @named_args
-      output.push('').map(&:render_arguments)
+      output.push('')
+    end
+
+    ##
+    ## Format an argument definition with syntax highlighting
+    ## Parentheses in blue, variable name in bright white, default in yellow
+    ##
+    ## @param      arg  [String] The argument definition (e.g., "var" or "var:default")
+    ##
+    ## @return     [String] Colorized argument definition
+    ##
+    def format_arg_definition(arg)
+      if arg.include?(':')
+        name, default = arg.split(':', 2)
+        "{bw}#{name}{l}:{y}#{default}{x}".c
+      else
+        "{bw}#{arg}{x}".c
+      end
+    end
+
+    ##
+    ## Highlight variable placeholders in content
+    ## Format: ${variable} or ${variable:default}
+    ## Dollar sign and braces in blue, variable name in bright white, default in yellow
+    ##
+    ## @param      text  [String] The text to process
+    ##
+    ## @return     [String] Text with highlighted variables
+    ##
+    def highlight_variables(text)
+      text.gsub(/\$\{([A-Za-z0-9_]+)(?::([^}]*))?\}/) do
+        var_name = Regexp.last_match(1)
+        default = Regexp.last_match(2)
+        if default
+          "{l}\\$\\{{bw}#{var_name}{l}:{y}#{default}{l}\\}{x}".c
+        else
+          "{l}\\$\\{{bw}#{var_name}{l}\\}{x}".c
+        end
+      end
     end
 
     include Comparable

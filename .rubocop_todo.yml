@@ -57,7 +57,7 @@ Metrics/BlockNesting:
 # Offense count: 8
 # Configuration parameters: CountComments, CountAsOne.
 Metrics/ClassLength:
-  Max: 730
+  Max: 745
 
 # Offense count: 45
 # Configuration parameters: AllowedMethods, AllowedPatterns.
@@ -243,9 +243,12 @@ Style/StderrPuts:
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/StringChars:
   Exclude:
-    - 'lib/howzit/colors.rb'
-    - 'lib/howzit/condition_evaluator.rb'
-    - 'lib/howzit/stringutils.rb'
+      - 'lib/howzit/colors.rb'
+      - 'lib/howzit/condition_evaluator.rb'
+      - 'lib/howzit/stringutils.rb'
+      - 'lib/howzit/task.rb'
+      - 'lib/howzit/topic.rb'
+      - 'lib/howzit/util.rb'
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).

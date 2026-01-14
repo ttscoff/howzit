@@ -1242,14 +1242,14 @@ module Howzit
       if Howzit.options[:run]
         Howzit.options[:paginate] = false
         summary = Howzit::RunReport.format
-        unless summary.empty?
+        if summary.empty?
+          Util.show(output.join("\n").strip, Howzit.options)
+        else
           # Display main output first
           Util.show(output.join("\n").strip, Howzit.options)
           # Display report separately without highlighting to prevent markdown highlighter
           # from reformatting it based on item count
           Util.show(summary, { color: Howzit.options[:color], highlight: false, paginate: false, wrap: 0 })
-        else
-          Util.show(output.join("\n").strip, Howzit.options)
         end
       else
         Util.show(output.join("\n").strip, Howzit.options)
