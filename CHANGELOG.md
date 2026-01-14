@@ -1,3 +1,16 @@
+### 2.1.35
+
+2026-01-14 04:36
+
+#### CHANGED
+
+- Variables are no longer rendered when displaying topics, showing the raw ${variable} syntax so users can see where variable substitution will occur
+
+#### NEW
+
+- Topic headers now display accepted variables with their defaults, e.g., "Deploy (increment:1, target:prod)"
+- Variable placeholders (${VAR} and ${VAR:default}) are syntax highlighted in topic display with blue delimiters, bright white variable names, and yellow default values
+
 ### 2.1.34
 
 2026-01-09 10:22
