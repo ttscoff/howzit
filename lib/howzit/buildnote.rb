@@ -842,14 +842,20 @@ module Howzit
           title = "#{short_path}:#{title}"
         end
 
+        # Ensure source_file is always an absolute path
         source_file = path || note_file
+        source_file = File.expand_path(source_file) if source_file
         topic = Topic.new(title, prefix + lines.join("\n").strip.render_template(@metadata), @metadata, source_file: source_file)
 
         topics.push(topic)
       end
 
       template_topics.each do |topic|
-        topics.push(topic) unless find_topic(topic.title.sub(/^.+:/, '')).count.positive?
+        # Check against local topics array, not @topics, to avoid filtering out templates
+        # when @topics already has topics (e.g., in stack mode)
+        topic_base = topic.title.sub(/^.+:/, '').strip.downcase
+        exists_in_local = topics.any? { |t| t.title.sub(/^.+:/, '').strip.downcase == topic_base }
+        topics.push(topic) unless exists_in_local
       end
 
       topics
@@ -955,13 +961,32 @@ module Howzit
           stack_files.each do |file|
             file_topics = read_help_file(file)
             file_topics.each do |topic|
-              # Ensure topic has the correct source_file set
-              topic.instance_variable_set(:@source_file, file) unless topic.source_file == file
+              # Ensure topic has the correct source_file set (always absolute path)
+              abs_file = File.expand_path(file)
+              topic.instance_variable_set(:@source_file, abs_file) unless topic.source_file == abs_file
               base_name = base_topic_name(topic.title)
               # Only add if we haven't seen this base topic name yet
               unless existing_base_names.include?(base_name)
                 @topics.push(topic)
                 existing_base_names.push(base_name)
+              end
+            end
+          end
+          
+          # Load template topics from the main build note (closest file) only
+          # Templates should only be loaded once, from the main build note
+          if stack_files.any?
+            main_file = stack_files.first
+            main_content = Util.read_file(main_file)
+            if main_content
+              main_template_topics = get_template_topics(main_content)
+              main_template_topics.each do |topic|
+                # Check if a topic with this base name already exists
+                base_name = base_topic_name(topic.title)
+                unless existing_base_names.include?(base_name)
+                  @topics.push(topic)
+                  existing_base_names.push(base_name)
+                end
               end
             end
           end

@@ -74,12 +74,32 @@ module Howzit
       old_log_level = apply_log_level
 
       # Get execution directory from source_file
-      exec_dir = @source_file ? File.dirname(File.expand_path(@source_file)) : nil
+      # Only change directory in stack mode, and only if source_file is from a parent directory (not a template)
+      exec_dir = nil
+      if @source_file && Howzit.options[:stack]
+        expanded_source = File.expand_path(@source_file)
+        source_dir = File.dirname(expanded_source)
+        
+        # Check if this is a template file - don't change directory for templates
+        is_template = false
+        if Howzit.config.respond_to?(:template_folder) && Howzit.config.template_folder
+          template_folder = File.expand_path(Howzit.config.template_folder)
+          is_template = expanded_source.start_with?(template_folder)
+        end
+        
+        # Only change directory if not a template
+        exec_dir = source_dir unless is_template
+      end
       original_dir = Dir.pwd
 
       begin
-        # Change to source file directory if available
-        Dir.chdir(exec_dir) if exec_dir && Dir.exist?(exec_dir) && exec_dir != original_dir
+        # Change to source file directory if available and different from current
+        # Only change if the directory exists and is actually different
+        if exec_dir && Dir.exist?(exec_dir)
+          expanded_exec_dir = File.expand_path(exec_dir)
+          expanded_original = File.expand_path(original_dir)
+          Dir.chdir(expanded_exec_dir) if expanded_exec_dir != expanded_original
+        end
 
         # Ensure support directory exists and install helpers
         ScriptSupport.ensure_support_dir
@@ -102,7 +122,11 @@ module Howzit
               end
       ensure
         # Restore original directory
-        Dir.chdir(original_dir) if exec_dir && Dir.exist?(exec_dir) && exec_dir != original_dir
+        if exec_dir && Dir.exist?(exec_dir)
+          expanded_exec_dir = File.expand_path(exec_dir)
+          expanded_original = File.expand_path(original_dir)
+          Dir.chdir(expanded_original) if expanded_exec_dir != expanded_original
+        end
         restore_log_level(old_log_level) if old_log_level
         script.close
         script.unlink
@@ -187,17 +211,41 @@ module Howzit
       old_log_level = apply_log_level
 
       # Get execution directory from source_file
-      exec_dir = @source_file ? File.dirname(File.expand_path(@source_file)) : nil
+      # Only change directory in stack mode, and only if source_file is from a parent directory (not a template)
+      exec_dir = nil
+      if @source_file && Howzit.options[:stack]
+        expanded_source = File.expand_path(@source_file)
+        source_dir = File.dirname(expanded_source)
+        
+        # Check if this is a template file - don't change directory for templates
+        is_template = false
+        if Howzit.config.respond_to?(:template_folder) && Howzit.config.template_folder
+          template_folder = File.expand_path(Howzit.config.template_folder)
+          is_template = expanded_source.start_with?(template_folder)
+        end
+        
+        # Only change directory if not a template
+        exec_dir = source_dir unless is_template
+      end
       original_dir = Dir.pwd
 
       begin
-        # Change to source file directory if available
-        Dir.chdir(exec_dir) if exec_dir && Dir.exist?(exec_dir) && exec_dir != original_dir
+        # Change to source file directory if available and different from current
+        # Only change if the directory exists and is actually different
+        if exec_dir && Dir.exist?(exec_dir)
+          expanded_exec_dir = File.expand_path(exec_dir)
+          expanded_original = File.expand_path(original_dir)
+          Dir.chdir(expanded_exec_dir) if expanded_exec_dir != expanded_original
+        end
 
         res = system(@action)
       ensure
         # Restore original directory
-        Dir.chdir(original_dir) if exec_dir && Dir.exist?(exec_dir) && exec_dir != original_dir
+        if exec_dir && Dir.exist?(exec_dir)
+          expanded_exec_dir = File.expand_path(exec_dir)
+          expanded_original = File.expand_path(original_dir)
+          Dir.chdir(expanded_original) if expanded_exec_dir != expanded_original
+        end
         restore_log_level(old_log_level) if old_log_level
         # Process script communication
         ScriptComm.apply(comm_file) if comm_file
