@@ -1,3 +1,18 @@
+### 2.1.39
+
+2026-01-25 07:39
+
+#### IMPROVED
+
+- The --stack option is now negatable, allowing --no-stack to disable stacking even when :stack: true is set in the configuration file, giving users command-line control over stack mode behavior
+- Howzit.buildnote now always creates a new instance when a specific file is requested, preventing cache-related issues when different files need to be loaded
+
+#### FIXED
+
+- Template topics now have their template name prefixed to their title (e.g., "github:Update GitHub README"), allowing them to be distinguished from local topics and enabling @include directives to reference them using the template prefix format
+- Build note file selection now prioritizes buildnotes.md and howzit.md over other build note files, preventing test files or other build notes from being incorrectly selected when multiple build note files exist in the same directory
+- Explicit file arguments to BuildNote.new are now properly handled, ensuring that when a specific file is provided it is used correctly instead of falling back to file discovery logic, and stack mode is disabled when an explicit file is provided
+
 ### 2.1.38
 
 2026-01-25 07:18
