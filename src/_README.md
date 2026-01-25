@@ -17,6 +17,8 @@ Howzit is a tool that allows you to keep Markdown-formatted notes about a projec
 - Use `@include()` to import another topic's tasks
 - Use fenced code blocks to include/run embedded scripts
 - Scripts can communicate back to Howzit, sending log messages and setting variables
+- Log helper functions output messages immediately with color-coded output (cyan for info, yellow for warn, red for error, dim for debug)
+- Log helper supports `-r`/`--report` flag (or `report` parameter) for delayed output via communication file
 - Conditional blocks (`@if`/`@unless`/`@elsif`/`@else`) for conditionally including content and tasks
 - String comparison operators including fuzzy match (`**=`) for flexible pattern matching
 - File contents conditions to check file contents in conditional blocks
@@ -25,6 +27,8 @@ Howzit is a tool that allows you to keep Markdown-formatted notes about a projec
 - Templates for easily including repeat tasks
 - Grep topics for pattern and choose from matches
 - Use positional and named variables when executing tasks
+- Topic display shows variable definitions with syntax highlighting (blue parentheses, bright white variable names, yellow defaults)
+- Variable placeholders in content are highlighted to show where substitution occurs
 
 ## Getting Started
 

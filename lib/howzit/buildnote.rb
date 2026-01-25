@@ -216,7 +216,11 @@ module Howzit
         next if s_out.empty?
 
         title = topic.title
-        title += " {dy}({xy}#{topic.named_args.keys.join(', ')}{dy}){x}" unless topic.named_args.empty?
+        # Show argument definitions with colorized formatting
+        unless topic.arg_definitions.nil? || topic.arg_definitions.empty?
+          formatted_args = topic.arg_definitions.map { |arg| topic.format_arg_definition(arg) }.join('{l}, '.c)
+          title += " {l}({x}#{formatted_args}{l}){x}".c
+        end
 
         output.push("- {g}#{title}{x}".c)
         output.push(s_out.join("\n"))
@@ -677,6 +681,46 @@ module Howzit
     end
 
     ##
+    ## Find all build note files from current directory up to root
+    ##
+    ## @return     [Array] Array of build note file paths, closest first
+    ##
+    def glob_stack
+      home = Dir.pwd
+      buildnotes = []
+      current_dir = home
+
+      while current_dir != '/' && (current_dir =~ %r{[A-Z]:/}).nil?
+        Dir.chdir(current_dir)
+        filename = glob_note
+        if filename
+          note = File.expand_path(filename)
+          buildnotes.push(note) if File.exist?(note)
+        end
+        current_dir = File.dirname(current_dir)
+      end
+
+      Dir.chdir(home)
+      buildnotes
+    end
+
+    ##
+    ## Get base topic name without variables (case-insensitive)
+    ##
+    ## @param      topic_title  [String] The topic title
+    ##
+    ## @return     [String] Base topic name in lowercase
+    ##
+    def base_topic_name(topic_title)
+      # Remove prefixes (e.g., "template:Topic Name" -> "Topic Name")
+      # Remove variable definitions in parentheses (e.g., "Deploy (increment:1)" -> "Deploy")
+      # Normalize to lowercase for case-insensitive matching
+      base = topic_title.to_s
+      base = base.sub(/^.+:/, '') if base.include?(':') # Remove prefix if present
+      base.sub(/ *\(.*?\) *$/, '').strip.downcase
+    end
+
+    ##
     ## Glob current directory for valid build note filenames
     ## (must start with "build" or "howzit" and have
     ## extension of "txt", "md", or "markdown")
@@ -798,7 +842,8 @@ module Howzit
           title = "#{short_path}:#{title}"
         end
 
-        topic = Topic.new(title, prefix + lines.join("\n").strip.render_template(@metadata), @metadata)
+        source_file = path || note_file
+        topic = Topic.new(title, prefix + lines.join("\n").strip.render_template(@metadata), @metadata, source_file: source_file)
 
         topics.push(topic)
       end
@@ -816,16 +861,131 @@ module Howzit
     ## @param      path  [String] The build note path
     ##
     def read_help(path = nil)
-      @topics = read_help_file(path)
-      return unless Howzit.options[:include_upstream]
+      # Stack mode only applies when reading the main build note
+      # When reading templates or included files, use normal mode to prevent recursion
 
-      unless Howzit.has_read_upstream
-        upstream_topics = read_upstream
+      # Check if this is a template file
+      is_template = false
+      if path && Howzit.config.respond_to?(:template_folder) && Howzit.config.template_folder
+        template_folder = File.expand_path(Howzit.config.template_folder)
+        file_path = File.expand_path(path)
+        is_template = file_path.start_with?(template_folder)
+      end
 
-        upstream_topics.each do |topic|
-          @topics.push(topic) unless find_topic(topic.title.sub(/^.+:/, '')).count.positive?
+      # Prevent recursion: if we're already processing stack mode, skip it
+      in_stack_mode = Howzit.instance_variable_defined?(:@in_stack_mode) && Howzit.instance_variable_get(:@in_stack_mode)
+
+      # Use stack mode only if:
+      # 1. Stack option is enabled
+      # 2. We're not already in stack mode (prevent recursion)
+      # 3. We're not reading a template file
+      # 4. We're reading the main build note (no specific path provided, or path matches the main note file)
+      main_note = if path.nil?
+                    true
+                  else
+                    begin
+                      main_file = note_file
+                      main_file && File.expand_path(path) == File.expand_path(main_file)
+                    rescue StandardError
+                      false
+                    end
+                  end
+
+      use_stack = Howzit.options[:stack] && !in_stack_mode && !is_template && main_note
+
+      if use_stack
+        # Set flag to prevent recursive stack mode calls
+        Howzit.instance_variable_set(:@in_stack_mode, true)
+        begin
+          # Stack mode: read all build notes from current directory up to root
+          stack_files = glob_stack
+          @topics = []
+          existing_base_names = []
+
+          # Merge metadata from all stacked files
+          # Process from root to closest, with closer directories taking precedence
+          stacked_metadata = {}
+
+          # Read metadata from all files (root to closest)
+          # Process in reverse so closer files overwrite parent values
+          stack_files.reverse.each do |file|
+            file_content = Util.read_file(file)
+            next if file_content.nil? || file_content.empty?
+
+            file_meta = file_content.split(/^#/)[0].strip.metadata
+            # Merge metadata: closer directories overwrite parent directories
+            # Processing root to closest means closer files overwrite parent values
+            next unless file_meta.is_a?(Hash)
+
+            file_meta.each do |key, value|
+              stacked_metadata[key] = value
+            end
+          end
+
+          # Get global metadata
+          global_meta = {}
+          raw_global = Howzit.options[:metadata] || Howzit.options['metadata']
+          if raw_global.is_a?(Hash)
+            raw_global.each do |k, v|
+              global_meta[k.to_s.downcase] = v
+            end
+          end
+
+          # Get passed metadata (from meta argument in initialize)
+          # Store it before we rebuild @metadata
+          original_metadata = @metadata.dup if @metadata.is_a?(Hash)
+
+          # Merge order for final metadata (closest directory takes precedence):
+          # 1. Global config metadata (lowest precedence)
+          # 2. Stacked metadata from all directories (closer overwrites parent)
+          # 3. Metadata passed in via meta argument (e.g., templates) - highest precedence
+          final_metadata = global_meta.dup
+          final_metadata.merge!(stacked_metadata)
+
+          # Add back any passed metadata that was in the original @metadata
+          # These are keys that exist in original but not in global or stacked
+          original_metadata&.each do |key, value|
+            next if global_meta.key?(key) || stacked_metadata.key?(key)
+
+            final_metadata[key] = value
+          end
+
+          @metadata = final_metadata
+
+          # Set primary note file to the closest one (first in stack)
+          @note_file = stack_files.first if stack_files.any?
+
+          # Read topics from each file, closest first
+          stack_files.each do |file|
+            file_topics = read_help_file(file)
+            file_topics.each do |topic|
+              # Ensure topic has the correct source_file set
+              topic.instance_variable_set(:@source_file, file) unless topic.source_file == file
+              base_name = base_topic_name(topic.title)
+              # Only add if we haven't seen this base topic name yet
+              unless existing_base_names.include?(base_name)
+                @topics.push(topic)
+                existing_base_names.push(base_name)
+              end
+            end
+          end
+        ensure
+          # Clear the flag when done
+          Howzit.instance_variable_set(:@in_stack_mode, false)
         end
-        Howzit.has_read_upstream = true
+      else
+        # Normal mode: read single build note file
+        @topics = read_help_file(path)
+        return unless Howzit.options[:include_upstream]
+
+        unless Howzit.has_read_upstream
+          upstream_topics = read_upstream
+
+          upstream_topics.each do |topic|
+            @topics.push(topic) unless find_topic(topic.title.sub(/^.+:/, '')).count.positive?
+          end
+          Howzit.has_read_upstream = true
+        end
       end
 
       return unless note_file && @topics.empty?
@@ -968,10 +1128,16 @@ module Howzit
         when :all
           topic_matches.concat(matches.sort_by(&:title))
         else
-          selected_titles = Prompt.choose(matches.map(&:title), height: :max, query: Howzit.options[:grep])
+          # Format titles with abbreviated paths for menu display
+          titles = matches.map { |topic| format_topic_title_for_menu(topic) }
+          selected_titles = Prompt.choose(titles, height: :max, query: Howzit.options[:grep])
           # Convert selected titles back to topic objects
           selected_titles.each do |title|
-            matched_topic = matches.find { |t| t.title == title }
+            # Match by formatted title or base title
+            matched_topic = matches.find do |t|
+              formatted = format_topic_title_for_menu(t)
+              formatted == title || t.title == title || t.title.sub(/^[^:]+:\s*/, '') == title.sub(/^[^:]+:\s*/, '')
+            end
             topic_matches.push(matched_topic) if matched_topic
           end
         end
@@ -1096,6 +1262,46 @@ module Howzit
     end
 
     ##
+    ## Abbreviate a directory path for menu display
+    ##
+    ## @param      source_file  [String] Path to the source build note file
+    ## @param      current_dir  [String] Current working directory (default: Dir.pwd)
+    ##
+    ## @return     [String] Last directory name, or nil if same directory
+    ##
+    def abbreviate_path(source_file, current_dir = Dir.pwd)
+      return nil unless source_file
+
+      source_dir = File.dirname(File.expand_path(source_file))
+      current_dir = File.expand_path(current_dir)
+
+      # If same directory, return nil (no prefix needed)
+      return nil if source_dir == current_dir
+
+      # Return just the last directory name
+      File.basename(source_dir)
+    end
+
+    ##
+    ## Format topic title for menu display with abbreviated path
+    ##
+    ## @param      topic  [Topic] The topic to format
+    ##
+    ## @return     [String] Formatted title with abbreviated path prefix
+    ##
+    def format_topic_title_for_menu(topic)
+      return topic.title unless topic.source_file
+
+      abbrev = abbreviate_path(topic.source_file)
+      return topic.title if abbrev.nil?
+
+      # Extract base title (remove existing path prefix if present)
+      base_title = topic.title.sub(/^[^:]+:\s*/, '')
+
+      "#{abbrev}: #{base_title}"
+    end
+
+    ##
     ## Resolve fuzzy matches for a search term
     ##
     ## @param      search_term  [String] The search term
@@ -1116,11 +1322,16 @@ module Howzit
       when :all
         matches
       else
-        titles = matches.map(&:title)
+        # Format titles with abbreviated paths for menu display
+        titles = matches.map { |topic| format_topic_title_for_menu(topic) }
         res = Prompt.choose(titles, query: search_term)
         # Convert selected titles back to topic objects from the original matches
         res.flat_map do |title|
-          matched_topic = matches.find { |t| t.title == title }
+          # Match by formatted title or base title
+          matched_topic = matches.find do |t|
+            formatted = format_topic_title_for_menu(t)
+            formatted == title || t.title == title || t.title.sub(/^[^:]+:\s*/, '') == title.sub(/^[^:]+:\s*/, '')
+          end
           matched_topic || find_topic(title)[0]
         end.compact
 

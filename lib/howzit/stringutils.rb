@@ -91,7 +91,28 @@ module Howzit
     def build_note?
       return false if downcase !~ /^(howzit[^.]*|build[^.]+)/
 
-      return false if Howzit.config.should_ignore(self)
+      # Avoid recursion: only check ignore patterns if config is fully initialized
+      # and we're not in the middle of loading ignore patterns or initializing
+      begin
+        # Check if config exists without triggering initialization
+        return true unless Howzit.instance_variable_defined?(:@config)
+
+        config = Howzit.instance_variable_get(:@config)
+        return true unless config
+
+        # Check if config is initializing or loading ignore patterns to prevent recursion
+        if config.instance_variable_defined?(:@initializing)
+          return true if config.instance_variable_get(:@initializing)
+        end
+        if config.instance_variable_defined?(:@loading_ignore_patterns)
+          return true if config.instance_variable_get(:@loading_ignore_patterns)
+        end
+
+        return false if config.respond_to?(:should_ignore) && config.should_ignore(self)
+      rescue StandardError
+        # If config access fails for any reason, skip the ignore check
+        # This prevents recursion and handles initialization edge cases
+      end
 
       true
     end

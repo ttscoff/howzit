@@ -14,6 +14,7 @@ module Howzit
       highlight: true,
       highlighter: 'auto',
       include_upstream: false,
+      stack: false,
       log_level: 1, # 0: debug, 1: info, 2: warn, 3: error
       matching: 'partial', # exact, partial, fuzzy, beginswith
       multiple_matches: 'choose',
@@ -68,7 +69,12 @@ module Howzit
     ## Initialize a config object
     ##
     def initialize
-      load_options
+      @initializing = true
+      begin
+        load_options
+      ensure
+        @initializing = false
+      end
     end
 
     ##
@@ -95,9 +101,28 @@ module Howzit
     ## @param      filename  The filename to test
     ##
     def should_ignore(filename)
-      return false unless File.exist?(ignore_file)
+      # Prevent recursion: if we're already loading ignore patterns, skip the check
+      return false if defined?(@loading_ignore_patterns) && @loading_ignore_patterns
 
-      @ignore_patterns ||= YAML.load(Util.read_file(ignore_file))
+      # Don't check the ignore file itself - do this before any file operations
+      begin
+        ignore_file_path = ignore_file
+        return false if filename == ignore_file_path || File.expand_path(filename) == File.expand_path(ignore_file_path)
+      rescue StandardError
+        # If ignore_file access fails, skip the check to prevent recursion
+        return false
+      end
+
+      return false unless File.exist?(ignore_file_path)
+
+      begin
+        @loading_ignore_patterns = true
+        @ignore_patterns ||= YAML.load(Util.read_file(ignore_file_path))
+      ensure
+        @loading_ignore_patterns = false
+      end
+
+      return false unless @ignore_patterns.is_a?(Array)
 
       ignore = false
 

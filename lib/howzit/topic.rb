@@ -7,22 +7,24 @@ module Howzit
 
     attr_accessor :content
 
-    attr_reader :title, :tasks, :prereqs, :postreqs, :results, :named_args, :directives, :arg_definitions
+    attr_reader :title, :tasks, :prereqs, :postreqs, :results, :named_args, :directives, :arg_definitions, :source_file
 
     ##
     ## Initialize a topic object
     ##
-    ## @param      title    [String] The topic title
-    ## @param      content  [String] The raw topic content
-    ## @param      metadata [Hash] Optional metadata hash
+    ## @param      title       [String] The topic title
+    ## @param      content     [String] The raw topic content
+    ## @param      metadata    [Hash] Optional metadata hash
+    ## @param      source_file [String] Optional path to the build note file this topic came from
     ##
-    def initialize(title, content, metadata = nil)
+    def initialize(title, content, metadata = nil, source_file: nil)
       @title = title
       @content = content
       @parent = nil
       @nest_level = 0
       @named_args = {}
       @metadata = metadata
+      @source_file = source_file
       arguments
 
       @directives = parse_directives_with_conditionals

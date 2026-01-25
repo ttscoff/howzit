@@ -89,6 +89,9 @@ module Howzit
       Howzit.named_arguments ||= {}
       Howzit.named_arguments.merge!(parent.named_args) if parent.named_args
 
+      # Pass source_file from parent topic to task
+      task_data[:source_file] = parent.respond_to?(:source_file) ? parent.source_file : nil
+
       case task_type
       when :block
         # Block tasks need title rendering

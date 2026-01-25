@@ -267,11 +267,30 @@ module Howzit
 
           # Log functions
           log() {
+            local report_mode=false
+            # Check for -r or --report flag
+            if [ "$1" = "-r" ] || [ "$1" = "--report" ]; then
+              report_mode=true
+              shift
+            fi
             local level="$1"
             shift
             local message="$*"
-            if [ -n "$HOWZIT_COMM_FILE" ]; then
+
+            if [ "$report_mode" = true ] && [ -n "$HOWZIT_COMM_FILE" ]; then
+              # Report mode: write to communication file
               echo "LOG:$level:$message" >> "$HOWZIT_COMM_FILE"
+            else
+              # Immediate mode: output with colors
+              local color=""
+              local reset="\\033[0m"
+              case "$level" in
+                info)  color="\\033[36m" ;;  # cyan
+                warn)  color="\\033[33m" ;;  # yellow
+                error) color="\\033[31m" ;;  # red
+                debug) color="\\033[2m"  ;;  # dim
+              esac
+              echo -e "${color}${message}${reset}" >&2
             fi
           }
 
@@ -306,11 +325,34 @@ module Howzit
           # Howzit helper functions for fish
 
           function log -d "Log a message at the specified level"
+            set report_mode false
+            # Check for -r or --report flag
+            if test "$argv[1]" = "-r"; or test "$argv[1]" = "--report"
+              set report_mode true
+              set -e argv[1]
+            end
             set level $argv[1]
             set -e argv[1]
             set message (string join " " $argv)
-            if test -n "$HOWZIT_COMM_FILE"
+
+            if test "$report_mode" = true; and test -n "$HOWZIT_COMM_FILE"
+              # Report mode: write to communication file
               echo "LOG:$level:$message" >> "$HOWZIT_COMM_FILE"
+            else
+              # Immediate mode: output with colors
+              set color ""
+              set reset "\\033[0m"
+              switch "$level"
+                case info
+                  set color "\\033[36m"  # cyan
+                case warn
+                  set color "\\033[33m"  # yellow
+                case error
+                  set color "\\033[31m"  # red
+                case debug
+                  set color "\\033[2m"   # dim
+              end
+              echo -e "$color$message$reset" >&2
             end
           end
 
@@ -362,30 +404,43 @@ module Howzit
               end
 
               class Logger
-                def info(message)
-                  log(:info, message)
+                def info(message, report: false)
+                  log(:info, message, report: report)
                 end
 
-                def warn(message)
-                  log(:warn, message)
+                def warn(message, report: false)
+                  log(:warn, message, report: report)
                 end
 
-                def error(message)
-                  log(:error, message)
+                def error(message, report: false)
+                  log(:error, message, report: report)
                 end
 
-                def debug(message)
-                  log(:debug, message)
+                def debug(message, report: false)
+                  log(:debug, message, report: report)
                 end
 
                 private
 
-                def log(level, message)
-                  comm_file = ENV['HOWZIT_COMM_FILE']
-                  return unless comm_file
+                def log(level, message, report: false)
+                  if report
+                    comm_file = ENV['HOWZIT_COMM_FILE']
+                    return unless comm_file
 
-                  File.open(comm_file, 'a') do |f|
-                    f.puts "LOG:#{level}:#{message}"
+                    File.open(comm_file, 'a') do |f|
+                      f.puts "LOG:#{level}:#{message}"
+                    end
+                  else
+                    # Immediate mode: output with colors
+                    color = case level
+                            when :info then "\033[36m"  # cyan
+                            when :warn then "\033[33m"  # yellow
+                            when :error then "\033[31m" # red
+                            when :debug then "\033[2m"   # dim
+                            else ""
+                            end
+                    reset = "\033[0m"
+                    $stderr.puts "#{color}#{message}#{reset}"
                   end
                 end
               end
@@ -419,25 +474,39 @@ module Howzit
           # Howzit helper module for Python
 
           import os
+          import sys
 
           class _Logger:
-              def _log(self, level, message):
-                  comm_file = os.environ.get('HOWZIT_COMM_FILE')
-                  if comm_file:
-                      with open(comm_file, 'a') as f:
-                          f.write(f"LOG:{level}:{message}\\n")
+              def _log(self, level, message, report=False):
+                  if report:
+                      comm_file = os.environ.get('HOWZIT_COMM_FILE')
+                      if comm_file:
+                          with open(comm_file, 'a') as f:
+                              f.write(f"LOG:{level}:{message}\\n")
+                  else:
+                      # Immediate mode: output with colors
+                      colors = {
+                          'info': '\\033[36m',   # cyan
+                          'warn': '\\033[33m',   # yellow
+                          'error': '\\033[31m',  # red
+                          'debug': '\\033[2m'    # dim
+                      }
+                      reset = '\\033[0m'
+                      color = colors.get(level, '')
+                      sys.stderr.write(f"{color}{message}{reset}\\n")
+                      sys.stderr.flush()
 
-              def info(self, message):
-                  self._log('info', message)
+              def info(self, message, report=False):
+                  self._log('info', message, report=report)
 
-              def warn(self, message):
-                  self._log('warn', message)
+              def warn(self, message, report=False):
+                  self._log('warn', message, report=report)
 
-              def error(self, message):
-                  self._log('error', message)
+              def error(self, message, report=False):
+                  self._log('error', message, report=report)
 
-              def debug(self, message):
-                  self._log('debug', message)
+              def debug(self, message, report=False):
+                  self._log('debug', message, report=report)
 
           class Howzit:
               logger = _Logger()
@@ -471,13 +540,33 @@ module Howzit
           use warnings;
 
           sub log {
+            my $report = 0;
+            # Check for -r or --report flag
+            if (@_ > 0 && ($_[0] eq '-r' || $_[0] eq '--report')) {
+              $report = 1;
+              shift;
+            }
             my ($level, $message) = @_;
-            my $comm_file = $ENV{'HOWZIT_COMM_FILE'};
-            return unless $comm_file;
 
-            open(my $fh, '>>', $comm_file) or return;
-            print $fh "LOG:$level:$message\\n";
-            close($fh);
+            if ($report) {
+              my $comm_file = $ENV{'HOWZIT_COMM_FILE'};
+              return unless $comm_file;
+
+              open(my $fh, '>>', $comm_file) or return;
+              print $fh "LOG:$level:$message\\n";
+              close($fh);
+            } else {
+              # Immediate mode: output with colors
+              my %colors = (
+                'info'  => "\\033[36m",  # cyan
+                'warn'  => "\\033[33m",  # yellow
+                'error' => "\\033[31m",  # red
+                'debug' => "\\033[2m"    # dim
+              );
+              my $reset = "\\033[0m";
+              my $color = $colors{$level} || '';
+              print STDERR "$color$message$reset\\n";
+            }
           }
 
           sub log_info { log('info', $_[0]); }
@@ -516,27 +605,40 @@ module Howzit
           const path = require('path');
 
           class Logger {
-            _log(level, message) {
-              const commFile = process.env.HOWZIT_COMM_FILE;
-              if (commFile) {
-                fs.appendFileSync(commFile, `LOG:${level}:${message}\\n`);
+            _log(level, message, report = false) {
+              if (report) {
+                const commFile = process.env.HOWZIT_COMM_FILE;
+                if (commFile) {
+                  fs.appendFileSync(commFile, `LOG:${level}:${message}\\n`);
+                }
+              } else {
+                // Immediate mode: output with colors
+                const colors = {
+                  'info': '\\033[36m',   // cyan
+                  'warn': '\\033[33m',   // yellow
+                  'error': '\\033[31m',  // red
+                  'debug': '\\033[2m'     // dim
+                };
+                const reset = '\\033[0m';
+                const color = colors[level] || '';
+                process.stderr.write(`${color}${message}${reset}\\n`);
               }
             }
 
-            info(message) {
-              this._log('info', message);
+            info(message, report = false) {
+              this._log('info', message, report);
             }
 
-            warn(message) {
-              this._log('warn', message);
+            warn(message, report = false) {
+              this._log('warn', message, report);
             }
 
-            error(message) {
-              this._log('error', message);
+            error(message, report = false) {
+              this._log('error', message, report);
             }
 
-            debug(message) {
-              this._log('debug', message);
+            debug(message, report = false) {
+              this._log('debug', message, report);
             }
           }
 

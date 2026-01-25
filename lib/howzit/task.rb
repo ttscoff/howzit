@@ -5,7 +5,7 @@ require 'English'
 module Howzit
   # Task object
   class Task
-    attr_reader :type, :title, :action, :arguments, :parent, :optional, :default, :last_status, :log_level
+    attr_reader :type, :title, :action, :arguments, :parent, :optional, :default, :last_status, :log_level, :source_file
 
     ##
     ## Initialize a Task object
@@ -21,6 +21,7 @@ module Howzit
     ## @option attributes :action [String] task action
     ## @option attributes :parent [String] title of nested (included) topic origin
     ## @option attributes :log_level [String] log level for this task (debug, info, warn, error)
+    ## @option attributes :source_file [String] path to the build note file this task came from
     def initialize(attributes, optional: false, default: true)
       @prefix = "{bw}\u{25B7}\u{25B7} {x}"
       # arrow = "{bw}\u{279F}{x}"
@@ -32,6 +33,9 @@ module Howzit
 
       @action = attributes[:action].render_arguments || nil
       @log_level = attributes[:log_level]
+      # Get source_file from parent topic if available, or from attributes
+      parent_obj = attributes[:parent]
+      @source_file = attributes[:source_file] || parent_obj&.source_file
 
       @optional = optional
       @default = default
@@ -68,7 +72,15 @@ module Howzit
       script = Tempfile.new('howzit_script')
       comm_file = ScriptComm.setup
       old_log_level = apply_log_level
+
+      # Get execution directory from source_file
+      exec_dir = @source_file ? File.dirname(File.expand_path(@source_file)) : nil
+      original_dir = Dir.pwd
+
       begin
+        # Change to source file directory if available
+        Dir.chdir(exec_dir) if exec_dir && Dir.exist?(exec_dir) && exec_dir != original_dir
+
         # Ensure support directory exists and install helpers
         ScriptSupport.ensure_support_dir
         ENV['HOWZIT_SUPPORT_DIR'] = ScriptSupport.support_dir
@@ -89,6 +101,8 @@ module Howzit
                 system(cmd)
               end
       ensure
+        # Restore original directory
+        Dir.chdir(original_dir) if exec_dir && Dir.exist?(exec_dir) && exec_dir != original_dir
         restore_log_level(old_log_level) if old_log_level
         script.close
         script.unlink
@@ -171,9 +185,19 @@ module Howzit
       ENV['HOWZIT_SCRIPTS'] = File.expand_path('~/.config/howzit/scripts')
       comm_file = ScriptComm.setup
       old_log_level = apply_log_level
+
+      # Get execution directory from source_file
+      exec_dir = @source_file ? File.dirname(File.expand_path(@source_file)) : nil
+      original_dir = Dir.pwd
+
       begin
+        # Change to source file directory if available
+        Dir.chdir(exec_dir) if exec_dir && Dir.exist?(exec_dir) && exec_dir != original_dir
+
         res = system(@action)
       ensure
+        # Restore original directory
+        Dir.chdir(original_dir) if exec_dir && Dir.exist?(exec_dir) && exec_dir != original_dir
         restore_log_level(old_log_level) if old_log_level
         # Process script communication
         ScriptComm.apply(comm_file) if comm_file
@@ -245,7 +269,13 @@ module Howzit
     ## @return     [String] List representation of the object.
     ##
     def to_list
-      "    * #{@type}: #{@title.preserve_escapes}"
+      # Highlight variables in title if parent topic has the method
+      display_title = if @parent.respond_to?(:highlight_variables)
+                        @parent.highlight_variables(@title.preserve_escapes)
+                      else
+                        @title.preserve_escapes
+                      end
+      "    * #{@type}: #{display_title}"
     end
   end
 end
