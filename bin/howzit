@@ -243,8 +243,8 @@ OptionParser.new do |opts|
 
   opts.separator("\n  Misc:\n\n") #=================================================================== MISC
 
-  opts.on('--stack', 'Stack build notes from current directory up to root, with closer files taking precedence') do
-    Howzit.options[:stack] = true
+  opts.on('--[no-]stack', 'Stack build notes from current directory up to root, with closer files taking precedence') do |s|
+    Howzit.options[:stack] = s
   end
 
   opts.on('-h', '--help', 'Display this screen') do
