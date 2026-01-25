@@ -13,9 +13,13 @@ module Howzit
     ## @param      file  [String] The path to the build note file
     ##
     def initialize(file: nil, meta: nil)
+      # Track if an explicit file was provided
+      @explicit_file = file ? File.expand_path(file) : nil
+
       # Set @note_file if an explicit file was provided, before calling note_file getter
       if file
         @note_file = File.expand_path(file)
+        file = @note_file # Use expanded path for reading
       else
         file = note_file
       end
@@ -657,9 +661,7 @@ module Howzit
         topic.content = topic.content.render_template(@metadata)
         # Prefix topic title with template name (e.g., "github:Update GitHub README")
         # unless it already has a prefix
-        unless topic.title.include?(':')
-          topic.instance_variable_set(:@title, "#{template}:#{topic.title}")
-        end
+        topic.instance_variable_set(:@title, "#{template}:#{topic.title}") unless topic.title.include?(':')
         topic
       end
     end
@@ -740,11 +742,11 @@ module Howzit
     def glob_note
       files = Dir.glob('*.{txt,md,markdown}').select(&:build_note?)
       return nil if files.empty?
-      
+
       # Prioritize standard build note filenames
       priority_files = files.select { |f| f =~ /^(buildnotes|howzit)\./i }
       return priority_files.min unless priority_files.empty?
-      
+
       # Otherwise return first alphabetically
       files.min
     end
@@ -904,6 +906,7 @@ module Howzit
       # 2. We're not already in stack mode (prevent recursion)
       # 3. We're not reading a template file
       # 4. We're reading the main build note (no specific path provided, or path matches the main note file)
+      # 5. An explicit file was not provided (explicit files should not use stack mode)
       main_note = path.nil? || begin
         main_file = note_file
         main_file && File.expand_path(path) == File.expand_path(main_file)
@@ -911,7 +914,8 @@ module Howzit
         false
       end
 
-      use_stack = Howzit.options[:stack] && !in_stack_mode && !is_template && main_note
+      # Don't use stack mode if an explicit file was provided
+      use_stack = Howzit.options[:stack] && !in_stack_mode && !is_template && main_note && @explicit_file.nil?
 
       if use_stack
         # Set flag to prevent recursive stack mode calls
@@ -973,7 +977,8 @@ module Howzit
           @metadata = final_metadata
 
           # Set primary note file to the closest one (first in stack)
-          @note_file = stack_files.first if stack_files.any?
+          # But don't override if an explicit file was provided
+          @note_file = stack_files.first if stack_files.any? && @explicit_file.nil?
 
           # Read topics from each file, closest first
           stack_files.each do |file|

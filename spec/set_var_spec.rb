@@ -5,6 +5,7 @@ require 'spec_helper'
 describe '@set_var directive' do
   before do
     Howzit.options[:include_upstream] = false
+    Howzit.options[:stack] = false
     Howzit.options[:default] = true
     Howzit.options[:matching] = 'partial'
     Howzit.options[:multiple_matches] = 'choose'
@@ -29,7 +30,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       expect(topic.directives).not_to be_nil
       set_var_directive = topic.directives.find(&:set_var?)
@@ -48,7 +49,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       set_var_directive = topic.directives.find(&:set_var?)
       expect(set_var_directive).not_to be_nil
@@ -66,7 +67,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       set_var_directive = topic.directives.find(&:set_var?)
       expect(set_var_directive).not_to be_nil
@@ -84,7 +85,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       set_var_directive = topic.directives.find(&:set_var?)
       expect(set_var_directive).not_to be_nil
@@ -102,7 +103,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       set_var_directive = topic.directives.find(&:set_var?)
       expect(set_var_directive).not_to be_nil
@@ -120,7 +121,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       set_var_directive = topic.directives.find(&:set_var?)
       expect(set_var_directive).to be_nil
@@ -136,7 +137,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       set_var_directive = topic.directives.find(&:set_var?)
       expect(set_var_directive).not_to be_nil
@@ -156,7 +157,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
 
@@ -186,7 +187,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
       topic.run
@@ -205,7 +206,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
       topic.run
@@ -226,7 +227,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
       topic.run
@@ -247,7 +248,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
       topic.run
@@ -268,7 +269,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
       topic.run
@@ -286,7 +287,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
       topic.run
@@ -304,7 +305,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
       topic.run
@@ -323,7 +324,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
       topic.run
@@ -349,7 +350,7 @@ describe '@set_var directive' do
         console_warnings << message
       end
 
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
       topic.run
@@ -373,7 +374,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
 
@@ -405,7 +406,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
 
@@ -438,7 +439,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
 
@@ -473,7 +474,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
 
@@ -505,7 +506,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
 
@@ -532,7 +533,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
 
@@ -562,7 +563,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
 
@@ -591,7 +592,7 @@ describe '@set_var directive' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
       topic.run

@@ -19,6 +19,7 @@ RSpec.configure do |c|
     # Reset buildnote cache to ensure fresh instance with updated file
     Howzit.instance_variable_set(:@buildnote, nil)
     Howzit.options[:include_upstream] = false
+    Howzit.options[:stack] = false
     Howzit.options[:default] = true
     Howzit.options[:matching] = 'partial'
     Howzit.options[:multiple_matches] = 'choose'

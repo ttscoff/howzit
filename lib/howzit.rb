@@ -89,7 +89,13 @@ module Howzit
     ## Module storage for buildnote
     ##
     def buildnote(file = nil)
-      @buildnote ||= BuildNote.new(file: file)
+      # If a specific file is requested, always create a new instance
+      # Otherwise, use cached instance if available
+      if file
+        BuildNote.new(file: file)
+      else
+        @buildnote ||= BuildNote.new(file: file)
+      end
     end
 
     ##

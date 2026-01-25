@@ -5,6 +5,7 @@ require 'spec_helper'
 describe 'Sequential Conditional Evaluation' do
   before do
     Howzit.options[:include_upstream] = false
+    Howzit.options[:stack] = false
     Howzit.options[:default] = true
     Howzit.options[:matching] = 'partial'
     Howzit.options[:multiple_matches] = 'choose'
@@ -35,7 +36,7 @@ describe 'Sequential Conditional Evaluation' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
       expect(topic).not_to be_nil
 
       # Verify the conditional task is present
@@ -76,7 +77,7 @@ describe 'Sequential Conditional Evaluation' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       task_titles = []
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
@@ -115,7 +116,7 @@ describe 'Sequential Conditional Evaluation' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       task_titles = []
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
@@ -151,7 +152,7 @@ describe 'Sequential Conditional Evaluation' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       task_titles = []
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
@@ -189,7 +190,7 @@ describe 'Sequential Conditional Evaluation' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       task_titles = []
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
@@ -227,7 +228,7 @@ describe 'Sequential Conditional Evaluation' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       task_titles = []
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
@@ -265,7 +266,7 @@ describe 'Sequential Conditional Evaluation' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
 
@@ -302,7 +303,7 @@ describe 'Sequential Conditional Evaluation' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
 

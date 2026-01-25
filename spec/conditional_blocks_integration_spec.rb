@@ -5,6 +5,7 @@ require 'spec_helper'
 describe 'Conditional Blocks Integration' do
   before do
     Howzit.options[:include_upstream] = false
+    Howzit.options[:stack] = false
     Howzit.options[:default] = true
     Howzit.options[:matching] = 'partial'
     Howzit.options[:multiple_matches] = 'choose'
@@ -27,7 +28,7 @@ describe 'Conditional Blocks Integration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil) # Force reload
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
       expect(topic).not_to be_nil
       output = topic.print_out
       expect(output.join("\n")).to include('This should be included')
@@ -47,7 +48,7 @@ describe 'Conditional Blocks Integration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil) # Force reload
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
       expect(topic).not_to be_nil
       output = topic.print_out
       expect(output.join("\n")).not_to include('This should NOT be included')
@@ -65,7 +66,7 @@ describe 'Conditional Blocks Integration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil) # Force reload
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
       expect(topic).not_to be_nil
       expect(topic.tasks.count).to eq(1)
       expect(topic.tasks[0].action).to include('echo "test"')
@@ -83,7 +84,7 @@ describe 'Conditional Blocks Integration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil) # Force reload
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
       expect(topic).not_to be_nil
       expect(topic.tasks.count).to eq(0)
     end
@@ -104,7 +105,7 @@ describe 'Conditional Blocks Integration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil) # Force reload
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
       expect(topic).not_to be_nil
       output = topic.print_out
       expect(output.join("\n")).to include('Outer content')
@@ -126,7 +127,7 @@ describe 'Conditional Blocks Integration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil) # Force reload
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
       expect(topic).not_to be_nil
       output = topic.print_out
       expect(output.join("\n")).to include('Production content')
@@ -148,7 +149,7 @@ describe 'Conditional Blocks Integration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil) # Force reload
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
       expect(topic).not_to be_nil
       output = topic.print_out
       expect(output.join("\n")).to include('This should be included')

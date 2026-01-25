@@ -5,6 +5,7 @@ require 'spec_helper'
 describe 'Log Level Configuration' do
   before do
     Howzit.options[:include_upstream] = false
+    Howzit.options[:stack] = false
     Howzit.options[:default] = true
     Howzit.options[:matching] = 'partial'
     Howzit.options[:multiple_matches] = 'choose'
@@ -30,7 +31,7 @@ describe 'Log Level Configuration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
       expect(topic).not_to be_nil
 
       # Verify log_level directive was parsed
@@ -60,7 +61,7 @@ describe 'Log Level Configuration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       log_level_directives = topic.directives.select(&:log_level?)
       expect(log_level_directives.count).to eq(3)
@@ -84,7 +85,7 @@ describe 'Log Level Configuration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       # Set initial log level to warn (should hide debug/info)
       Howzit.options[:log_level] = 2
@@ -120,7 +121,7 @@ describe 'Log Level Configuration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       log_level_directive = topic.directives.find(&:log_level?)
       expect(log_level_directive).not_to be_nil
@@ -139,7 +140,7 @@ describe 'Log Level Configuration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
       expect(topic).not_to be_nil
 
       task = topic.tasks.find { |t| t.title == 'Test Task' }
@@ -160,7 +161,7 @@ describe 'Log Level Configuration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       tasks = topic.tasks
       expect(tasks.count).to eq(3)
@@ -179,7 +180,7 @@ describe 'Log Level Configuration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       # Set initial log level to warn (should hide debug/info)
       Howzit.options[:log_level] = 2
@@ -208,7 +209,7 @@ describe 'Log Level Configuration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       task = topic.tasks[0]
       expect(task.action).to eq('./script.sh arg1')
@@ -232,7 +233,7 @@ describe 'Log Level Configuration' do
       EONOTE
       File.open('builda.md', 'w') { |f| f.puts note }
       Howzit.instance_variable_set(:@buildnote, nil)
-      topic = Howzit.buildnote.find_topic('Test Topic')[0]
+      topic = Howzit.buildnote('builda.md').find_topic('Test Topic')[0]
 
       # Verify environment variable is set (task execution will use it)
       allow(Howzit::Prompt).to receive(:yn).and_return(true)
