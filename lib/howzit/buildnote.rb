@@ -880,16 +880,12 @@ module Howzit
       # 2. We're not already in stack mode (prevent recursion)
       # 3. We're not reading a template file
       # 4. We're reading the main build note (no specific path provided, or path matches the main note file)
-      main_note = if path.nil?
-                    true
-                  else
-                    begin
-                      main_file = note_file
-                      main_file && File.expand_path(path) == File.expand_path(main_file)
-                    rescue StandardError
-                      false
-                    end
-                  end
+      main_note = path.nil? || begin
+        main_file = note_file
+        main_file && File.expand_path(path) == File.expand_path(main_file)
+      rescue StandardError
+        false
+      end
 
       use_stack = Howzit.options[:stack] && !in_stack_mode && !is_template && main_note
 

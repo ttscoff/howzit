@@ -1,3 +1,19 @@
+### 2.1.36
+
+2026-01-25 06:46
+
+#### NEW
+
+- Added --stack option to merge build notes from directory hierarchy up to root, with topics from closer directories taking precedence over parent directories
+- Metadata from all stacked build note files is now merged, with closer directories overriding parent values but parent directories filling in missing keys
+- Commands now execute from the directory where their build note file is located, automatically changing directory before execution and restoring original directory after completion
+- Menu display for multiple topic matches now shows abbreviated directory
+
+#### IMPROVED
+
+- Topic and Task classes now track source_file to enable directory-aware execution and abbreviated path display
+- Menu selection now handles both abbreviated and full path formats for backward compatibility when matching selected topics
+
 ### 2.1.35
 
 2026-01-14 04:36

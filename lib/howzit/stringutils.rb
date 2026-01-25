@@ -101,11 +101,9 @@ module Howzit
         return true unless config
 
         # Check if config is initializing or loading ignore patterns to prevent recursion
-        if config.instance_variable_defined?(:@initializing)
-          return true if config.instance_variable_get(:@initializing)
-        end
-        if config.instance_variable_defined?(:@loading_ignore_patterns)
-          return true if config.instance_variable_get(:@loading_ignore_patterns)
+        return true if config.instance_variable_defined?(:@initializing) && config.instance_variable_get(:@initializing)
+        if config.instance_variable_defined?(:@loading_ignore_patterns) && config.instance_variable_get(:@loading_ignore_patterns)
+          return true
         end
 
         return false if config.respond_to?(:should_ignore) && config.should_ignore(self)
