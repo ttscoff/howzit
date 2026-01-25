@@ -655,6 +655,11 @@ module Howzit
       template_topics.map do |topic|
         topic.parent = template
         topic.content = topic.content.render_template(@metadata)
+        # Prefix topic title with template name (e.g., "github:Update GitHub README")
+        # unless it already has a prefix
+        unless topic.title.include?(':')
+          topic.instance_variable_set(:@title, "#{template}:#{topic.title}")
+        end
         topic
       end
     end
