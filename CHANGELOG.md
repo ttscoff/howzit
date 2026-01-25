@@ -1,3 +1,30 @@
+### 2.1.38
+
+2026-01-25 07:18
+
+#### NEW
+
+- Added --stack option to merge build notes from directory hierarchy up to root, with topics from closer directories taking precedence over parent directories
+- Metadata from all stacked build note files is now merged, with closer directories overriding parent values but parent directories filling in missing keys
+- Commands now execute from the directory where their build note file is located, automatically changing directory before execution and restoring original directory after completion
+- Menu display for multiple topic matches now shows abbreviated directory
+
+#### IMPROVED
+
+- Topic and Task classes now track source_file to enable directory-aware execution and abbreviated path display
+- Menu selection now handles both abbreviated and full path formats for backward compatibility when matching selected topics
+- Template topics are now explicitly loaded from the main build note (closest file) in stack mode to ensure they are always included
+- Source file paths are now always normalized to absolute paths for consistent directory handling
+- Task execution directory logic now only changes directory in stack mode and correctly identifies template files to avoid changing directory for template-based tasks
+
+#### FIXED
+
+- Template topics are now correctly loaded in both normal and stack modes, fixing an issue where templates were not appearing when using --stack option
+- Template topic filtering now checks against local topics array instead of instance @topics to prevent templates from being incorrectly filtered out when @topics already contains topics from parent directories
+- Build note file selection now prioritizes buildnotes.md and howzit.md over other build note files, preventing test files or other build notes from being incorrectly selected when multiple build note files exist in the same directory
+- Explicit file arguments to BuildNote.new are now properly handled, ensuring that when a specific file is provided it is used correctly instead of falling back to file discovery logic
+- Template topics now have their template name prefixed to their title (e.g., "github:Update GitHub README"), allowing them to be distinguished from local topics and enabling @include directives to reference them using the template prefix format
+
 ### 2.1.37
 
 2026-01-25 07:14
