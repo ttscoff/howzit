@@ -13,7 +13,12 @@ module Howzit
     ## @param      file  [String] The path to the build note file
     ##
     def initialize(file: nil, meta: nil)
-      file ||= note_file
+      # Set @note_file if an explicit file was provided, before calling note_file getter
+      if file
+        @note_file = File.expand_path(file)
+      else
+        file = note_file
+      end
 
       @topics = []
       create_note(prompt: true) if file.nil?
@@ -728,7 +733,15 @@ module Howzit
     ## @return     [String] file path
     ##
     def glob_note
-      Dir.glob('*.{txt,md,markdown}').select(&:build_note?).min
+      files = Dir.glob('*.{txt,md,markdown}').select(&:build_note?)
+      return nil if files.empty?
+      
+      # Prioritize standard build note filenames
+      priority_files = files.select { |f| f =~ /^(buildnotes|howzit)\./i }
+      return priority_files.min unless priority_files.empty?
+      
+      # Otherwise return first alphabetically
+      files.min
     end
 
     ##
@@ -972,7 +985,7 @@ module Howzit
               end
             end
           end
-          
+
           # Load template topics from the main build note (closest file) only
           # Templates should only be loaded once, from the main build note
           if stack_files.any?

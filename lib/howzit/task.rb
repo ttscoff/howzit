@@ -79,14 +79,14 @@ module Howzit
       if @source_file && Howzit.options[:stack]
         expanded_source = File.expand_path(@source_file)
         source_dir = File.dirname(expanded_source)
-        
+
         # Check if this is a template file - don't change directory for templates
         is_template = false
         if Howzit.config.respond_to?(:template_folder) && Howzit.config.template_folder
           template_folder = File.expand_path(Howzit.config.template_folder)
           is_template = expanded_source.start_with?(template_folder)
         end
-        
+
         # Only change directory if not a template
         exec_dir = source_dir unless is_template
       end
@@ -216,14 +216,14 @@ module Howzit
       if @source_file && Howzit.options[:stack]
         expanded_source = File.expand_path(@source_file)
         source_dir = File.dirname(expanded_source)
-        
+
         # Check if this is a template file - don't change directory for templates
         is_template = false
         if Howzit.config.respond_to?(:template_folder) && Howzit.config.template_folder
           template_folder = File.expand_path(Howzit.config.template_folder)
           is_template = expanded_source.start_with?(template_folder)
         end
-        
+
         # Only change directory if not a template
         exec_dir = source_dir unless is_template
       end
