@@ -31,6 +31,10 @@ OptionParser.new do |opts|
 
   opts.on('-f', '--force', 'Continue executing after an error') { Howzit.options[:force] = true }
 
+  opts.on('--test-search TERM', 'Exit 0 if TERM matches any topic, 1 otherwise (no output)') do |term|
+    Howzit.options[:test_search] = term
+  end
+
   opts.on('-m', '--matching TYPE', MATCHING_OPTIONS,
           'Topics matching type', "(#{MATCHING_OPTIONS.join(', ').sub(/#{Howzit.options[:matching]}/, "*#{Howzit.options[:matching]}")})") do |c|
     Howzit.options[:matching] = c

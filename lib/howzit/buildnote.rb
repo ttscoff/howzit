@@ -1126,6 +1126,15 @@ module Howzit
         Howzit.multi_topic_run = false
       end
 
+      # Test-search mode: do not auto-create a build note; just check for a match
+      if Howzit.options[:test_search]
+        term = Howzit.options[:test_search]
+        # If no note file can be found at all, treat as no match
+        Process.exit(1) unless note_file
+        matches = find_topic(term)
+        Process.exit(matches.any? ? 0 : 1)
+      end
+
       unless note_file
         Process.exit 0 if Howzit.options[:list_runnable_titles] || Howzit.options[:list_topic_titles]
 
