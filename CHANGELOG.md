@@ -1,3 +1,15 @@
+### 2.1.40
+
+2026-02-04 07:53
+
+#### NEW
+
+- Added a --test-search flag that exits 0 when a search term matches at least one topic and 1 otherwise, with no normal output, allowing shells and scripts to probe for howzit topics programmatically
+
+#### IMPROVED
+
+- Build note processing in test-search mode now short-circuits without auto-creating buildnotes and treats the absence of any note file as a clean non-match instead of an error
+
 ### 2.1.39
 
 2026-01-25 07:39
