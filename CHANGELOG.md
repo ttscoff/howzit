@@ -1,3 +1,20 @@
+### 2.1.41
+
+2026-05-10 08:18
+
+#### NEW
+
+- `-z name` and `-n name` in `@if`/`@unless` conditions for shell-style empty and non-empty checks on named and positional variables.
+
+#### IMPROVED
+
+- `Util.show` strips safely when the default external encoding rejects multibyte content (fewer crashes under strict ASCII locale when piping or highlighting).
+
+#### FIXED
+
+- @set_var and @log_level inside @if/@else/@elsif so only the active branch runs; the previous behavior ran every branch and could overwrite variables set in another branch (for example ONLY_RUN set in @if then replaced by @else).
+- Topic title parameters from arguments after `--` so they no longer shift when another topic is parsed first with `@include(...[args])` (CLI positional snapshot kept separate from mutable Howzit.arguments during load).
+
 ### 2.1.40
 
 2026-02-04 07:53
