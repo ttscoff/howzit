@@ -25,7 +25,7 @@ module Howzit
       @named_args = {}
       @metadata = metadata
       @source_file = source_file
-      arguments
+      arguments(from_cli_snapshot: true)
 
       @directives = parse_directives_with_conditionals
       @tasks = gather_tasks
@@ -33,9 +33,22 @@ module Howzit
     end
 
     # Get named arguments from title
-    def arguments
+    # from_cli_snapshot: use Howzit.cli_topic_positional_args (set once from argv after ` -- `) so earlier topics' gather_tasks
+    # cannot clobber positional binding. Re-entrant calls (e.g. @include with [a,b]) pass false to use live Howzit.arguments.
+    def arguments(from_cli_snapshot: false)
       @arg_definitions = []
       return unless @title =~ /\(.*?\) *$/
+
+      positional = if from_cli_snapshot
+                     # Specs / non-CLI: leave unset to keep using Howzit.arguments
+                     if Howzit.cli_topic_positional_args.nil?
+                       Howzit.arguments || []
+                     else
+                       Howzit.cli_topic_positional_args
+                     end
+                   else
+                     Howzit.arguments || []
+                   end
 
       a = @title.match(/\((?<args>.*?)\) *$/)
       args = a['args'].split(/ *, */).each(&:strip)
@@ -45,8 +58,8 @@ module Howzit
         # Store original definition for display purposes
         @arg_definitions << (default ? "#{arg_name}:#{default}" : arg_name)
 
-        @named_args[arg_name] = if Howzit.arguments && Howzit.arguments.count >= idx + 1
-                                  Howzit.arguments[idx]
+        @named_args[arg_name] = if positional && positional.count >= idx + 1
+                                  positional[idx]
                                 else
                                   default
                                 end
@@ -642,6 +655,7 @@ module Howzit
         if line =~ /^@log_level\s*\(([^)]+)\)\s*$/i
           log_level = Regexp.last_match(1).strip
           conditional_path = conditional_stack.dup
+          conditional_path << current_branch_index if current_branch_index
           directives << Howzit::Directive.new(
             type: :log_level,
             log_level_value: log_level,
@@ -664,6 +678,7 @@ module Howzit
               # Remove quotes from value if present (handles both single and double quotes)
               var_value = Regexp.last_match(1) if var_value =~ /^["'](.+)["']$/
               conditional_path = conditional_stack.dup
+              conditional_path << current_branch_index if current_branch_index
               directives << Howzit::Directive.new(
                 type: :set_var,
                 var_name: var_name,
@@ -818,12 +833,16 @@ module Howzit
 
         # Handle @log_level directive (before task check)
         if directive.log_level?
+          next unless directive_in_active_branch?(directive, conditional_state)
+
           current_log_level = directive.log_level_value
           next
         end
 
         # Handle @set_var directive (before task check)
         if directive.set_var?
+          next unless directive_in_active_branch?(directive, conditional_state)
+
           # Set the variable in named_arguments
           Howzit.named_arguments ||= {}
           value = directive.var_value
@@ -856,34 +875,7 @@ module Howzit
         # Handle task directives
         next unless directive.task?
 
-        # Check if all parent conditionals are true
-        should_execute = true
-
-        # If path ends with an @elsif/@else, skip the parent @if index
-        # (the index right before the elsif/else in the path)
-        path_to_check = directive.conditional_path.dup
-        if path_to_check.length >= 2
-          last_idx = path_to_check.last
-          last_state = conditional_state[last_idx]
-          if last_state && %w[elsif else].include?(last_state[:directive_type])
-            # Skip the parent @if index (the one before the elsif/else)
-            parent_if_idx = path_to_check[path_to_check.length - 2]
-            parent_if_state = conditional_state[parent_if_idx]
-            if parent_if_state && %w[if unless].include?(parent_if_state[:directive_type])
-              path_to_check.delete(parent_if_idx)
-            end
-          end
-        end
-
-        path_to_check.each do |cond_idx|
-          cond_state = conditional_state[cond_idx]
-          if cond_state.nil? || !cond_state[:evaluated] || !cond_state[:result]
-            should_execute = false
-            break
-          end
-        end
-
-        next unless should_execute
+        next unless directive_in_active_branch?(directive, conditional_state)
 
         # Convert directive to task
         task = directive.to_task(self, current_log_level: current_log_level)
@@ -937,6 +929,38 @@ module Howzit
       end
 
       output
+    end
+
+    ##
+    ## Whether a directive nested under @if/@unless/@elsif/@else should run (same rules as tasks).
+    ##
+    def directive_in_active_branch?(directive, conditional_state)
+      path = directive.conditional_path || []
+      return true if path.empty?
+
+      should_execute = true
+      path_to_check = path.dup
+      if path_to_check.length >= 2
+        last_idx = path_to_check.last
+        last_state = conditional_state[last_idx]
+        if last_state && %w[elsif else].include?(last_state[:directive_type])
+          parent_if_idx = path_to_check[path_to_check.length - 2]
+          parent_if_state = conditional_state[parent_if_idx]
+          if parent_if_state && %w[if unless].include?(parent_if_state[:directive_type])
+            path_to_check.delete(parent_if_idx)
+          end
+        end
+      end
+
+      path_to_check.each do |cond_idx|
+        cond_state = conditional_state[cond_idx]
+        if cond_state.nil? || !cond_state[:evaluated] || !cond_state[:result]
+          should_execute = false
+          break
+        end
+      end
+
+      should_execute
     end
 
     ##

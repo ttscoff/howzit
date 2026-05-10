@@ -122,6 +122,30 @@ describe Howzit::ConditionEvaluator do
         expect(described_class.evaluate('${env} == "production"', {})).to be true
         expect(described_class.evaluate('${var} == "other"', {})).to be false
       end
+
+      it 'evaluates -z (empty) for named arguments' do
+        Howzit.named_arguments = { 'option' => '', other: 'x' }
+        expect(described_class.evaluate('-z option', {})).to be true
+        expect(described_class.evaluate('-z other', {})).to be false
+      end
+
+      it 'evaluates -n (non-empty) for named arguments' do
+        Howzit.named_arguments = { 'option' => '', other: 'x' }
+        expect(described_class.evaluate('-n option', {})).to be false
+        expect(described_class.evaluate('-n other', {})).to be true
+      end
+
+      it 'treats undefined named argument as empty for -z / -n' do
+        Howzit.named_arguments = {}
+        expect(described_class.evaluate('-z missing', {})).to be true
+        expect(described_class.evaluate('-n missing', {})).to be false
+      end
+
+      it 'supports not -z and not -n' do
+        Howzit.named_arguments = { opt: 'yes' }
+        expect(described_class.evaluate('not -z opt', {})).to be true
+        expect(described_class.evaluate('not -n opt', {})).to be false
+      end
     end
 
     context 'with metadata' do

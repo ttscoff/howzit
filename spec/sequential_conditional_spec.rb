@@ -317,4 +317,53 @@ describe 'Sequential Conditional Evaluation' do
       expect(Howzit.named_arguments['ALL']).to eq('123')
     end
   end
+
+  describe '@set_var under @if/@else' do
+    let(:branch_note) do
+      <<~EONOTE
+        # Test
+
+        ## Branch Topic (flag)
+
+        @if -n flag
+        @set_var(RESULT, "yes")
+        @else
+        @set_var(RESULT, "no")
+        @end
+
+        ```run Echo
+        #!/bin/bash
+        echo ok
+        ```
+      EONOTE
+    end
+
+    it 'only runs @set_var from the active branch when @if is true' do
+      File.open('builda.md', 'w') { |f| f.puts branch_note }
+      Howzit.arguments = ['present']
+      Howzit.cli_topic_positional_args = ['present']
+      Howzit.named_arguments = {}
+      Howzit.instance_variable_set(:@buildnote, nil)
+      topic = Howzit.buildnote('builda.md').find_topic('Branch Topic')[0]
+      allow(Howzit::Prompt).to receive(:yn).and_return(true)
+
+      topic.run
+
+      expect(Howzit.named_arguments['RESULT']).to eq('yes')
+    end
+
+    it 'only runs @set_var from the active branch when @else is taken' do
+      File.open('builda.md', 'w') { |f| f.puts branch_note }
+      Howzit.arguments = []
+      Howzit.cli_topic_positional_args = []
+      Howzit.named_arguments = {}
+      Howzit.instance_variable_set(:@buildnote, nil)
+      topic = Howzit.buildnote('builda.md').find_topic('Branch Topic')[0]
+      allow(Howzit::Prompt).to receive(:yn).and_return(true)
+
+      topic.run
+
+      expect(Howzit.named_arguments['RESULT']).to eq('no')
+    end
+  end
 end

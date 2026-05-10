@@ -161,6 +161,14 @@ module Howzit
         status.success?
       end
 
+      # Strip safely when external encoding rejects multibyte content (e.g. US-ASCII default).
+      def safe_strip(str)
+        s = str.to_s
+        s.strip
+      rescue Encoding::CompatibilityError
+        s.encode('UTF-8', invalid: :replace, undef: :replace).strip
+      end
+
       # print output to terminal
       def show(string, opts = {})
         options = {
@@ -180,7 +188,10 @@ module Howzit
           pipes = "|#{hl}" if hl
         end
 
-        output = `echo #{Shellwords.escape(string.strip)}#{pipes}`.strip
+        string = safe_strip(string)
+
+        raw_output = `echo #{Shellwords.escape(string)}#{pipes}`
+        output = safe_strip(raw_output)
 
         if options[:paginate] && Howzit.options[:paginate]
           page(output)

@@ -18,11 +18,19 @@ RSpec.configure do |c|
     save_buildnote
     # Reset buildnote cache to ensure fresh instance with updated file
     Howzit.instance_variable_set(:@buildnote, nil)
+    Howzit.arguments = []
+    Howzit.cli_topic_positional_args = nil
+    Howzit.named_arguments = {}
     Howzit.options[:include_upstream] = false
     Howzit.options[:stack] = false
     Howzit.options[:default] = true
     Howzit.options[:matching] = 'partial'
     Howzit.options[:multiple_matches] = 'choose'
+    # Point singleton at test fixture (repo may also contain buildnotes.md, etc.)
+    Howzit.instance_variable_set(
+      :@buildnote,
+      Howzit::BuildNote.new(file: File.expand_path('builda.md'))
+    )
     @hz = Howzit.buildnote
   end
 

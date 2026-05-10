@@ -9,6 +9,8 @@ Howzit::Color.coloring = $stdout.isatty
 parts = Shellwords.shelljoin(ARGV).split(/ -- /)
 args = parts[0] ? Shellwords.shellsplit(parts[0]) : []
 Howzit.arguments = parts[1] ? Shellwords.shellsplit(parts[1]) : []
+# Immutable snapshot for topic title (param): binding — gather_tasks/@include mutates Howzit.arguments while parsing earlier topics
+Howzit.cli_topic_positional_args = Howzit.arguments&.dup || []
 Howzit.named_arguments = {}
 
 OptionParser.new do |opts|

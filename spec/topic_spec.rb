@@ -24,7 +24,7 @@ end
 
 describe Howzit::Topic do
   subject(:topic) do
-    bn = Howzit.buildnote
+    bn = Howzit.buildnote('builda.md')
     bn.find_topic('Topic Balogna')[0]
   end
 

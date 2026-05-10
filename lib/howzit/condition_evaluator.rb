@@ -35,6 +35,17 @@ module Howzit
       ## Evaluate a single condition (without negation)
       ##
       def evaluate_condition(condition, context)
+        # Shell-style empty / non-empty tests (bash -z / -n)
+        if (match = condition.match(/^-z\s+(.+)$/i))
+          name = match[1].strip
+          val = get_value(name, context)
+          return val.nil? || val.to_s.strip.empty?
+        elsif (match = condition.match(/^-n\s+(.+)$/i))
+          name = match[1].strip
+          val = get_value(name, context)
+          return !val.nil? && !val.to_s.strip.empty?
+        end
+
         # Handle special conditions FIRST to avoid false matches with comparison patterns
         # Check file contents before other patterns since it has arguments and operators
         if condition =~ /^file\s+contents\s+(.+?)\s+(\*\*=|\*=|\^=|\$=|==|!=|=~)\s*(.+)$/i
