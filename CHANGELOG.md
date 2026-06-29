@@ -1,3 +1,15 @@
+### 2.1.42
+
+2026-06-29 06:52
+
+#### NEW
+
+- `includes:` metadata to pull topics from external build note files or project directories (comma-separated paths, optional `[topic | filter]` like templates); directory paths auto-detect the build note; included topics are prefixed by basename; local topics always win on duplicate names.
+
+#### FIXED
+
+- Paged build note output no longer opens with the first line scrolled off screen (pager receives the full buffer via IO.popen instead of starting on partial pipe input).
+
 ### 2.1.41
 
 2026-05-10 08:18
