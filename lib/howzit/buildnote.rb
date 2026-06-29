@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'set'
+
 module Howzit
   # BuildNote Class
   class BuildNote
@@ -12,9 +14,11 @@ module Howzit
     ##
     ## @param      file  [String] The path to the build note file
     ##
-    def initialize(file: nil, meta: nil)
+    def initialize(file: nil, meta: nil, skip_includes: false, included_paths: nil)
       # Track if an explicit file was provided
       @explicit_file = file ? File.expand_path(file) : nil
+      @skip_includes = skip_includes
+      @included_paths = included_paths || Set.new
 
       # Set @note_file if an explicit file was provided, before calling note_file getter
       if file
@@ -653,7 +657,7 @@ module Howzit
     ## @return     [Array] extracted topics
     ##
     def read_template(template, file, subtopics = nil)
-      note = BuildNote.new(file: file, meta: @metadata)
+      note = BuildNote.new(file: file, meta: @metadata, skip_includes: true, included_paths: @included_paths)
 
       template_topics = subtopics.nil? ? note.topics : extract_subtopics(note, subtopics)
       template_topics.map do |topic|
@@ -752,6 +756,24 @@ module Howzit
     end
 
     ##
+    ## Glob a directory for a valid build note filename
+    ##
+    ## @param      dir  [String] Directory to search
+    ##
+    ## @return     [String, nil] Absolute path to build note file
+    ##
+    def glob_note_in(dir)
+      pattern = File.join(File.expand_path(dir), '*.{txt,md,markdown}')
+      files = Dir.glob(pattern).select { |f| File.basename(f).build_note? }
+      return nil if files.empty?
+
+      priority_files = files.select { |f| File.basename(f) =~ /^(buildnotes|howzit)\./i }
+      return priority_files.min unless priority_files.empty?
+
+      files.min
+    end
+
+    ##
     ## Search for a valid build note, checking current
     ## directory, git top level directory, and parent
     ## directories
@@ -794,26 +816,117 @@ module Howzit
     end
 
     ##
-    ## Read a list of topics from an included template
+    ## Read a list of topics from included templates and includes: metadata
     ##
-    ## @param      content  [String] The template contents
+    ## @param      content  [String] The build note contents
     ##
     def get_template_topics(content)
       leader = content.split(/^#/)[0].strip
 
-      template_topics = []
+      external_topics = []
 
-      return template_topics if leader.empty?
+      return external_topics if leader.empty?
 
       data = leader.metadata
 
       if data.key?('template')
         templates = data['template'].strip.split(/\s*,\s*/)
 
-        template_topics.concat(gather_templates(templates))
+        external_topics.concat(gather_templates(templates))
       end
 
-      template_topics
+      if data.key?('includes') && !@skip_includes
+        includes = data['includes'].strip.split(/\s*,\s*/)
+
+        external_topics.concat(gather_includes(includes))
+      end
+
+      external_topics
+    end
+
+    ##
+    ## Resolve an includes: metadata entry to a label and build note file path
+    ##
+    ## @param      path_spec  [String] File path, directory, or ~ path
+    ##
+    ## @return     [Array, nil] [label, absolute_file_path] or nil if not found
+    ##
+    def resolve_include_path(path_spec)
+      path = File.expand_path(path_spec.to_s.strip)
+      return nil unless File.exist?(path)
+
+      if File.directory?(path)
+        note_path = glob_note_in(path)
+        return nil unless note_path
+
+        [File.basename(path), File.expand_path(note_path)]
+      elsif File.file?(path)
+        [File.basename(path, File.extname(path)), path]
+      end
+    end
+
+    ##
+    ## Read topics from an external build note referenced by includes: metadata
+    ##
+    def read_include(label, file, subtopics = nil)
+      note = BuildNote.new(file: file, meta: @metadata, skip_includes: true, included_paths: @included_paths)
+      included_topics = subtopics.nil? ? note.topics : extract_subtopics(note, subtopics)
+      included_topics.map do |topic|
+        topic.parent = label
+        topic.content = topic.content.render_template(@metadata)
+        topic.instance_variable_set(:@title, "#{label}:#{topic.title}") unless topic.title.include?(':')
+        topic
+      end
+    end
+
+    ##
+    ## Load topics from includes: metadata paths (comma-separated)
+    ##
+    def gather_includes(includes)
+      included_topics = []
+
+      includes.each do |spec|
+        spec = spec.strip
+        next if spec.empty?
+
+        path_spec, subtopics = detect_subtopics(spec.dup)
+        resolved = resolve_include_path(path_spec)
+        unless resolved
+          Howzit.console.warn "{br}WARNING:{xr} includes: path not found or has no build note: {bw}#{path_spec}{x}".c
+          next
+        end
+
+        label, file = resolved
+        abs_file = File.expand_path(file)
+        main_file = @note_file ? File.expand_path(@note_file) : nil
+
+        if main_file && abs_file == main_file
+          Howzit.console.warn "{br}WARNING:{xr} includes: skipping self-reference: {bw}#{path_spec}{x}".c
+          next
+        end
+
+        if @included_paths.include?(abs_file)
+          Howzit.console.warn "{br}WARNING:{xr} includes: already loaded, skipping: {bw}#{path_spec}{x}".c
+          next
+        end
+
+        @included_paths.add(abs_file)
+        included_topics.concat(read_include(label, abs_file, subtopics))
+      end
+
+      included_topics
+    end
+
+    ##
+    ## Merge external topics (templates, includes) into local topics; local wins on duplicate names
+    ##
+    def merge_external_topics(local_topics, external_topics)
+      external_topics.each do |topic|
+        base = base_topic_name(topic.title)
+        exists_in_local = local_topics.any? { |t| base_topic_name(t.title) == base }
+        local_topics.push(topic) unless exists_in_local
+      end
+      local_topics
     end
 
     # Read in the build notes file and output a hash of
@@ -870,13 +983,7 @@ module Howzit
         topics.push(topic)
       end
 
-      template_topics.each do |topic|
-        # Check against local topics array, not @topics, to avoid filtering out templates
-        # when @topics already has topics (e.g., in stack mode)
-        topic_base = topic.title.sub(/^.+:/, '').strip.downcase
-        exists_in_local = topics.any? { |t| t.title.sub(/^.+:/, '').strip.downcase == topic_base }
-        topics.push(topic) unless exists_in_local
-      end
+      merge_external_topics(topics, template_topics)
 
       topics
     end

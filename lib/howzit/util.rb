@@ -123,42 +123,29 @@ module Howzit
           rescue Errno::EPIPE
             # Pipe closed, ignore
           end
-          return
+          return true
         end
 
-        read_io, write_io = IO.pipe
-
-        input = $stdin
-
-        pid = Kernel.fork do
-          write_io.close
-          input.reopen(read_io)
-          read_io.close
-
-          # Wait until we have input before we start the pager
-          IO.select [input]
-
-          pager = which_pager
-
+        pager = which_pager
+        if pager.nil?
           begin
-            exec(pager)
-          rescue SystemCallError => e
-            Howzit.console.error(e)
-            exit 1
+            puts text
+          rescue Errno::EPIPE
+            # Pipe closed, ignore
           end
+          return true
         end
 
-        read_io.close
-        begin
-          write_io.write(text)
+        # Write the full buffer to the pager stdin before closing it. The old
+        # fork + IO.select approach started less as soon as the first bytes
+        # arrived, which could leave the initial viewport scrolled past line 1.
+        IO.popen(pager, 'w') do |io|
+          io.write(text)
         rescue Errno::EPIPE
           # User quit pager before we finished writing, ignore
         end
-        write_io.close
 
-        _, status = Process.waitpid2(pid)
-
-        status.success?
+        Process.last_status.success?
       end
 
       # Strip safely when external encoding rejects multibyte content (e.g. US-ASCII default).

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'cli-test'
 
 # https://github.com/thoiberg/cli-test
 describe 'CLI' do

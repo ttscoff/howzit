@@ -33,8 +33,9 @@ module Howzit
     end
 
     # Get named arguments from title
-    # from_cli_snapshot: use Howzit.cli_topic_positional_args (set once from argv after ` -- `) so earlier topics' gather_tasks
-    # cannot clobber positional binding. Re-entrant calls (e.g. @include with [a,b]) pass false to use live Howzit.arguments.
+    # from_cli_snapshot: use Howzit.cli_topic_positional_args (argv after `--`) so earlier
+    # topics' gather_tasks cannot clobber positional binding. Re-entrant @include [a,b]
+    # calls pass false to use live Howzit.arguments.
     def arguments(from_cli_snapshot: false)
       @arg_definitions = []
       return unless @title =~ /\(.*?\) *$/
@@ -944,7 +945,7 @@ module Howzit
         last_idx = path_to_check.last
         last_state = conditional_state[last_idx]
         if last_state && %w[elsif else].include?(last_state[:directive_type])
-          parent_if_idx = path_to_check[path_to_check.length - 2]
+          parent_if_idx = path_to_check[-2]
           parent_if_state = conditional_state[parent_if_idx]
           if parent_if_state && %w[if unless].include?(parent_if_state[:directive_type])
             path_to_check.delete(parent_if_idx)
