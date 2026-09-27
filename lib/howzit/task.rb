@@ -152,9 +152,9 @@ module Howzit
 
       Howzit.console.info("#{@prefix}{by}Running tasks from {bw}#{matches[0].title}{x}".c)
       output.concat(matches[0].run(nested: true))
-      Howzit.console.info("{by}End include: #{matches[0].tasks.count} tasks{x}".c)
+      Howzit.console.info("{by}End include: #{matches[0].all_tasks.count} tasks{x}".c)
       @last_status = nil
-      [output, matches[0].tasks.count]
+      [output, matches[0].all_tasks.count]
     end
 
     ##

@@ -169,9 +169,35 @@ module Howzit
       output = []
       output.push("{bg}Topics:{x}\n".c)
       @topics.each do |topic|
-        output.push("- {bw}#{topic.title}{x}".c)
+        output.push("#{subtopic_indent(topic)}- {bw}#{topic.title}{x}".c)
       end
       output.join("\n")
+    end
+
+    ##
+    ## Indentation for a topic in list output, based on
+    ## how many of its parent topics are in the list
+    ##
+    ## @param      topic  [Topic] The topic
+    ##
+    ## @return     [String] leading whitespace
+    ##
+    def subtopic_indent(topic)
+      '  ' * topic.ancestors.count { |parent| @topics.any? { |t| t.equal?(parent) } }
+    end
+
+    ##
+    ## Topics that aren't nested under another topic in
+    ## the build note (subtopics are output with their parent)
+    ##
+    ## @param      topics  [Array] Topics to filter, defaults to all topics
+    ##
+    ## @return     [Array] array of Topics
+    ##
+    def top_level_topics(topics = @topics)
+      topics.reject do |topic|
+        topic.ancestors.any? { |parent| topics.any? { |t| t.equal?(parent) } }
+      end
     end
 
     ##
@@ -204,7 +230,7 @@ module Howzit
     def list_runnable_completions
       output = []
       @topics.each do |topic|
-        next unless topic.tasks.count.positive?
+        next unless topic.all_tasks.any?
 
         output.push(topic.title)
       end
@@ -222,11 +248,10 @@ module Howzit
       output.push(%({bg}"Runnable" Topics:{x}\n).c)
 
       find_topic(Howzit.options[:for_topic]).each do |topic|
-        s_out = []
+        next if topic.all_tasks.empty?
 
-        topic.tasks.each { |task| s_out.push(task.to_list) }
-
-        next if s_out.empty?
+        indent = subtopic_indent(topic)
+        s_out = topic.tasks.map { |task| "#{indent}#{task.to_list}" }
 
         title = topic.title
         # Show argument definitions with colorized formatting
@@ -235,8 +260,8 @@ module Howzit
           title += " {l}({x}#{formatted_args}{l}){x}".c
         end
 
-        output.push("- {g}#{title}{x}".c)
-        output.push(s_out.join("\n"))
+        output.push("#{indent}- {g}#{title}{x}".c)
+        output.push(s_out.join("\n")) unless s_out.empty?
       end
 
       output.join("\n")
@@ -956,11 +981,13 @@ module Howzit
 
       template_topics = get_template_topics(help)
 
-      split = help.split(/^##+/)
-      split.slice!(0)
-      split.each do |sect|
-        next if sect.strip.empty?
+      sections = help.split(/^(##+)/)
+      sections.shift
+      parent_stack = []
+      sections.each_slice(2) do |marks, sect|
+        next if sect.nil? || sect.strip.empty?
 
+        level = marks.length
         lines = sect.split(/\n/)
         title = lines.slice!(0).strip
         prefix = ''
@@ -978,7 +1005,12 @@ module Howzit
         # Ensure source_file is always an absolute path
         source_file = path || note_file
         source_file = File.expand_path(source_file) if source_file
-        topic = Topic.new(title, prefix + lines.join("\n").strip.render_template(@metadata), @metadata, source_file: source_file)
+        topic = Topic.new(title, prefix + lines.join("\n").strip.render_template(@metadata), @metadata,
+                          source_file: source_file, level: level)
+
+        parent_stack.pop while parent_stack.any? && parent_stack.last.level >= level
+        parent_stack.last&.add_subtopic(topic)
+        parent_stack.push(topic)
 
         topics.push(topic)
       end
@@ -1373,13 +1405,13 @@ module Howzit
           process_default_metadata(output)
         else
           Howzit.run_log = []
-          Howzit.multi_topic_run = topics.length > 1
-          topics.each { |k| output.push(process_topic(k, false, single: false)) }
+          Howzit.multi_topic_run = top_level_topics.length > 1
+          top_level_topics.each { |k| output.push(process_topic(k, false, single: false)) }
           finalize_output(output)
         end
       else
         # Show all topics
-        topics.each { |k| output.push(process_topic(k, false, single: false)) }
+        top_level_topics.each { |k| output.push(process_topic(k, false, single: false)) }
         finalize_output(output)
       end
     end
@@ -1525,9 +1557,12 @@ module Howzit
           end
         end
         topic_matches.compact! # Remove any nil values from failed matches
-        topic_matches.each { |topic_match| output.push(process_topic(topic_match, Howzit.options[:run], single: true)) }
+        # A matched subtopic is already output/run with its matched parent
+        top_level_topics(topic_matches).each do |topic_match|
+          output.push(process_topic(topic_match, Howzit.options[:run], single: true))
+        end
       else
-        topics.each { |k| output.push(process_topic(k, false, single: false)) }
+        top_level_topics.each { |k| output.push(process_topic(k, false, single: false)) }
       end
 
       finalize_output(output)

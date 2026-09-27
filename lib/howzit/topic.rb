@@ -5,9 +5,10 @@ module Howzit
   class Topic
     attr_writer :parent
 
-    attr_accessor :content
+    attr_accessor :content, :parent_topic
 
-    attr_reader :title, :tasks, :prereqs, :postreqs, :results, :named_args, :directives, :arg_definitions, :source_file
+    attr_reader :title, :tasks, :prereqs, :postreqs, :results, :named_args, :directives, :arg_definitions, :source_file,
+                :level, :subtopics
 
     ##
     ## Initialize a topic object
@@ -16,11 +17,15 @@ module Howzit
     ## @param      content     [String] The raw topic content
     ## @param      metadata    [Hash] Optional metadata hash
     ## @param      source_file [String] Optional path to the build note file this topic came from
+    ## @param      level       [Integer] Markdown header level (2 for ##, 3 for ###, etc.)
     ##
-    def initialize(title, content, metadata = nil, source_file: nil)
+    def initialize(title, content, metadata = nil, source_file: nil, level: 2)
       @title = title
       @content = content
       @parent = nil
+      @parent_topic = nil
+      @subtopics = []
+      @level = level
       @nest_level = 0
       @named_args = {}
       @metadata = metadata
@@ -30,6 +35,40 @@ module Howzit
       @directives = parse_directives_with_conditionals
       @tasks = gather_tasks
       @results = { total: 0, success: 0, errors: 0, message: ''.c }
+    end
+
+    ##
+    ## Nest a topic under this one (a deeper header following this topic)
+    ##
+    ## @param      topic  [Topic] The subtopic
+    ##
+    def add_subtopic(topic)
+      topic.parent_topic = self
+      @subtopics << topic
+    end
+
+    ##
+    ## Tasks from this topic and all nested subtopics, in run order
+    ##
+    ## @return     [Array] Array of Task objects
+    ##
+    def all_tasks
+      @tasks + @subtopics.flat_map(&:all_tasks)
+    end
+
+    ##
+    ## Parent topics from nearest to outermost
+    ##
+    ## @return     [Array] Array of Topic objects
+    ##
+    def ancestors
+      list = []
+      node = @parent_topic
+      while node
+        list << node
+        node = node.parent_topic
+      end
+      list
     end
 
     # Get named arguments from title
@@ -80,7 +119,7 @@ module Howzit
 
     def ask_task(task)
       note = if task.type == :include
-               task_count = Howzit.buildnote.find_topic(task.action)[0].tasks.count
+               task_count = Howzit.buildnote.find_topic(task.action)[0].all_tasks.count
                " (#{task_count} tasks)"
              else
                ''
@@ -95,80 +134,121 @@ module Howzit
       60
     end
 
-    # Handle run command, execute directives in topic
-    def run(nested: false)
+    ##
+    ## Handle run command, execute directives in topic, then in each subtopic
+    ##
+    ## @param      nested       [Boolean] Suppress the summary message (topic is being included)
+    ## @param      as_subtopic  [Boolean] Topic is being run as part of a parent topic
+    ##
+    ## @return     [Array] output lines
+    ##
+    def run(nested: false, as_subtopic: false)
+      @results = { total: 0, success: 0, errors: 0, message: ''.c }
       output = []
-
       cols = check_cols
 
-      # Use sequential processing if we have directives with conditionals
-      if @directives && @directives.any?(&:conditional?)
-        return run_sequential(nested: nested, output: output, cols: cols)
-      end
+      confirm_prereqs(cols) if !@prereqs.empty? && (all_tasks.any? || sequential?)
 
-      # Fall back to old behavior for backward compatibility
-      # Note: @set_var directives are already processed in gather_tasks for non-sequential path
-      # This section is kept for backward compatibility but shouldn't be needed
-
-      if @tasks.count.positive?
-        unless @prereqs.empty?
-          begin
-            puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
-          rescue Errno::EPIPE
-            # Pipe closed, ignore
-          end
-          res = Prompt.yn('Have the above prerequisites been met?', default: true)
-          Process.exit 1 unless res
-
-        end
-
-        @tasks.each do |task|
-          next if (task.optional || Howzit.options[:ask]) && !ask_task(task)
-
-          run_output, total, success = task.run
-
-          output.concat(run_output)
-          @results[:total] += total
-
-          if success
-            @results[:success] += total
-          else
-            Howzit.console.warn %({bw}\u{2297} {br}Error running task {bw}"#{task.title}"{x}).c
-
-            @results[:errors] += total
-
-            break unless Howzit.options[:force]
-          end
-
-          log_task_result(task, success)
-        end
-
-        total = "{bw}#{@results[:total]}{by} #{@results[:total] == 1 ? 'task' : 'tasks'}".c
-        errors = "{bw}#{@results[:errors]}{by} #{@results[:errors] == 1 ? 'error' : 'errors'}".c
-        @results[:message] += if @results[:errors].zero?
-                                "{bg}\u{2713} {by}Ran #{total}{x}".c
-                              elsif Howzit.options[:force]
-                                "{br}\u{2715} {by}Completed #{total} with #{errors}{x}".c
-                              else
-                                "{br}\u{2715} {by}Ran #{total}, terminated due to error{x}".c
-                              end
-      else
+      if sequential?
+        run_sequential(output: output)
+      elsif @tasks.any?
+        run_tasks(output)
+      elsif all_tasks.empty? && !as_subtopic
         Howzit.console.warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c
       end
 
-      output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested && !Howzit.options[:run]
+      run_subtopics(output) unless halted?
 
-      unless @postreqs.empty?
-        begin
-          # Apply variable substitution to postreqs content, then wrap each line individually to preserve structure
-          postreqs_content = @postreqs.join("\n\n").render_arguments
-          wrapped_content = postreqs_content.split(/\n/).map { |line| line.wrap(cols - 4) }.join("\n")
-          puts TTY::Box.frame("{bw}#{wrapped_content}{x}".c, width: cols)
-        rescue Errno::EPIPE
-          # Pipe closed, ignore
-        end
+      if @results[:total].positive? || (all_tasks.any? && !sequential?)
+        @results[:message] += results_message
+        output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested && !Howzit.options[:run]
       end
 
+      show_postreqs(cols)
+
+      output
+    end
+
+    ##
+    ## Whether the topic contains conditional directives and must be run sequentially
+    ##
+    def sequential?
+      @directives&.any?(&:conditional?) || false
+    end
+
+    def halted?
+      @results[:errors].positive? && !Howzit.options[:force]
+    end
+
+    def confirm_prereqs(cols)
+      begin
+        puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+      rescue Errno::EPIPE
+        # Pipe closed, ignore
+      end
+      res = Prompt.yn('Have the above prerequisites been met?', default: true)
+      Process.exit 1 unless res
+    end
+
+    def show_postreqs(cols)
+      return if @postreqs.empty?
+
+      # Apply variable substitution to postreqs content, then wrap each line individually to preserve structure
+      postreqs_content = @postreqs.join("\n\n").render_arguments
+      wrapped_content = postreqs_content.split(/\n/).map { |line| line.wrap(cols - 4) }.join("\n")
+      puts TTY::Box.frame("{bw}#{wrapped_content}{x}".c, width: cols)
+    rescue Errno::EPIPE
+      # Pipe closed, ignore
+    end
+
+    def results_message
+      total = "{bw}#{@results[:total]}{by} #{@results[:total] == 1 ? 'task' : 'tasks'}".c
+      errors = "{bw}#{@results[:errors]}{by} #{@results[:errors] == 1 ? 'error' : 'errors'}".c
+      if @results[:errors].zero?
+        "{bg}\u{2713} {by}Ran #{total}{x}".c
+      elsif Howzit.options[:force]
+        "{br}\u{2715} {by}Completed #{total} with #{errors}{x}".c
+      else
+        "{br}\u{2715} {by}Ran #{total}, terminated due to error{x}".c
+      end
+    end
+
+    ##
+    ## Run tasks without conditional evaluation
+    ##
+    def run_tasks(output)
+      @tasks.each do |task|
+        next if (task.optional || Howzit.options[:ask]) && !ask_task(task)
+
+        run_output, total, success = task.run
+
+        output.concat(run_output)
+        @results[:total] += total
+
+        if success
+          @results[:success] += total
+        else
+          Howzit.console.warn %({bw}\u{2297} {br}Error running task {bw}"#{task.title}"{x}).c
+
+          @results[:errors] += total
+
+          break unless Howzit.options[:force]
+        end
+
+        log_task_result(task, success)
+      end
+      output
+    end
+
+    ##
+    ## Run each subtopic in order, adding its results to this topic's
+    ##
+    def run_subtopics(output)
+      @subtopics.each do |sub|
+        output.concat(sub.run(nested: true, as_subtopic: true))
+        %i[total success errors].each { |key| @results[key] += sub.results[key] }
+        break if halted?
+      end
       output
     end
 
@@ -178,7 +258,7 @@ module Howzit
     end
 
     def colored_option(color, topic, keys)
-      if topic.tasks.empty?
+      if topic.all_tasks.empty?
         ''
       else
         optional = keys[:optional] =~ /[?!]+/ ? true : false
@@ -302,7 +382,8 @@ module Howzit
           formatted_args = @arg_definitions.map { |arg| format_arg_definition(arg) }.join('{l}, '.c)
           header_title += " {l}({x}#{formatted_args}{l}){x}".c
         end
-        output.push(header_title.format_header)
+        header_opts = opt[:subtopic] ? { color: '{bc}', hr: "\u{2508}" } : {}
+        output.push(header_title.format_header(header_opts))
         output.push('')
       end
       # Process conditional blocks first
@@ -333,6 +414,8 @@ module Howzit
       end
       Howzit.named_arguments = @named_args
       output.push('')
+      @subtopics.each { |sub| output.concat(sub.print_out(opt.merge(header: true, subtopic: true))) }
+      output
     end
 
     ##
@@ -727,7 +810,7 @@ module Howzit
     ##
     ## Run directives sequentially with conditional re-evaluation
     ##
-    def run_sequential(nested: false, output: [], cols: 80)
+    def run_sequential(output: [])
       # Initialize conditional state
       conditional_state = {} # { index => { evaluated: bool, result: bool, matched_chain: bool } }
       directive_index = 0
@@ -736,16 +819,6 @@ module Howzit
       # Initialize named_arguments with topic's named args (don't overwrite on each iteration)
       Howzit.named_arguments ||= {}
       Howzit.named_arguments.merge!(@named_args) if @named_args
-
-      unless @prereqs.empty?
-        begin
-          puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
-        rescue Errno::EPIPE
-          # Pipe closed, ignore
-        end
-        res = Prompt.yn('Have the above prerequisites been met?', default: true)
-        Process.exit 1 unless res
-      end
 
       # Process directives sequentially
       while directive_index < @directives.length
@@ -903,30 +976,6 @@ module Howzit
 
         # Re-evaluate all open conditionals after task execution
         re_evaluate_conditionals(conditional_state, directive_index - 1, context)
-      end
-
-      if @results[:total].positive?
-        total = "{bw}#{@results[:total]}{by} #{@results[:total] == 1 ? 'task' : 'tasks'}".c
-        errors = "{bw}#{@results[:errors]}{by} #{@results[:errors] == 1 ? 'error' : 'errors'}".c
-        @results[:message] += if @results[:errors].zero?
-                                "{bg}\u{2713} {by}Ran #{total}{x}".c
-                              elsif Howzit.options[:force]
-                                "{br}\u{2715} {by}Completed #{total} with #{errors}{x}".c
-                              else
-                                "{br}\u{2715} {by}Ran #{total}, terminated due to error{x}".c
-                              end
-        output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested && !Howzit.options[:run]
-      end
-
-      unless @postreqs.empty?
-        begin
-          # Apply variable substitution to postreqs content, then wrap each line individually to preserve structure
-          postreqs_content = @postreqs.join("\n\n").render_arguments
-          wrapped_content = postreqs_content.split(/\n/).map { |line| line.wrap(cols - 4) }.join("\n")
-          puts TTY::Box.frame("{bw}#{wrapped_content}{x}".c, width: cols)
-        rescue Errno::EPIPE
-          # Pipe closed, ignore
-        end
       end
 
       output

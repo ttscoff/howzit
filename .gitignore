@@ -47,3 +47,12 @@ html
 *.bak
 commit_message.txt
 *.backup
+.DS_Store
+*/.DS_Store
+.r_completions~
+*.code-workspace
+howzit.taskpaper
+buildnotes.md
+.cursor
+.github/prompts
+builda.md
