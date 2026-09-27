@@ -5,7 +5,8 @@ require 'English'
 module Howzit
   # Task object
   class Task
-    attr_reader :type, :title, :action, :arguments, :parent, :optional, :default, :last_status, :log_level, :source_file
+    attr_reader :type, :title, :action, :arguments, :parent, :optional, :default, :last_status, :log_level, :source_file,
+                :include_results
 
     ##
     ## Initialize a Task object
@@ -141,7 +142,7 @@ module Howzit
     ##
     ## Execute an include task
     ##
-    ## @return     [Array] [[Array] output, [Integer] number of tasks executed]
+    ## @return     [Array] [[Array] output, [Integer] number of tasks executed, [Boolean] all tasks succeeded]
     ##
     def run_include
       output = []
@@ -150,11 +151,13 @@ module Howzit
       matches = Howzit.buildnote.find_topic(action)
       raise "Topic not found: #{action}" if matches.empty?
 
-      Howzit.console.info("#{@prefix}{by}Running tasks from {bw}#{matches[0].title}{x}".c)
-      output.concat(matches[0].run(nested: true))
-      Howzit.console.info("{by}End include: #{matches[0].all_tasks.count} tasks{x}".c)
+      topic = matches[0]
+      Howzit.console.info("#{@prefix}{by}Running tasks from {bw}#{topic.title}{x}".c)
+      output.concat(topic.run(nested: true))
+      Howzit.console.info("{by}End include: #{topic.all_tasks.count} tasks{x}".c)
       @last_status = nil
-      [output, matches[0].all_tasks.count]
+      @include_results = topic.results.slice(:total, :success, :errors)
+      [output, @include_results[:total], @include_results[:errors].zero?]
     end
 
     ##
@@ -287,7 +290,8 @@ module Howzit
             else
               case @type
               when :include
-                output, tasks = run_include
+                output, tasks, include_success = run_include
+                include_success
               when :run
                 run_run
               when :copy

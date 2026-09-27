@@ -26,8 +26,20 @@ module Howzit
       output_lines.join("\n")
     end
 
+    def status_symbol(entry)
+      return '⏭️' if entry[:skipped]
+
+      entry[:success] ? '✅' : '❌'
+    end
+
+    def status_reason(entry)
+      return 'skipped' if entry[:skipped]
+
+      entry[:exit_status] ? "exit code #{entry[:exit_status]}" : 'failed'
+    end
+
     def format_line(entry, prefix_topic)
-      symbol = entry[:success] ? '✅' : '❌'
+      symbol = status_symbol(entry)
       parts = ["#{symbol} "]
       if prefix_topic && entry[:topic] && !entry[:topic].empty?
         # Escape braces and dollar signs in topic name to prevent color code interpretation
@@ -36,10 +48,11 @@ module Howzit
       end
       # Escape braces and dollar signs in task name to prevent color code interpretation
       task_escaped = entry[:task].gsub(/\{/, '\\{').gsub(/\}/, '\\}').gsub(/\$/, '\\$')
-      parts << "{by}#{task_escaped} {x}"
-      unless entry[:success]
-        reason = entry[:exit_status] ? "exit code #{entry[:exit_status]}" : 'failed'
-        parts << " {br}(#{reason}){x}"
+      if entry[:skipped]
+        parts << "{d}#{task_escaped} (skipped){x}"
+      else
+        parts << "{by}#{task_escaped} {x}"
+        parts << " {br}(#{status_reason(entry)}){x}" unless entry[:success]
       end
       parts.join.c
     end
@@ -76,7 +89,7 @@ module Howzit
     def format_row(entry, prefix_topic)
       # Use plain emoji without color codes - the emoji itself provides visual meaning
       # and complex ANSI codes interfere with mdless table rendering
-      symbol = entry[:success] ? '✅' : '❌'
+      symbol = status_symbol(entry)
 
       task_parts = []
       task_parts_plain = []
@@ -94,7 +107,7 @@ module Howzit
       task_parts_plain << entry[:task]
 
       unless entry[:success]
-        reason = entry[:exit_status] ? "exit code #{entry[:exit_status]}" : 'failed'
+        reason = status_reason(entry)
         task_parts << " {br}(#{reason}){x}"
         task_parts_plain << " (#{reason})"
       end

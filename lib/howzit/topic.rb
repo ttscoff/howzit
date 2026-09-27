@@ -157,7 +157,11 @@ module Howzit
         Howzit.console.warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c
       end
 
-      run_subtopics(output) unless halted?
+      if halted?
+        log_skipped_tasks(@subtopics.flat_map(&:all_tasks))
+      else
+        run_subtopics(output)
+      end
 
       if @results[:total].positive? || (all_tasks.any? && !sequential?)
         @results[:message] += results_message
@@ -225,37 +229,76 @@ module Howzit
     ## Run tasks without conditional evaluation
     ##
     def run_tasks(output)
-      @tasks.each do |task|
+      @tasks.each_with_index do |task, idx|
         next if (task.optional || Howzit.options[:ask]) && !ask_task(task)
 
         run_output, total, success = task.run
 
         output.concat(run_output)
-        @results[:total] += total
+        record_task_result(task, total, success)
+        next unless halted?
 
-        if success
-          @results[:success] += total
-        else
-          Howzit.console.warn %({bw}\u{2297} {br}Error running task {bw}"#{task.title}"{x}).c
-
-          @results[:errors] += total
-
-          break unless Howzit.options[:force]
-        end
-
-        log_task_result(task, success)
+        log_skipped_tasks(@tasks[(idx + 1)..])
+        break
       end
       output
+    end
+
+    ##
+    ## Add a task's results to the topic totals and the run report
+    ##
+    ## @param      task     [Task] The task that ran
+    ## @param      total    [Integer] Number of tasks it represents
+    ## @param      success  [Boolean] Whether it succeeded
+    ##
+    def record_task_result(task, total, success)
+      if task.type == :include && task.include_results
+        %i[total success errors].each { |key| @results[key] += task.include_results[key] }
+      else
+        @results[:total] += total
+        @results[success ? :success : :errors] += total
+      end
+
+      log_task_result(task, success)
+      Howzit.console.warn %({bw}\u{2297} {br}Error running task {bw}"#{task.title}"{x}).c unless success
+    end
+
+    ##
+    ## Log tasks that won't run because an earlier task failed.
+    ## Include tasks are expanded to the tasks of the included topic.
+    ##
+    ## @param      tasks  [Array] Task objects
+    ## @param      seen   [Array] Titles of included topics already expanded
+    ##
+    def log_skipped_tasks(tasks, seen = [])
+      return unless Howzit.options[:run]
+
+      Howzit.run_log ||= []
+      tasks.each do |task|
+        if task.type == :include
+          topic = Howzit.buildnote.find_topic(task.action)[0]
+          next if topic.nil? || seen.include?(topic.title)
+
+          topic.log_skipped_tasks(topic.all_tasks, seen + [topic.title])
+          next
+        end
+
+        topic_title = task.parent.is_a?(Topic) ? task.parent.title : @title
+        Howzit.run_log << { topic: topic_title, task: task_log_title(task), success: false, skipped: true }
+      end
     end
 
     ##
     ## Run each subtopic in order, adding its results to this topic's
     ##
     def run_subtopics(output)
-      @subtopics.each do |sub|
+      @subtopics.each_with_index do |sub, idx|
         output.concat(sub.run(nested: true, as_subtopic: true))
         %i[total success errors].each { |key| @results[key] += sub.results[key] }
-        break if halted?
+        next unless halted?
+
+        log_skipped_tasks(@subtopics[(idx + 1)..].flat_map(&:all_tasks))
+        break
       end
       output
     end
@@ -538,20 +581,18 @@ module Howzit
       return if task.type == :include
 
       Howzit.run_log ||= []
-
-      title = (task.title || '').strip
-      if title.empty?
-        action = (task.action || '').strip
-        title = action.split(/\n/).first.to_s.strip
-      end
-      title = task.type.to_s.capitalize if title.nil? || title.empty?
-
       Howzit.run_log << {
         topic: @title,
-        task: title,
+        task: task_log_title(task),
         success: success ? true : false,
         exit_status: task.last_status
       }
+    end
+
+    def task_log_title(task)
+      title = (task.title || '').strip
+      title = (task.action || '').strip.split(/\n/).first.to_s.strip if title.empty?
+      title.empty? ? task.type.to_s.capitalize : title
     end
 
     def gather_tasks
@@ -968,19 +1009,13 @@ module Howzit
         run_output, total, success = task.run
 
         output.concat(run_output)
-        @results[:total] += total
-
-        if success
-          @results[:success] += total
-        else
-          Howzit.console.warn %({bw}\u{2297} {br}Error running task {bw}"#{task.title}"{x}).c
-
-          @results[:errors] += total
-
-          break unless Howzit.options[:force]
+        record_task_result(task, total, success)
+        if halted?
+          # Tasks inside conditionals are omitted, since their conditions were never evaluated
+          remaining = @directives[directive_index..].select { |d| d.task? && (d.conditional_path || []).empty? }
+          log_skipped_tasks(remaining.filter_map { |d| d.to_task(self) })
+          break
         end
-
-        log_task_result(task, success)
 
         # Re-evaluate all open conditionals after task execution
         re_evaluate_conditionals(conditional_state, directive_index - 1, context)

@@ -1558,8 +1558,10 @@ module Howzit
         end
         topic_matches.compact! # Remove any nil values from failed matches
         # A matched subtopic is already output/run with its matched parent
-        top_level_topics(topic_matches).each do |topic_match|
+        selected = top_level_topics(topic_matches)
+        selected.each_with_index do |topic_match, idx|
           output.push(process_topic(topic_match, Howzit.options[:run], single: true))
+          break if stop_after_failure?(selected[(idx + 1)..])
         end
       else
         top_level_topics.each { |k| output.push(process_topic(k, false, single: false)) }
@@ -1599,7 +1601,7 @@ module Howzit
       end
 
       # Run each topic with its specific arguments
-      topic_specs.each do |topic_match, args|
+      topic_specs.each_with_index do |(topic_match, args), idx|
         # Set arguments if provided, otherwise clear them
         Howzit.arguments = if args && !args.empty?
                              args.split(/ *, */).map(&:render_arguments)
@@ -1607,8 +1609,27 @@ module Howzit
                              []
                            end
         output.push(process_topic(topic_match, Howzit.options[:run], single: true))
+        break if stop_after_failure?(topic_specs[(idx + 1)..].map(&:first))
       end
       finalize_output(output)
+    end
+
+    ##
+    ## After running a topic in a multi-topic run, check whether a task
+    ## failed. If so (and --force isn't set), log the remaining topics'
+    ## tasks as skipped.
+    ##
+    ## @param      remaining  [Array] Topics that haven't run yet
+    ##
+    ## @return     [Boolean] true if the run should stop
+    ##
+    def stop_after_failure?(remaining)
+      return false unless Howzit.options[:run]
+      return false if Howzit.options[:force]
+      return false unless Howzit.run_log.any? { |entry| !entry[:success] && !entry[:skipped] }
+
+      remaining.each { |topic| topic.log_skipped_tasks(topic.all_tasks) }
+      true
     end
 
     ##
