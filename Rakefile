@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# rspec, rubocop plugins, and the .rubocop_todo.yml cops depend on the locked bundle
+exec('bundle', 'exec', 'rake', *ARGV) unless ENV['BUNDLE_GEMFILE']
+
 # require 'bump/tasks'
 require 'English'
 require 'bundler/gem_tasks'
