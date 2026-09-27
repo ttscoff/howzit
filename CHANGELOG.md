@@ -1,3 +1,19 @@
+### 2.1.47
+
+2026-09-27 13:20
+
+#### IMPROVED
+
+- **Included topics** receive their bracketed arguments as positional arguments ($1, $2) in shell run blocks for the duration of the include
+
+#### FIXED
+
+- **default: metadata** now splits topics only on commas outside of brackets, so `default: Build, Deploy[prod, fast], Test` passes both arguments to Deploy
+- **Bracketed arguments in default:** (e.g. `Deploy[prod]`) are now bound to the topic's title parameters, so `${target}` and friends render in @run commands instead of coming out empty
+- **@include bracketed arguments** (e.g. `@include(Deploy [staging])`) now bind to the included topic's parameters, and including the same topic multiple times with different arguments works
+- **Unspecified bracketed arguments** fall back to the topic's parameter defaults
+- **Topics that use @include with arguments** no longer lose their own argument definitions
+
 ### 2.1.46
 
 2026-09-27 12:52
