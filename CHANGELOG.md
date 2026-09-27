@@ -1,3 +1,26 @@
+### 2.1.45
+
+2026-09-27 12:16
+
+#### CHANGED
+
+- **Multi-topic runs** (comma-separated topics or `default:` metadata) now stop after the first topic with a failed task and mark the remaining topics' tasks as skipped; use --force to run every topic.
+
+#### NEW
+
+- **Skipped tasks** in the run report: tasks that did not run because of an earlier failure are listed with a skipped marker and "(skipped)" label.
+- **Skipped @include tasks** are expanded to the included topic's individual tasks in the run report.
+
+#### IMPROVED
+
+- **Conditional topics** list remaining unconditional tasks as skipped after a failure; tasks inside unevaluated conditionals are omitted.
+
+#### FIXED
+
+- **Run report** now includes the task that failed and stopped a run, instead of omitting it and showing only the earlier successes.
+- **@include** directives now fail when a task in the included topic fails, so the including topic stops instead of continuing with its remaining tasks.
+- **Task totals for @include** reflect the included topic's actual successes and errors instead of counting every included task as a single result.
+
 ### 2.1.44
 
 2026-09-27 11:38
