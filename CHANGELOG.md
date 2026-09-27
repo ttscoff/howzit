@@ -1,3 +1,28 @@
+### 2.1.46
+
+2026-09-27 12:52
+
+#### CHANGED
+
+- **Shell run blocks** (sh, bash, zsh, dash, ksh, or no hashbang) now receive Howzit variables as environment variables instead of having ${VAR} replaced in the script text, so scripts can use their own variables, parameter expansions, and ENV without Howzit clobbering them.
+- **Command-line arguments** after -- are passed to shell run blocks as script arguments, so $1, $#, and "$@" work like any shell script (including inside shell functions).
+
+#### NEW
+
+- **:shell_variables: config option** (env or substitute) to switch shell run blocks back to text substitution; defaults to env.
+- **$${VAR} escape** passes ${VAR} through to the shell untouched in @run, @copy, and text-substituted blocks.
+
+#### IMPROVED
+
+- **Howzit-style defaults** (${name:default}) in shell run blocks are converted to the shell's ${name:-default} so they keep working with environment variables.
+
+#### FIXED
+
+- **Shell parameter expansions** like ${VAR:-default}, ${VAR:=x}, ${VAR:+x}, ${VAR:?x}, and ${VAR:0:3} are no longer mangled into Howzit defaults when VAR isn't a Howzit variable.
+- **Positional placeholders** ($1, ${2}) without a matching argument are left intact instead of being replaced with an empty string, which broke shell functions and awk '{print $1}'.
+- **$@ and $*** are only replaced when arguments were passed after --, instead of always being replaced with an empty string.
+- **Default values containing colons** (e.g. ${url:http://localhost:3000}) are no longer cut off at the second colon.
+
 ### 2.1.45
 
 2026-09-27 12:16
