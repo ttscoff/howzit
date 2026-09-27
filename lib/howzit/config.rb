@@ -21,6 +21,7 @@ module Howzit
       output_title: false,
       pager: 'auto',
       paginate: true,
+      shell_variables: 'env', # env: pass variables to shell run blocks via ENV, substitute: replace ${VAR} in text
       show_all_code: false,
       show_all_on_error: false,
       wrap: 0

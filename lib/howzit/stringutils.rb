@@ -383,29 +383,64 @@ module Howzit
       str = dup
       str.render_named_placeholders
       str.render_numeric_placeholders
-      Howzit.arguments.nil? ? str : str.gsub(/\$[@*]/, Shellwords.join(Howzit.arguments))
+      args = Howzit.arguments
+      return str if args.nil? || args.empty?
+
+      str.gsub(/(?<!\$)\$[@*]/, Shellwords.join(args))
     end
 
+    ##
+    ## Replace ${NAME} and ${NAME:default} with Howzit variable
+    ## values. Names Howzit doesn't know, shell parameter
+    ## expansions (${VAR:-x}, ${VAR:=x}, ${VAR:0:3}, etc.), and
+    ## escaped $${NAME} placeholders are left for the shell.
+    ##
     def render_named_placeholders
-      gsub!(/\$\{(?<name>[A-Z0-9_]+(?::.*?)?)\}/i) do
+      gsub!(/(?<!\$)\$\{(?<name>[A-Z0-9_]+)(?<rest>:[^}]*)?\}/i) do
         m = Regexp.last_match
-        arg, default = m['name'].split(/:/).map(&:strip)
-        if Howzit.named_arguments&.key?(arg) && !Howzit.named_arguments[arg].nil?
-          Howzit.named_arguments[arg]
-        elsif default
-          default
+        original = m[0]
+        rest = m['rest'].to_s
+        value = placeholder_value(m['name'])
+
+        if rest.empty?
+          value.nil? ? original : value
+        elsif rest.start_with?(':-')
+          value.nil? || value.empty? || rest.include?('$') ? original : value
+        elsif rest.match?(/\A:[=+?\s\d]/)
+          original
         else
-          # Preserve the original ${VAR} syntax if variable is not defined and no default provided
-          m[0]
+          value.nil? ? rest[1..].strip : value
         end
       end
     end
 
     def render_numeric_placeholders
-      gsub!(/\$\{?(\d+)\}?/) do
-        arg, default = Regexp.last_match(1).split(/:/)
-        idx = arg.to_i - 1
-        Howzit.arguments.length > idx ? Howzit.arguments[idx] : default || Regexp.last_match(0)
+      gsub!(/(?<!\$)\$(?:\{(\d+)\}|(\d+))/) do
+        m = Regexp.last_match
+        placeholder_value(m[1] || m[2]) || m[0]
+      end
+    end
+
+    ##
+    ## Remove the escape from $${NAME} placeholders, leaving
+    ## ${NAME} for the shell. Applied right before execution.
+    ##
+    ## @return     [String] unescaped string
+    ##
+    def unescape_placeholders
+      gsub(/\$\$(?=\{)/, '$')
+    end
+
+    ##
+    ## Convert Howzit-style ${NAME:default} to the shell's
+    ## ${NAME:-default} so defaults work when variables are
+    ## passed to a shell script through the environment
+    ##
+    ## @return     [String] converted string
+    ##
+    def shellify_defaults
+      gsub(/(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*|\d+):(?![-=+?\s\d$(])([^}]*)\}/) do
+        "${#{Regexp.last_match(1)}:-#{Regexp.last_match(2)}}"
       end
     end
 
@@ -559,6 +594,24 @@ module Howzit
 
         Color.template("\n\n#{title}#{tail}{x}\n\n")
       end
+    end
+
+    private
+
+    ##
+    ## Look up a placeholder name: digits are positional
+    ## arguments, anything else is a named variable
+    ##
+    ## @return     [String, nil] value, or nil if not defined
+    ##
+    def placeholder_value(name)
+      if name.match?(/\A\d+\z/)
+        idx = name.to_i - 1
+        args = Howzit.arguments || []
+        return idx >= 0 && idx < args.length ? args[idx].to_s : nil
+      end
+
+      Howzit.named_arguments&.[](name)&.to_s
     end
   end
 end

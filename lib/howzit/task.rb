@@ -32,7 +32,8 @@ module Howzit
       @title = attributes[:title]&.to_s
       @parent = attributes[:parent] || nil
 
-      @action = attributes[:action].render_arguments || nil
+      action = attributes[:action]
+      @action = shell_env_block?(action) ? action : action.render_arguments
       @log_level = attributes[:log_level]
       # Get source_file from parent topic if available, or from attributes
       parent_obj = attributes[:parent]
@@ -62,14 +63,36 @@ module Howzit
     end
 
     ##
+    ## Whether this is a shell run block that receives Howzit
+    ## variables through the environment instead of text substitution
+    ##
+    ## @param      content  [String] The block content
+    ##
+    def shell_env_block?(content = @action)
+      @type == :block &&
+        Howzit.options[:shell_variables].to_s != 'substitute' &&
+        ScriptSupport.shell_script?(content)
+    end
+
+    ##
     ## Execute a block type
     ##
     def run_block
       Howzit.console.info "#{@prefix}{bg}Running block {bw}#{@title}{x}".c if Howzit.options[:log_level] < 2
       block = @action
+      env_mode = shell_env_block?(block)
       # Apply variable substitution to block content at execution time
       # (variables from previous run blocks are now available)
-      block = block.render_arguments if block && !block.empty?
+      if env_mode
+        block = block.shellify_defaults
+        env = ScriptSupport.variables_env
+        script_args = Howzit.arguments || []
+      else
+        block = block.render_arguments if block && !block.empty?
+        env = {}
+        script_args = []
+      end
+      block = block.unescape_placeholders
       script = Tempfile.new('howzit_script')
       comm_file = ScriptComm.setup
       old_log_level = apply_log_level
@@ -117,9 +140,9 @@ module Howzit
         cmd = ScriptSupport.execution_command_for(script.path, interpreter)
         # If interpreter is nil, execute directly (will respect hashbang)
         res = if interpreter.nil?
-                system(script.path)
+                system(env, script.path, *script_args)
               else
-                system(cmd)
+                system(env, [cmd, *script_args.map { |arg| Shellwords.escape(arg) }].join(' '))
               end
       ensure
         # Restore original directory
@@ -241,7 +264,7 @@ module Howzit
           Dir.chdir(expanded_exec_dir) if expanded_exec_dir != expanded_original
         end
 
-        res = system(@action)
+        res = system(@action.unescape_placeholders)
       ensure
         # Restore original directory
         if exec_dir && Dir.exist?(exec_dir)
@@ -274,7 +297,7 @@ module Howzit
                         @title && !@title.empty? ? @title : @action
                       end
       Howzit.console.info("#{@prefix}{bg}Copied {bw}#{display_title}{bg} to clipboard{x}".c)
-      Util.os_copy(@action)
+      Util.os_copy(@action.unescape_placeholders)
       @last_status = 0
       true
     end

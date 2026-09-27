@@ -8,6 +8,8 @@ comments: true
 ---
 [Howzit](https://github.com/ttscoff/howzit) has always split build notes into topics using Markdown headers. What it didn't do was care *which* header level you used. An `##` and a `###` were both just "a topic," and they all got flattened into one long list. As of version 2.1.44, that's changed: deeper headers now nest under the header above them, and that nesting affects both how notes display and what happens when you run them.
 
+In case you've missed it, Howzit is a command-line tool for keeping Markdown notes about a project, things like how to build it, deploy it, or remember that one weird flag you always forget. The notes live in a `buildnotes.md` file in your project, split into topics by headers. Type `howzit build` and you get just the "Build" section, paged and highlighted in your terminal. Where it really earns its keep is as a task runner. Drop `@run(...)` directives or fenced `run` blocks into a topic, and `howzit -r build` executes them. It's documentation first, automation second, and I use it in pretty much every project I touch.
+
 ### The short version
 
 A `###` following a `##` is now a subtopic of that `##`. A `####` under the `###` is a subtopic of the `###`, and so on down. The next header at the same level (or shallower) closes out the parent.
@@ -89,9 +91,35 @@ Shell completions stay flat, so you can still tab-complete straight to a subtopi
 
 If you've been using `###` headers under `##` purely as visual formatting, those are now real subtopics. Viewing the parent will include them (probably what you wanted anyway), and running the parent will run their tasks too. If you had a `###` section with tasks you *don't* want run as part of its parent, bump it up to `##`.
 
+### Other notes
+
+While I was in there, I noticed the report at the end of a run could lie to me. A topic would error out, and the summary would still be a column of green checkmarks. Two bugs were teaming up on that:
+
+- **The failed task never made it into the report.** Howzit stopped running when a task failed, but it bailed out *before* logging the failure. You'd only see the tasks that passed.
+- **`@include` always counted as a success.** If a task inside an included topic failed, the including topic shrugged and kept going. That's how my own release topic happily published the wiki after the gem build fell over.
+
+Both are fixed. The report now shows the failure with its exit code, and anything that didn't get to run is marked as skipped:
+
+```console
+✅ Build: Compile
+❌ Build: Package  (exit code 1)
+⏭️ Test: Run specs (skipped)
+⏭️ Deploy: Push (skipped)
+```
+
+Skipped includes are expanded into the included topic's individual tasks, so you can see exactly what didn't happen. (In topics with `@if` blocks, tasks inside conditions that never got evaluated are left out, since there's no way to know if they would have run.)
+
+Stopping on failure now applies everywhere, too. Howzit already stopped within a topic, and nested topics skip their remaining subtopics. Now multi-topic runs stop as well, whether you ran `howzit -r build,test,deploy` or used a `default:` metadata list. If `build` fails, `test` and `deploy` don't run.
+
+If you'd rather push through, `-f` (`--force`) still does that. Every task runs, and the report still tells you which ones failed.
+
+One gotcha worth knowing: a fenced `run` block counts as a single task, and only its final exit status matters. If a command in the middle of a Bash block fails, the block keeps going unless you've got `set -e` at the top.
+
+The wiki has the full rundown under [Failures and the run report](https://github.com/ttscoff/howzit/wiki/@commands#failures-and-the-run-report).
+
 ### Grab it
 
-It's in 2.1.44:
+Nested topics landed in 2.1.44, and everything in "Other notes" is in 2.1.45:
 
 ```console
 $ gem install howzit

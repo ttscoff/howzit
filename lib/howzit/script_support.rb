@@ -154,6 +154,35 @@ module Howzit
       end
 
       ##
+      ## Whether a run block is a POSIX-style shell script (sh, bash,
+      ## zsh, dash, ksh). Blocks without a hashbang run with sh.
+      ##
+      ## @param      script_content  [String] The script content
+      ##
+      ## @return     [Boolean]
+      ##
+      def shell_script?(script_content)
+        first_line = script_content.to_s.lines.first&.strip
+        return true unless first_line&.start_with?('#!')
+
+        first_line.match?(%r{\A#!\s*(?:/usr/bin/env\s+)?(?:\S*/)?(?:sh|bash|zsh|dash|ksh)(?:\s|\z)})
+      end
+
+      ##
+      ## Howzit variables as environment variables for shell run blocks
+      ##
+      ## @return     [Hash] name => string value
+      ##
+      def variables_env
+        (Howzit.named_arguments || {}).each_with_object({}) do |(key, value), env|
+          name = key.to_s
+          next if value.nil? || !name.match?(/\A[A-Za-z_][A-Za-z0-9_]*\z/)
+
+          env[name] = value.to_s
+        end
+      end
+
+      ##
       ## Get the injection line for a given interpreter
       ##
       ## @param      interpreter  [Symbol] The interpreter type
