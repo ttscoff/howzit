@@ -138,7 +138,7 @@ module Howzit
         if title =~ /\[(.*?)\] *$/
           args = Regexp.last_match(1).split(/ *, */).map(&:render_arguments)
           Howzit.arguments = args
-          parent.arguments
+          task_data[:include_args] = args
           title.sub!(/ *\[.*?\] *$/, '')
         end
         title = title.render_arguments if title && !title.empty?

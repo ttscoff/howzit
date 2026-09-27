@@ -1608,7 +1608,7 @@ module Howzit
                            else
                              []
                            end
-        output.push(process_topic(topic_match, Howzit.options[:run], single: true))
+        output.push(process_topic(topic_match.with_arguments(Howzit.arguments), Howzit.options[:run], single: true))
         break if stop_after_failure?(topic_specs[(idx + 1)..].map(&:first))
       end
       finalize_output(output)
@@ -1640,7 +1640,8 @@ module Howzit
     ## @return     [Array] Array of topic specification strings
     ##
     def parse_default_metadata(default_value)
-      default_value.strip.split(/\s*,\s*/).map(&:strip).reject(&:empty?)
+      # Commas inside [bracketed arguments] separate arguments, not topics
+      default_value.strip.split(/\s*,\s*(?![^\[]*\])/).map(&:strip).reject(&:empty?)
     end
 
     ##

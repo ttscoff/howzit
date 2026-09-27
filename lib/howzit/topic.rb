@@ -18,8 +18,11 @@ module Howzit
     ## @param      metadata    [Hash] Optional metadata hash
     ## @param      source_file [String] Optional path to the build note file this topic came from
     ## @param      level       [Integer] Markdown header level (2 for ##, 3 for ###, etc.)
+    ## @param      positional  [Array] Values to bind to the title's (arguments),
+    ##                         overriding CLI arguments
     ##
-    def initialize(title, content, metadata = nil, source_file: nil, level: 2)
+    def initialize(title, content, metadata = nil, source_file: nil, level: 2, positional: nil)
+      @raw_title = title
       @title = title
       @content = content
       @parent = nil
@@ -30,7 +33,7 @@ module Howzit
       @named_args = {}
       @metadata = metadata
       @source_file = source_file
-      arguments(from_cli_snapshot: true)
+      arguments(from_cli_snapshot: positional.nil?, positional: positional)
 
       @directives = parse_directives_with_conditionals
       @tasks = gather_tasks
@@ -71,24 +74,43 @@ module Howzit
       list
     end
 
+    ##
+    ## A copy of this topic with bracketed arguments (e.g.
+    ## `@include(Deploy [prod])` or `default: Deploy[prod]`) bound to the
+    ## title's (arguments). Tasks are rebuilt so commands render with them.
+    ##
+    ## @param      args  [Array] Positional values
+    ##
+    ## @return     [Topic] a new Topic, or self if no args given
+    ##
+    def with_arguments(args)
+      return self if args.nil? || args.empty?
+
+      topic = Topic.new(@raw_title, @content, @metadata, source_file: @source_file, level: @level, positional: args)
+      topic.parent = @parent
+      topic.parent_topic = @parent_topic
+      topic.subtopics.concat(@subtopics)
+      topic
+    end
+
     # Get named arguments from title
     # from_cli_snapshot: use Howzit.cli_topic_positional_args (argv after `--`) so earlier
-    # topics' gather_tasks cannot clobber positional binding. Re-entrant @include [a,b]
-    # calls pass false to use live Howzit.arguments.
-    def arguments(from_cli_snapshot: false)
+    # topics' gather_tasks cannot clobber positional binding. positional: binds
+    # bracketed arguments from @include [a,b] and default: (see #with_arguments).
+    def arguments(from_cli_snapshot: false, positional: nil)
       @arg_definitions = []
       return unless @title =~ /\(.*?\) *$/
 
-      positional = if from_cli_snapshot
-                     # Specs / non-CLI: leave unset to keep using Howzit.arguments
-                     if Howzit.cli_topic_positional_args.nil?
-                       Howzit.arguments || []
+      positional ||= if from_cli_snapshot
+                       # Specs / non-CLI: leave unset to keep using Howzit.arguments
+                       if Howzit.cli_topic_positional_args.nil?
+                         Howzit.arguments || []
+                       else
+                         Howzit.cli_topic_positional_args
+                       end
                      else
-                       Howzit.cli_topic_positional_args
+                       Howzit.arguments || []
                      end
-                   else
-                     Howzit.arguments || []
-                   end
 
       a = @title.match(/\((?<args>.*?)\) *$/)
       args = a['args'].split(/ *, */).each(&:strip)
@@ -538,7 +560,7 @@ module Howzit
         if title =~ /\[(.*?)\] *$/
           args = Regexp.last_match(1).split(/ *, */).map(&:render_arguments)
           Howzit.arguments = args
-          arguments
+          task_args[:include_args] = args
           title.sub!(/ *\[.*?\] *$/, '')
         end
         # Apply variable substitution to title after bracket processing

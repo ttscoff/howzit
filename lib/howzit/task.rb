@@ -27,6 +27,7 @@ module Howzit
       @prefix = "{bw}\u{25B7}\u{25B7} {x}"
       # arrow = "{bw}\u{279F}{x}"
       @arguments = attributes[:arguments] || []
+      @include_args = attributes[:include_args]
 
       @type = attributes[:type] || :run
       @title = attributes[:title]&.to_s
@@ -171,16 +172,33 @@ module Howzit
       output = []
       action = @action
 
-      matches = Howzit.buildnote.find_topic(action)
+      matches = Howzit.buildnote.find_topic(action.sub(/ *\[.*?\] *$/, ''))
       raise "Topic not found: #{action}" if matches.empty?
 
-      topic = matches[0]
+      topic = matches[0].with_arguments(@include_args)
       Howzit.console.info("#{@prefix}{by}Running tasks from {bw}#{topic.title}{x}".c)
-      output.concat(topic.run(nested: true))
+      output.concat(with_positional_arguments(@include_args) { topic.run(nested: true) })
       Howzit.console.info("{by}End include: #{topic.all_tasks.count} tasks{x}".c)
       @last_status = nil
       @include_results = topic.results.slice(:total, :success, :errors)
       [output, @include_results[:total], @include_results[:errors].zero?]
+    end
+
+    ##
+    ## Temporarily set Howzit.arguments (e.g. $1 in included shell blocks)
+    ##
+    ## @param      args  [Array] Positional values, or nil to leave unchanged
+    ##
+    def with_positional_arguments(args)
+      return yield if args.nil? || args.empty?
+
+      previous = Howzit.arguments
+      Howzit.arguments = args
+      begin
+        yield
+      ensure
+        Howzit.arguments = previous
+      end
     end
 
     ##
