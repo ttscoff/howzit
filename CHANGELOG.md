@@ -1,3 +1,29 @@
+### 2.1.44
+
+2026-09-27 11:38
+
+#### CHANGED
+
+- **Task failures** in a parent or subtopic stop the remaining subtopics from running unless --force is used.
+- **@after blocks** on a parent are shown after the parent and all of its subtopics finish.
+
+#### NEW
+
+- **Subtopics**: deeper headers (### under ##, #### under ###, etc.) are now nested under the preceding shallower topic.
+- **Displaying a parent topic** shows all of its subtopics after it, with subtopic headers drawn in a lighter style (cyan title, dotted rule).
+- **Running a parent topic** runs its own tasks, then every subtopic's tasks in order (depth-first), with a single combined "Ran N tasks" summary.
+
+#### IMPROVED
+
+- **Showing all topics** (howzit with no arguments, or howzit -r with no default) only outputs top-level topics so subtopics are not repeated.
+- **Selecting both a parent and its subtopic** outputs/runs the subtopic only once, as part of the parent.
+- **Topic lists** (howzit -l and the runnable topics list) indent subtopics under their parents.
+- **@include(Topic)** on a parent runs the parent and all of its subtopics, and task counts in include notes and menus now count subtopic tasks.
+
+#### FIXED
+
+- **Parent topics with no tasks of their own** no longer warn "No @directive found" when their subtopics contain tasks.
+
 ### 2.1.43
 
 2026-09-27 11:35
