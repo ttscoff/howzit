@@ -153,7 +153,7 @@ module Howzit
         run_sequential(output: output)
       elsif @tasks.any?
         run_tasks(output)
-      elsif all_tasks.empty? && !as_subtopic
+      elsif all_tasks.empty? && !as_subtopic && !directives?
         Howzit.console.warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c
       end
 
@@ -174,6 +174,14 @@ module Howzit
     ##
     def sequential?
       @directives&.any?(&:conditional?) || false
+    end
+
+    ##
+    ## Whether this topic or any subtopic contains directives,
+    ## including non-task directives like @set_var and @log_level
+    ##
+    def directives?
+      @directives&.any? || @subtopics.any?(&:directives?)
     end
 
     def halted?
