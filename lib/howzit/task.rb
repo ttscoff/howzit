@@ -6,7 +6,7 @@ module Howzit
   # Task object
   class Task
     attr_reader :type, :title, :action, :arguments, :parent, :optional, :default, :last_status, :log_level, :source_file,
-                :include_results
+                :include_results, :include_args
 
     ##
     ## Initialize a Task object

@@ -165,34 +165,58 @@ module Howzit
     ## @return     [Array] output lines
     ##
     def run(nested: false, as_subtopic: false)
-      @results = { total: 0, success: 0, errors: 0, message: ''.c }
-      output = []
-      cols = check_cols
+      # The outermost run shows @before/@after notes for the whole tree
+      return run_topic(nested: nested, as_subtopic: as_subtopic) if Howzit.topic_run_active
 
-      confirm_prereqs(cols) if !@prereqs.empty? && (all_tasks.any? || sequential?)
-
-      if sequential?
-        run_sequential(output: output)
-      elsif @tasks.any?
-        run_tasks(output)
-      elsif all_tasks.empty? && !as_subtopic && !directives?
-        Howzit.console.warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c
+      Howzit.topic_run_active = true
+      begin
+        cols = check_cols
+        confirm_prereqs(cols) if all_tasks.any? || sequential?
+        output = run_topic(nested: nested, as_subtopic: as_subtopic)
+        show_postreqs(cols)
+        output
+      ensure
+        Howzit.topic_run_active = false
       end
+    end
 
-      if halted?
-        log_skipped_tasks(@subtopics.flat_map(&:all_tasks))
-      else
-        run_subtopics(output)
+    ##
+    ## @before notes for this topic, the topics it includes, and its
+    ## subtopics, in document order
+    ##
+    ## @return     [Array] rendered notes
+    ##
+    def all_prereqs
+      collect_notes(:prereqs)
+    end
+
+    ##
+    ## @after notes for this topic, the topics it includes, and its
+    ## subtopics, in document order
+    ##
+    ## @return     [Array] rendered notes
+    ##
+    def all_postreqs
+      collect_notes(:postreqs)
+    end
+
+    ##
+    ## Gather notes recursively through @include tasks and subtopics
+    ##
+    ## @param      kind  [Symbol] :prereqs or :postreqs
+    ## @param      args  [Array] Bracketed arguments from an @include
+    ## @param      seen  [Array] Titles of topics already collected
+    ##
+    def collect_notes(kind, args = nil, seen = [])
+      return [] if seen.include?(@title)
+
+      seen << @title
+      notes = render_notes(kind == :prereqs ? @prereqs : @postreqs, args)
+      @tasks.select { |task| task.type == :include }.each do |task|
+        topic = Howzit.buildnote.find_topic(task.action.sub(/ *\[.*?\] *$/, ''))[0]
+        notes.concat(topic.collect_notes(kind, task.include_args, seen)) if topic
       end
-
-      if @results[:total].positive? || (all_tasks.any? && !sequential?)
-        @results[:message] += results_message
-        output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested && !Howzit.options[:run]
-      end
-
-      show_postreqs(cols)
-
-      output
+      notes + @subtopics.flat_map { |sub| sub.collect_notes(kind, nil, seen) }
     end
 
     ##
@@ -215,8 +239,11 @@ module Howzit
     end
 
     def confirm_prereqs(cols)
+      prereqs = all_prereqs
+      return if prereqs.empty?
+
       begin
-        puts TTY::Box.frame("{by}#{@prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
+        puts TTY::Box.frame("{by}#{prereqs.join("\n\n").wrap(cols - 4)}{x}".c, width: cols)
       rescue Errno::EPIPE
         # Pipe closed, ignore
       end
@@ -225,11 +252,11 @@ module Howzit
     end
 
     def show_postreqs(cols)
-      return if @postreqs.empty?
+      postreqs = all_postreqs
+      return if postreqs.empty?
 
-      # Apply variable substitution to postreqs content, then wrap each line individually to preserve structure
-      postreqs_content = @postreqs.join("\n\n").render_arguments
-      wrapped_content = postreqs_content.split(/\n/).map { |line| line.wrap(cols - 4) }.join("\n")
+      # Wrap each line individually to preserve structure
+      wrapped_content = postreqs.join("\n\n").split(/\n/).map { |line| line.wrap(cols - 4) }.join("\n")
       puts TTY::Box.frame("{bw}#{wrapped_content}{x}".c, width: cols)
     rescue Errno::EPIPE
       # Pipe closed, ignore
@@ -592,6 +619,55 @@ module Howzit
     end
 
     private
+
+    def run_topic(nested:, as_subtopic:)
+      @results = { total: 0, success: 0, errors: 0, message: ''.c }
+      output = []
+
+      if sequential?
+        run_sequential(output: output)
+      elsif @tasks.any?
+        run_tasks(output)
+      elsif all_tasks.empty? && !as_subtopic && !directives?
+        Howzit.console.warn "{r}--run: No {br}@directive{xr} found in {bw}#{@title}{x}".c
+      end
+
+      if halted?
+        log_skipped_tasks(@subtopics.flat_map(&:all_tasks))
+      else
+        run_subtopics(output)
+      end
+
+      if @results[:total].positive? || (all_tasks.any? && !sequential?)
+        @results[:message] += results_message
+        output.push(@results[:message]) if Howzit.options[:log_level] < 2 && !nested && !Howzit.options[:run]
+      end
+
+      output
+    end
+
+    ##
+    ## Render notes with this topic's variables, plus any bracketed
+    ## @include arguments bound to its title parameters
+    ##
+    def render_notes(notes, args)
+      return [] if notes.empty?
+
+      previous = Howzit.named_arguments
+      begin
+        Howzit.named_arguments = (previous || {}).merge(@named_args.compact).merge(bound_arguments(args))
+        notes.map(&:render_arguments)
+      ensure
+        Howzit.named_arguments = previous
+      end
+    end
+
+    def bound_arguments(args)
+      return {} if args.nil? || args.empty?
+
+      names = @arg_definitions.map { |definition| definition.split(':', 2).first }
+      names.zip(args).to_h.compact
+    end
 
     ##
     ## Collect all directives in the topic content

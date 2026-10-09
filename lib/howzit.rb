@@ -60,7 +60,8 @@ require 'tty/box'
 # Main module for howzit
 module Howzit
   class << self
-    attr_accessor :arguments, :named_arguments, :cli_topic_positional_args, :cli_args, :run_log, :multi_topic_run
+    attr_accessor :arguments, :named_arguments, :cli_topic_positional_args, :cli_args, :run_log, :multi_topic_run,
+                  :topic_run_active
 
     ##
     ## Holds a Configuration object with methods and a @settings hash
