@@ -1,3 +1,20 @@
+### 2.1.48
+
+2026-10-09 07:20
+
+#### CHANGED
+
+- **@before blocks** from a topic, its subtopics, and any included topics are shown together in one box before anything runs, with a single confirmation prompt instead of one prompt per topic
+- **@after blocks** from a topic, its subtopics, and any included topics are shown together in one box at the end of the run instead of after each topic finishes
+
+#### IMPROVED
+
+- **Collected notes** appear in document order: the topic's own block, then included topics in @include order, then subtopics
+- **@after notes from subtopics skipped after a failure** are still shown in the final box
+- **Notes from included topics** render variables with the bracketed arguments passed via @include(Topic [args])
+- **@before blocks** now render ${variables}, matching @after
+- **Topics included more than once** only contribute their notes once
+
 ### 2.1.47
 
 2026-09-27 13:20
