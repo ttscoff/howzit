@@ -1,3 +1,17 @@
+### 2.1.49
+
+2026-10-21 05:15
+
+#### CHANGED
+
+- **Markdown highlighting** tries `apex` first when `:highlighter:` is `auto`, then mdcat, then mdless. mdless is still installed with the gem
+- **Directives inside a code fence** are shown as code instead of being turned into tasks
+
+#### FIXED
+
+- **Apex output** uses `-t terminal256 --no-paginate`, including when `:highlighter:` is set to `apex` alone, so topics render as terminal color instead of HTML
+- **Placeholders inside fenced code** are left as written, so a syntax highlighter such as Pygments does not print howzit's color codes as text like `[1m`
+
 ### 2.1.48
 
 2026-10-09 07:20
