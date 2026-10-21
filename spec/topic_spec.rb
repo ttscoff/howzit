@@ -103,6 +103,36 @@ describe Howzit::Topic do
       Howzit.options[:show_all_code] = true
       expect(topic.print_out({ single: true, header: true }).join("\n").uncolor).to match(/▶ ls -1/)
     end
+
+    it 'leaves placeholders inside fenced code for the syntax highlighter' do
+      Howzit::Color.coloring = true
+      Howzit.options[:show_all_code] = true
+      note = Howzit::Topic.new('Widgets', <<~MD)
+        We set ${TEST_VAR} in a script block
+
+        ```bash
+        echo "${TEST_VAR}"
+        @run(ls) shown as code
+        ```
+
+        ```run Full capture script
+        if [[ -n ${only} ]]
+        ```
+      MD
+
+      lines = note.print_out({ single: true, header: false })
+      prose = lines.find { |line| line.include?('We set') }
+      echo_line = lines.find { |line| line.include?('echo') }
+      directive = lines.find { |line| line.include?('@run') }
+      condition = lines.find { |line| line.include?('only') }
+
+      expect(prose).to include("\e[")
+      expect(echo_line).to eq('echo "${TEST_VAR}"')
+      expect(directive).to eq('@run(ls) shown as code')
+      expect(condition).to eq('if [[ -n ${only} ]]')
+    ensure
+      Howzit::Color.coloring = false
+    end
   end
 
   describe '.arguments' do

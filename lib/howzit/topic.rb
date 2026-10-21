@@ -493,7 +493,18 @@ module Howzit
         topic.gsub!(/(?mix)^(`{3,})run([?!]*)\s*
                     ([^\n]*)[\s\S]*?\n\1\s*$/, '@@@run\2 \3')
       end
+      in_fence = false
+      fence_char = nil
+      fence_len = 0
       topic.split(/\n/).each do |l|
+        # Fenced code is passed through unchanged. Howzit color codes inside a
+        # fence get mangled by the syntax highlighter Apex shells out to.
+        if in_fence
+          output.push(l)
+          in_fence = false if closing_fence?(l, fence_char, fence_len)
+          next
+        end
+
         case l
         when /@(before|after|prereq|end|if|unless)/
           next
@@ -504,12 +515,22 @@ module Howzit
         when /(?<fence>`{3,})run(?<optional>[!?]{1,2})? *(?<title>.*?)$/i
           desc = title_code_block(Regexp.last_match.named_captures.symbolize_keys)
           output.push("{bmK}\u{25B6} {bwK}#{desc}{x}\n```".c)
+          fence_char = '`'
+          fence_len = Regexp.last_match[:fence].length
+          in_fence = true
         when /@@@run(?<optional>[!?]{1,2})? *(?<title>.*?)$/i
           output.push("{bmK}\u{25B6} {bwK}#{title_code_block(Regexp.last_match.named_captures.symbolize_keys)}{x}".c)
         else
-          l.wrap!(Howzit.options[:wrap]) if Howzit.options[:wrap].positive?
-          # Highlight variable placeholders in content
-          output.push(highlight_variables(l))
+          opened = opening_fence(l)
+          if opened
+            fence_char, fence_len = opened
+            in_fence = true
+            output.push(l)
+          else
+            l.wrap!(Howzit.options[:wrap]) if Howzit.options[:wrap].positive?
+            # Highlight variable placeholders in content
+            output.push(highlight_variables(l))
+          end
         end
       end
       Howzit.named_arguments = @named_args
@@ -619,6 +640,23 @@ module Howzit
     end
 
     private
+
+    ##
+    ## A markdown opening fence (` ``` ` or `~~~`, up to three spaces of indent)
+    ##
+    ## @return     [Array(String, Integer), nil] fence character and length
+    ##
+    def opening_fence(line)
+      match = line.match(/\A {0,3}(?<marker>`{3,}|~{3,})/)
+      return unless match
+
+      marker = match[:marker]
+      [marker[0], marker.length]
+    end
+
+    def closing_fence?(line, char, length)
+      line.match?(/\A {0,3}#{Regexp.escape(char)}{#{length},}[ \t]*\z/)
+    end
 
     def run_topic(nested:, as_subtopic:)
       @results = { total: 0, success: 0, errors: 0, message: ''.c }

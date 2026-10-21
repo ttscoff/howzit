@@ -37,7 +37,7 @@ Howzit is a tool that allows you to keep Markdown-formatted notes about a projec
 - Ruby 2.4+ (It probably works on older Rubys, but is untested prior to 2.4.1.)
 - Optional: if [`fzf`](https://github.com/junegunn/fzf) is available, it will be used for handling multiple choice selections
 - Optional: if [`bat`](https://github.com/sharkdp/bat) is available it will page with that
-- Optional: [`mdless`](https://github.com/ttscoff/mdless) or [`mdcat`](https://github.com/lunaryorn/mdcat) for formatting output
+- Optional: [`apex`](https://github.com/ApexMarkdown/apex) is preferred for formatting output when it is installed. Otherwise howzit uses [`mdcat`](https://github.com/lunaryorn/mdcat) or [`mdless`](https://github.com/ttscoff/mdless). mdless is installed with the howzit gem.
 
 ### Installing
 

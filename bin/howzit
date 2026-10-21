@@ -210,7 +210,7 @@ OptionParser.new do |opts|
     Howzit.options[:header_format] = t
   end
 
-  opts.on('--[no-]md-highlight', 'Highlight Markdown syntax (default on), requires mdless or mdcat') do |m|
+  opts.on('--[no-]md-highlight', 'Highlight Markdown syntax (default on), prefers apex, then mdcat or mdless') do |m|
     Howzit.options[:highlight] = Howzit.options[:color] ? m : false
   end
 

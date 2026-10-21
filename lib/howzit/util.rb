@@ -50,31 +50,50 @@ module Howzit
         end
       end
 
-      # If either mdless or mdcat are installed, use that for highlighting
-      # markdown
+      # Prefer apex, then mdcat, then mdless. mdless ships with the gem,
+      # so highlighting still works when apex is not installed.
       def which_highlighter
-        if Howzit.options[:highlighter] =~ /auto/i
-          highlighters = %w[mdcat mdless]
-          highlighters.delete_if(&:nil?).select!(&:available?)
-          return nil if highlighters.empty?
+        command = if Howzit.options[:highlighter] =~ /auto/i
+                    auto_highlighter
+                  else
+                    configured_highlighter
+                  end
+        apex_command(command)
+      end
 
-          hl = highlighters.first
-          args = case hl
-                 when 'mdless'
-                   '--no-pager'
-                 end
+      # Apex defaults to HTML. Howzit always wants terminal escapes, and it
+      # pages the result itself, so add those flags unless the command
+      # already sets a format or a pagination option. This covers both
+      # auto and an explicit `:highlighter: apex`.
+      def apex_command(command)
+        return command if command.nil? || command.empty?
+        return command unless command.split.first == 'apex'
 
-          [hl, args].join(' ')
-        else
-          hl = Howzit.options[:highlighter].split(/ /)[0]
-          if hl.available?
-            Howzit.options[:highlighter]
-          else
-            Howzit.console.error Color.template("{Rw}Error:{xbw} Specified highlighter (#{Howzit.options[:highlighter]}) not found, switching to auto")
-            Howzit.options[:highlighter] = 'auto'
-            which_highlighter
-          end
-        end
+        args = command.split[1..]
+        has_format = args.any? { |arg| ['-t', '--to'].include?(arg) || arg.start_with?('--to=') }
+        args.push('-t', 'terminal256') unless has_format
+        has_pager = args.any? { |arg| ['--no-paginate', '--paginate', '-p'].include?(arg) }
+        args << '--no-paginate' unless has_pager
+        ['apex', *args].join(' ')
+      end
+
+      def auto_highlighter
+        highlighters = %w[apex mdcat mdless]
+        highlighters.delete_if(&:nil?).select!(&:available?)
+        return nil if highlighters.empty?
+
+        hl = highlighters.first
+        args = '--no-pager' if hl == 'mdless'
+        [hl, args].compact.join(' ')
+      end
+
+      def configured_highlighter
+        hl = Howzit.options[:highlighter].split(/ /)[0]
+        return Howzit.options[:highlighter] if hl.available?
+
+        Howzit.console.error Color.template("{Rw}Error:{xbw} Specified highlighter (#{Howzit.options[:highlighter]}) not found, switching to auto")
+        Howzit.options[:highlighter] = 'auto'
+        auto_highlighter
       end
 
       # When pagination is enabled, find the best (in my opinion) option,

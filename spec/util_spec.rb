@@ -23,9 +23,49 @@ describe Howzit::Util do
   end
 
   describe '.which_highlighter' do
+    after { Howzit.options[:highlighter] = 'auto' }
+
     it 'finds mdless' do
       Howzit.options[:highlighter] = 'mdless'
       expect(util.which_highlighter).to eq 'mdless'
+    end
+
+    it 'prefers apex with terminal256 output and pagination disabled' do
+      Howzit.options[:highlighter] = 'auto'
+      allow(util).to receive(:command_exist?).and_return(false)
+      allow(util).to receive(:command_exist?).with('apex').and_return(true)
+
+      expect(util.which_highlighter).to eq 'apex -t terminal256 --no-paginate'
+    end
+
+    it 'uses mdcat when apex is not installed' do
+      Howzit.options[:highlighter] = 'auto'
+      allow(util).to receive(:command_exist?).and_return(false)
+      allow(util).to receive(:command_exist?).with('mdcat').and_return(true)
+
+      expect(util.which_highlighter).to eq 'mdcat'
+    end
+
+    it 'uses mdless without its pager when apex and mdcat are not installed' do
+      Howzit.options[:highlighter] = 'auto'
+      allow(util).to receive(:command_exist?).and_return(false)
+      allow(util).to receive(:command_exist?).with('mdless').and_return(true)
+
+      expect(util.which_highlighter).to eq 'mdless --no-pager'
+    end
+
+    it 'adds terminal256 output when the highlighter is set to apex' do
+      Howzit.options[:highlighter] = 'apex'
+      allow(util).to receive(:command_exist?).with('apex').and_return(true)
+
+      expect(util.which_highlighter).to eq 'apex -t terminal256 --no-paginate'
+    end
+
+    it 'keeps an explicit apex output format' do
+      Howzit.options[:highlighter] = 'apex -t html'
+      allow(util).to receive(:command_exist?).with('apex').and_return(true)
+
+      expect(util.which_highlighter).to eq 'apex -t html --no-paginate'
     end
   end
 
